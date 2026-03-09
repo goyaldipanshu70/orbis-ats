@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from typing import Optional
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -226,3 +226,25 @@ async def send_adhoc_email(
 
     await send_email(to=to, subject=subject, body_html=body)
     return {"status": "sent", "to": to}
+
+
+@router.post("/internal/email/send")
+async def send_internal_email(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    x_internal_key: str = Header(None, alias="X-Internal-Key"),
+):
+    """Internal endpoint for service-to-service email sending."""
+    from app.core.config import settings
+    if x_internal_key != settings.INTERNAL_API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid internal key")
+
+    to = payload.get("to")
+    subject = payload.get("subject")
+    body = payload.get("body")
+    if not to or not subject or not body:
+        raise HTTPException(status_code=400, detail="to, subject, and body are required")
+
+    from app.services.email_service import send_email
+    success = await send_email(to=to, subject=subject, body_html=body)
+    return {"status": "sent" if success else "failed", "to": to}

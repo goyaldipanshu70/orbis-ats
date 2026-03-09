@@ -109,3 +109,57 @@ class RankCandidatesNode(BaseNode):
             lead["rank"] = i + 1
 
         return {"leads": ranked, "count": len(ranked)}
+
+
+class ConditionalNode(BaseNode):
+    node_type = "conditional"
+    category = "processing"
+    display_name = "Conditional Branch"
+    description = "Route leads to different branches based on conditions"
+    config_schema = {
+        "condition_type": {
+            "type": "select",
+            "options": ["score_threshold", "has_email", "has_linkedin", "location_match", "skill_match"],
+            "description": "Type of condition to evaluate",
+        },
+        "threshold": {"type": "number", "default": 50, "description": "Score threshold (for score_threshold type)"},
+        "match_value": {"type": "string", "description": "Value to match against (for location_match/skill_match)"},
+    }
+
+    async def execute(self, input_data):
+        leads = self._collect_leads(input_data)
+
+        condition_type = self.config.get("condition_type", "score_threshold")
+        threshold = self.config.get("threshold", 50)
+        match_value = (self.config.get("match_value") or "").lower()
+
+        true_leads = []
+        false_leads = []
+
+        for lead in leads:
+            if condition_type == "score_threshold":
+                passes = lead.get("score", 0) >= threshold
+            elif condition_type == "has_email":
+                passes = bool(lead.get("email"))
+            elif condition_type == "has_linkedin":
+                passes = bool(lead.get("linkedin_url"))
+            elif condition_type == "location_match":
+                passes = match_value in (lead.get("location") or "").lower()
+            elif condition_type == "skill_match":
+                skills = lead.get("skills") or []
+                passes = any(match_value in s.lower() for s in skills)
+            else:
+                passes = False
+
+            if passes:
+                true_leads.append(lead)
+            else:
+                false_leads.append(lead)
+
+        return {
+            "leads": true_leads,
+            "true_leads": true_leads,
+            "false_leads": false_leads,
+            "true_count": len(true_leads),
+            "false_count": len(false_leads),
+        }

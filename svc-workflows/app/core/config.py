@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     RECRUITING_URL: str = "http://localhost:8002"
     REDIS_URL: str = "redis://localhost:6379"
     GITHUB_TOKEN: str = ""
+    INTERNAL_API_KEY: str = "intesa-internal-key-dev"
 
     class Config:
         env_file = ".env"

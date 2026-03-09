@@ -34,6 +34,7 @@ import {
   X,
   Circle,
   Loader2,
+  GitBranch,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AppLayout from '@/components/layout/AppLayout';
@@ -95,6 +96,7 @@ function WorkflowNodeComponent({ data, selected }: NodeProps) {
     nodeType: string;
   };
   const color = CATEGORY_COLORS[nodeData.category] || '#6b7280';
+  const isConditional = nodeData.nodeType === 'conditional';
 
   return (
     <div
@@ -112,7 +114,7 @@ function WorkflowNodeComponent({ data, selected }: NodeProps) {
         style={{ backgroundColor: color }}
       >
         <span className="text-white">
-          {CATEGORY_ICONS[nodeData.category] || <Circle className="h-4 w-4" />}
+          {isConditional ? <GitBranch className="h-4 w-4" /> : (CATEGORY_ICONS[nodeData.category] || <Circle className="h-4 w-4" />)}
         </span>
         <span className="text-sm font-medium text-white truncate">
           {nodeData.label}
@@ -124,14 +126,39 @@ function WorkflowNodeComponent({ data, selected }: NodeProps) {
           style={{ backgroundColor: color }}
         />
         <span className="text-xs text-muted-foreground capitalize">
-          {nodeData.category}
+          {isConditional ? 'conditional' : nodeData.category}
         </span>
       </div>
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!w-3 !h-3 !border-2 !border-white !bg-muted-foreground"
-      />
+      {isConditional ? (
+        <>
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="true"
+            className="!w-3 !h-3 !border-2 !border-white !bg-green-500"
+            style={{ top: '35%' }}
+          />
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="false"
+            className="!w-3 !h-3 !border-2 !border-white !bg-red-500"
+            style={{ top: '65%' }}
+          />
+          <div className="absolute right-[-28px] text-[9px] font-medium" style={{ top: '28%' }}>
+            <span className="text-green-600">T</span>
+          </div>
+          <div className="absolute right-[-28px] text-[9px] font-medium" style={{ top: '58%' }}>
+            <span className="text-red-600">F</span>
+          </div>
+        </>
+      ) : (
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="!w-3 !h-3 !border-2 !border-white !bg-muted-foreground"
+        />
+      )}
     </div>
   );
 }
@@ -163,14 +190,24 @@ function workflowNodesToFlow(
   });
 }
 
-function workflowEdgesToFlow(edges: [string, string][]): Edge[] {
-  return edges.map(([source, target], i) => ({
-    id: `e-${source}-${target}-${i}`,
-    source,
-    target,
-    animated: true,
-    style: { strokeWidth: 2 },
-  }));
+function workflowEdgesToFlow(edges: (string[])[]): Edge[] {
+  return edges.map((edge, i) => {
+    const [source, target, label] = edge;
+    return {
+      id: `e-${source}-${target}-${label || ''}-${i}`,
+      source,
+      target,
+      sourceHandle: label || undefined,
+      animated: true,
+      style: {
+        strokeWidth: 2,
+        stroke: label === 'true' ? '#22c55e' : label === 'false' ? '#ef4444' : undefined,
+      },
+      label: label === 'true' ? 'Yes' : label === 'false' ? 'No' : undefined,
+      labelStyle: { fontSize: 10, fontWeight: 600 },
+      data: { branchLabel: label },
+    };
+  });
 }
 
 function flowNodesToWorkflow(nodes: Node[]): WorkflowNode[] {
@@ -185,8 +222,12 @@ function flowNodesToWorkflow(nodes: Node[]): WorkflowNode[] {
   }));
 }
 
-function flowEdgesToWorkflow(edges: Edge[]): [string, string][] {
-  return edges.map((e) => [e.source, e.target]);
+function flowEdgesToWorkflow(edges: Edge[]): string[][] {
+  return edges.map((e) => {
+    const label = (e.data as any)?.branchLabel || e.sourceHandle;
+    if (label) return [e.source, e.target, label];
+    return [e.source, e.target];
+  });
 }
 
 // ── Main page ────────────────────────────────────────────────────────
@@ -286,9 +327,20 @@ function WorkflowBuilderInner() {
 
   const onConnect = useCallback(
     (connection: Connection) => {
+      const label = connection.sourceHandle; // 'true' or 'false' for conditional
       setEdges((eds) =>
         addEdge(
-          { ...connection, animated: true, style: { strokeWidth: 2 } },
+          {
+            ...connection,
+            animated: true,
+            style: {
+              strokeWidth: 2,
+              stroke: label === 'true' ? '#22c55e' : label === 'false' ? '#ef4444' : undefined,
+            },
+            label: label === 'true' ? 'Yes' : label === 'false' ? 'No' : undefined,
+            labelStyle: { fontSize: 10, fontWeight: 600 },
+            data: { branchLabel: label },
+          },
           eds,
         ),
       );
@@ -710,6 +762,45 @@ function WorkflowBuilderInner() {
                 </div>
               </div>
 
+              {/* Cron trigger schedule presets */}
+              {selectedNodeData?.nodeType === 'cron_trigger' && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Schedule</Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { label: 'Every Hour', cron: '0 * * * *' },
+                      { label: 'Daily 9am', cron: '0 9 * * *' },
+                      { label: 'Mon-Fri 9am', cron: '0 9 * * 1-5' },
+                      { label: 'Weekly Mon', cron: '0 9 * * 1' },
+                      { label: 'Bi-Weekly', cron: '0 9 1,15 * *' },
+                      { label: 'Monthly', cron: '0 9 1 * *' },
+                    ].map((preset) => (
+                      <Button
+                        key={preset.cron}
+                        variant={selectedNodeData?.config?.cron_expression === preset.cron ? 'default' : 'outline'}
+                        size="sm"
+                        className="text-xs h-7"
+                        onClick={() => updateNodeConfig('cron_expression', preset.cron)}
+                      >
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Custom Cron Expression</Label>
+                    <Input
+                      value={selectedNodeData?.config?.cron_expression || '0 9 * * 1'}
+                      onChange={(e) => updateNodeConfig('cron_expression', e.target.value)}
+                      placeholder="0 9 * * 1"
+                      className="h-8 font-mono text-xs"
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Format: minute hour day month weekday
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Dynamic config fields from config_schema */}
               {configKeys.length > 0 && (
                 <div className="space-y-4">
@@ -722,6 +813,11 @@ function WorkflowBuilderInner() {
                     const fieldType =
                       schema?.type ||
                       (typeof schema === 'string' ? schema : 'string');
+
+                    // Skip cron_expression if already shown above
+                    if (selectedNodeData?.nodeType === 'cron_trigger' && key === 'cron_expression') {
+                      return null;
+                    }
 
                     if (fieldType === 'select' && schema?.options) {
                       return (
@@ -795,6 +891,31 @@ function WorkflowBuilderInner() {
                           <Label className="text-xs capitalize">
                             {schema?.label || key.replace(/_/g, ' ')}
                           </Label>
+                        </div>
+                      );
+                    }
+
+                    // Multiline text for body/template fields
+                    if (key.includes('body') || key.includes('template')) {
+                      return (
+                        <div key={key} className="space-y-1.5">
+                          <Label className="text-xs capitalize">
+                            {schema?.label || key.replace(/_/g, ' ')}
+                          </Label>
+                          <textarea
+                            value={String(value)}
+                            onChange={(e) =>
+                              updateNodeConfig(key, e.target.value)
+                            }
+                            placeholder={schema?.placeholder || ''}
+                            className="w-full rounded-md border bg-background px-3 py-2 text-sm min-h-[80px] resize-y"
+                            rows={3}
+                          />
+                          {key.includes('email') && (
+                            <p className="text-[10px] text-muted-foreground">
+                              Supports: {'{name}'}, {'{role}'}, {'{company}'} placeholders
+                            </p>
+                          )}
                         </div>
                       );
                     }

@@ -10,7 +10,7 @@ export interface WorkflowNode {
 
 export interface WorkflowDefinition {
   nodes: WorkflowNode[];
-  edges: [string, string][];
+  edges: string[][];
 }
 
 export interface Workflow {
@@ -78,7 +78,7 @@ export interface ScrapedLead {
 
 export interface NodeTypeInfo {
   type: string;
-  category: 'trigger' | 'search' | 'ai' | 'processing' | 'action';
+  category: 'trigger' | 'search' | 'ai' | 'processing' | 'action' | 'conditional';
   display_name: string;
   description: string;
   config_schema: Record<string, any>;

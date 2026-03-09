@@ -79,39 +79,109 @@ class AddToEmailCampaignNode(BaseNode):
     description = "Add candidates to an outreach email campaign"
     config_schema = {
         "campaign_name": {"type": "string", "description": "Name of the email campaign"},
-        "template": {"type": "string", "description": "Email template to use"},
+        "email_subject": {"type": "string", "description": "Email subject line (supports {name} placeholder)"},
+        "email_body": {"type": "string", "description": "Email body HTML (supports {name}, {role}, {company} placeholders)"},
+        "send_immediately": {"type": "boolean", "default": False, "description": "Send emails immediately after adding to campaign"},
     }
+
+    def _apply_template(self, template: str, lead: dict) -> str:
+        """Replace placeholders in a template string with lead data."""
+        name = lead.get("name", "Unknown")
+        headline = lead.get("headline", "")
+        raw_data = lead.get("raw_data", {}) if isinstance(lead.get("raw_data"), dict) else {}
+        company = raw_data.get("company", "")
+        return template.replace("{name}", name).replace("{role}", headline).replace("{company}", company)
 
     async def execute(self, input_data):
         leads = self._collect_leads(input_data)
         campaign_name = self.config.get("campaign_name", "Default Outreach")
+        email_subject = self.config.get("email_subject", "Opportunity from {company}")
+        email_body = self.config.get("email_body", "<p>Hi {name}, we have an exciting role for you.</p>")
+        send_immediately = self.config.get("send_immediately", False)
 
         added = []
         skipped = []
+        sent_count = 0
+        failed_count = 0
+        errors = []
 
-        for lead in leads:
-            email = lead.get("email")
-            if email:
+        # Build headers for internal service-to-service calls
+        headers = {"Content-Type": "application/json"}
+        internal_key = getattr(settings, "INTERNAL_API_KEY", None)
+        if internal_key:
+            headers["X-Internal-Key"] = internal_key
+
+        async with httpx.AsyncClient(timeout=30) as client:
+            for lead in leads:
+                email = lead.get("email")
+                if not email:
+                    skipped.append({
+                        "name": lead.get("name", "Unknown"),
+                        "reason": "No email address available",
+                    })
+                    continue
+
+                subject = self._apply_template(email_subject, lead)
+                body = self._apply_template(email_body, lead)
+
                 added.append({
                     "name": lead.get("name", "Unknown"),
                     "email": email,
                     "campaign": campaign_name,
+                    "subject": subject,
                 })
                 logger.info("Added %s (%s) to campaign '%s'", lead.get("name"), email, campaign_name)
-            else:
-                skipped.append({
-                    "name": lead.get("name", "Unknown"),
-                    "reason": "No email address available",
-                })
+
+                if send_immediately:
+                    try:
+                        resp = await client.post(
+                            f"{settings.RECRUITING_URL}/api/outreach/internal/email/send",
+                            json={"to": email, "subject": subject, "body": body},
+                            headers=headers,
+                        )
+                        if resp.status_code < 300:
+                            resp_data = resp.json()
+                            if resp_data.get("status") == "sent":
+                                sent_count += 1
+                                logger.info("Email sent to %s for campaign '%s'", email, campaign_name)
+                            else:
+                                failed_count += 1
+                                errors.append({"lead": lead.get("name", "Unknown"), "email": email, "error": f"Send failed: {resp_data.get('status')}"})
+                                logger.warning("Email send failed for %s: %s", email, resp_data)
+                        else:
+                            failed_count += 1
+                            errors.append({"lead": lead.get("name", "Unknown"), "email": email, "error": f"HTTP {resp.status_code}"})
+                            logger.warning("Failed to send email to %s: HTTP %s - %s", email, resp.status_code, resp.text[:200])
+                    except Exception as e:
+                        failed_count += 1
+                        errors.append({"lead": lead.get("name", "Unknown"), "email": email, "error": str(e)})
+                        logger.error("Error sending email to %s: %s", email, e)
+                else:
+                    logger.info("Would send email to %s (subject: %s) — send_immediately is off", email, subject)
+
+        if send_immediately:
+            message = (
+                f"Campaign '{campaign_name}': {len(added)} recipients, "
+                f"{sent_count} emails sent, {failed_count} failed, "
+                f"{len(skipped)} skipped (no email)"
+            )
+        else:
+            message = (
+                f"Added {len(added)} candidates to campaign '{campaign_name}', "
+                f"skipped {len(skipped)} without email (send_immediately=False, no emails sent)"
+            )
 
         return {
             "leads": leads,
             "campaign_name": campaign_name,
             "added_count": len(added),
             "skipped_count": len(skipped),
+            "sent_count": sent_count,
+            "failed_count": failed_count,
             "added": added,
             "skipped": skipped[:10],
-            "message": f"Added {len(added)} candidates to campaign '{campaign_name}', skipped {len(skipped)} without email",
+            "errors": errors[:5],
+            "message": message,
         }
 
 

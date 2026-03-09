@@ -119,7 +119,17 @@ class ExecutionEngine:
                 if edge[1] == node_id:
                     src_id = edge[0]
                     if src_id in node_outputs:
-                        input_data[src_id] = node_outputs[src_id]
+                        src_output = node_outputs[src_id]
+                        # Handle conditional branching
+                        edge_label = edge[2] if len(edge) > 2 else None
+                        if edge_label and isinstance(src_output, dict):
+                            branch_key = f"{edge_label}_leads"
+                            if branch_key in src_output:
+                                input_data[src_id] = {"leads": src_output[branch_key]}
+                            else:
+                                input_data[src_id] = src_output
+                        else:
+                            input_data[src_id] = src_output
             # Merge with global input
             if "_input" in node_outputs:
                 input_data["_input"] = node_outputs["_input"]
