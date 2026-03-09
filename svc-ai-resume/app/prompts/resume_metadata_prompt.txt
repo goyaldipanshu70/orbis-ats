@@ -1,0 +1,135 @@
+You are a resume parser. Extract ONLY factual metadata from the resume text below. Do NOT score, evaluate, or compare against any job description.
+
+Resume Text:
+{resume_text}
+
+Extract the following sections. If a field is not found in the resume, return null for that field.
+
+1. BASIC INFO
+   - full_name: The candidate's full name
+   - email: Email address
+   - phone: Phone number (any format)
+   - location: City, state, or country
+   - current_role: Most recent or current job title
+   - years_of_experience: Total years of professional experience (estimate from work history dates as a float)
+   - summary: A brief professional summary if present
+   - objective: Career objective if stated
+
+2. SKILLS
+   - skills: Up to 20 key technical and professional skills mentioned
+
+3. EDUCATION (array of entries)
+   - degree: e.g. "B.Tech", "M.S.", "MBA"
+   - field_of_study: e.g. "Computer Science"
+   - institution: University or school name
+   - graduation_year: Year of graduation (integer or null)
+   - gpa: GPA if mentioned (string, e.g. "3.8/4.0")
+   - honors: Any honors, distinctions, or awards (string or null)
+
+4. WORK EXPERIENCE (array of entries, most recent first)
+   - company: Company name
+   - role: Job title
+   - start_date: Start date (e.g. "Jan 2020" or "2020")
+   - end_date: End date (e.g. "Present" or "Dec 2023")
+   - location: Work location if mentioned
+   - responsibilities: Array of key responsibility/achievement bullet points (up to 5)
+
+5. PROJECTS (array of entries)
+   - title: Project name
+   - description: Brief description
+   - tech_stack: Technologies used (array of strings)
+   - url: Project URL if mentioned
+
+6. CERTIFICATIONS (array of entries)
+   - name: Certification name
+   - issuer: Issuing organization
+   - year: Year obtained (integer or null)
+   - expiry_year: Expiry year if mentioned (integer or null)
+   - credential_id: Credential ID if mentioned
+
+7. LANGUAGES (array of entries)
+   - language: Language name
+   - proficiency: Proficiency level if stated (e.g. "Native", "Fluent", "Intermediate")
+
+8. LINKS & SOCIAL PROFILES
+   - linkedin_url: LinkedIn profile URL
+   - github_url: GitHub profile URL
+   - leetcode_url: LeetCode profile URL
+   - hackerrank_url: HackerRank profile URL
+   - stackoverflow_url: Stack Overflow profile URL
+   - twitter_url: Twitter/X profile URL
+   - personal_website: Personal website URL
+   - portfolio_url: Portfolio URL
+   - other_urls: Array of any other URLs found
+
+OUTPUT FORMAT
+Respond with **only** a valid JSON object. Do not include any explanations or markdown.
+
+{{
+  "full_name": string,
+  "email": string or null,
+  "phone": string or null,
+  "location": string or null,
+  "current_role": string or null,
+  "years_of_experience": float or null,
+  "summary": string or null,
+  "objective": string or null,
+  "skills": [string],
+  "education": [
+    {{
+      "degree": string or null,
+      "field_of_study": string or null,
+      "institution": string or null,
+      "graduation_year": integer or null,
+      "gpa": string or null,
+      "honors": string or null
+    }}
+  ],
+  "work_experience": [
+    {{
+      "company": string or null,
+      "role": string or null,
+      "start_date": string or null,
+      "end_date": string or null,
+      "location": string or null,
+      "responsibilities": [string]
+    }}
+  ],
+  "projects": [
+    {{
+      "title": string or null,
+      "description": string or null,
+      "tech_stack": [string],
+      "url": string or null
+    }}
+  ],
+  "certifications": [
+    {{
+      "name": string or null,
+      "issuer": string or null,
+      "year": integer or null,
+      "expiry_year": integer or null,
+      "credential_id": string or null
+    }}
+  ],
+  "languages": [
+    {{
+      "language": string,
+      "proficiency": string or null
+    }}
+  ],
+  "links": {{
+    "linkedin_url": string or null,
+    "github_url": string or null,
+    "leetcode_url": string or null,
+    "hackerrank_url": string or null,
+    "stackoverflow_url": string or null,
+    "twitter_url": string or null,
+    "personal_website": string or null,
+    "portfolio_url": string or null,
+    "other_urls": [string]
+  }},
+  "linkedin_url": string or null,
+  "github_url": string or null,
+  "portfolio_url": string or null
+}}

@@ -1,0 +1,45 @@
+version: '3.8'
+
+# Infrastructure-only compose — run postgres and redis locally.
+# Backend services are started directly with uvicorn (not in Docker).
+
+services:
+  intesahr-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: intesahr-postgres
+    environment:
+      - POSTGRES_USER=intesa
+      - POSTGRES_PASSWORD=intesa123
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U intesa"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  intesahr-redis:
+    image: redis:7-alpine
+    container_name: intesahr-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  intesahr-mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: intesahr-mosquitto
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local

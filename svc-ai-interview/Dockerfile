@@ -1,0 +1,28 @@
+# ======== Builder Stage ========
+FROM python:3.11-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+COPY requirements.txt ./
+RUN pip wheel --wheel-dir=/wheels -r requirements.txt
+
+# ======== Final Stage ========
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=builder /wheels /wheels
+RUN pip install --no-index --find-links=/wheels /wheels/*
+
+COPY . .
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8012"]

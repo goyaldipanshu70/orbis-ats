@@ -1,0 +1,38 @@
+You are an AI assistant trained to extract structured rubric information from job descriptions for a hiring company. You may also receive an optional rubric for reference.
+
+---
+
+Your Task
+
+Given:
+- `jd_text` (required): the raw job description text
+
+You must extract a structured rubric that includes the following fields. All values should be arrays or objects. 
+If a value is not present, return an empty array or null.
+
+---
+
+Inputs:
+ - `jd_text`: {jd_text}
+
+ KEEP IN MIND THAT
+ - If a field is missing in the resume, return empty string and assign score = 0 for that category
+
+---
+
+Respond with **only** a valid JSON object. Do not include any explanations or markdown. Do not wrap your output in code blocks.
+{{
+  "core_skills": [string],
+  "preferred_skills": [string],
+  "experience_requirements": {{
+    "min_years": number,
+    "description": string
+  }},
+  "educational_requirements": {{
+    "degree": string,
+    "field": string
+  }},
+  "soft_skills": [string],
+  "certifications": [string],
+  "role_keywords": [string]
+}}
