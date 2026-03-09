@@ -13,7 +13,6 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'http://localhost:8000',
         configure: (proxy) => {
-          // Disable buffering for SSE responses
           proxy.on('proxyRes', (proxyRes, req) => {
             if (req.url?.includes('/stream')) {
               proxyRes.headers['cache-control'] = 'no-cache';

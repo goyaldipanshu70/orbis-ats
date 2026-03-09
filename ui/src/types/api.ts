@@ -294,29 +294,6 @@ export interface CandidateProfile {
   created_at: string | null;
 }
 
-// Candidate Job Entry types (per-job evaluation)
-export interface CandidateJobEntry {
-  _id: string;
-  profile_id: number;
-  jd_id: string;
-  user_id: string;
-  ai_resume_analysis: any;
-  resume_url: string | null;
-  status: string;
-  category: string | null;
-  source: string;
-  application_id: number | null;
-  onboard: boolean;
-  screening: boolean;
-  interview_status: boolean;
-  pipeline_stage: PipelineStage;
-  full_name: string | null;
-  email: string | null;
-  phone: string | null;
-  created_at: string | null;
-  imported_at: string | null;
-}
-
 // Pipeline types
 export type PipelineStage = 'applied' | 'screening' | 'ai_interview' | 'interview' | 'offer' | 'hired' | 'rejected';
 
@@ -412,20 +389,6 @@ export interface Offer {
   created_at: string;
 }
 
-// Interview Feedback types
-export interface InterviewerFeedback {
-  id: number;
-  schedule_id: number;
-  interviewer_id: string;
-  interviewer_name: string;
-  rating: number;
-  recommendation: 'strong_yes' | 'yes' | 'neutral' | 'no' | 'strong_no';
-  strengths: string | null;
-  concerns: string | null;
-  notes: string | null;
-  created_at: string;
-}
-
 // Job Approval types
 export interface JobApproval {
   id: number;
@@ -483,14 +446,6 @@ export interface ReferralLink {
   created_at: string;
 }
 
-export interface ReferralLeaderboardEntry {
-  referrer_name: string;
-  referrer_email: string;
-  total_referrals: number;
-  hired_count: number;
-  conversion_pct: number;
-}
-
 // ── Job Board types ─────────────────────────────────────────────────────
 export interface JobBoardPosting {
   id: number;
@@ -502,45 +457,6 @@ export interface JobBoardPosting {
   views: number;
   applications: number;
   created_at: string;
-}
-
-// ── Outreach / Campaign types ───────────────────────────────────────────
-export interface EmailCampaign {
-  id: number;
-  name: string;
-  jd_id: number | null;
-  template_subject: string;
-  template_body: string;
-  audience_filter: Record<string, any> | null;
-  campaign_type: 'one_time' | 'sequence';
-  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'paused';
-  scheduled_at: string | null;
-  created_by: string;
-  created_at: string;
-  total_recipients?: number;
-  sent_count?: number;
-  opened_count?: number;
-}
-
-export interface EmailCampaignStep {
-  id: number;
-  campaign_id: number;
-  step_number: number;
-  delay_days: number;
-  subject: string;
-  body: string;
-}
-
-export interface EmailCampaignRecipient {
-  id: number;
-  campaign_id: number;
-  step_id: number | null;
-  candidate_email: string;
-  candidate_name: string | null;
-  status: 'pending' | 'sent' | 'opened' | 'clicked' | 'replied' | 'bounced';
-  sent_at: string | null;
-  opened_at: string | null;
-  clicked_at: string | null;
 }
 
 export interface StageAutomation {
@@ -644,12 +560,6 @@ export interface CandidateScorecard {
   }>;
 }
 
-export interface ComparisonMatrix {
-  dimension: string;
-  scores: Record<number, number>;
-  winner_id: number | null;
-}
-
 // ── Compliance types ────────────────────────────────────────────────────
 export interface DiversityStats {
   source_distribution: Record<string, number>;
@@ -672,27 +582,6 @@ export interface SLAStats {
   candidates: SLACandidate[];
 }
 
-// ── Pipeline Config types ───────────────────────────────────────────────
-export interface PipelineStageConfig {
-  name: string;
-  display_name: string;
-  sort_order: number;
-  color: string;
-  is_terminal: boolean;
-}
-
-// ── Approval types (extend existing) ────────────────────────────────────
-export interface ApprovalRequest {
-  id: number;
-  job_id: number;
-  job_title?: string;
-  requested_by: string;
-  approved_by: string | null;
-  status: 'pending' | 'approved' | 'rejected';
-  comments: string | null;
-  created_at: string;
-}
-
 // ── AI Interview types ──────────────────────────────────────────────────
 
 export interface AIInterviewSession {
@@ -709,18 +598,6 @@ export interface AIInterviewSession {
   completed_at: string | null;
   created_at: string;
   expires_at: string;
-}
-
-export interface AIInterviewRoomInfo {
-  job_title: string;
-  company?: string;
-  interview_type: string;
-  time_limit_minutes: number;
-  max_questions: number;
-  include_coding: boolean;
-  coding_language?: string;
-  status: string;
-  expires_at: string | null;
 }
 
 export interface AIInterviewResults {
@@ -752,15 +629,6 @@ export interface ProctoringEvent {
   event_type: string;
   timestamp: string;
   duration_ms?: number;
-}
-
-export interface CodeEvalResult {
-  score: number;
-  feedback: string;
-  passed: boolean;
-  correctness?: string;
-  efficiency?: string;
-  code_quality?: string;
 }
 
 // ── Analytics types ──────────────────────────────────────────────────────
