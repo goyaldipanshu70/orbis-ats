@@ -31,16 +31,16 @@ export interface Workflow {
 export interface WorkflowRun {
   id: number;
   workflow_id: number;
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'running' | 'completed' | 'completed_with_errors' | 'failed' | 'cancelled';
   trigger_type: string;
-  input_data: Record<string, any>;
-  output_data: Record<string, any>;
+  input_data: Record<string, any> | null;
+  output_data: Record<string, any> | null;
   error_message: string | null;
-  started_at: string;
+  started_at: string | null;
   completed_at: string | null;
   created_at: string;
   created_by: string;
-  node_runs: WorkflowNodeRun[];
+  node_runs?: WorkflowNodeRun[];
 }
 
 export interface WorkflowNodeRun {
@@ -49,12 +49,12 @@ export interface WorkflowNodeRun {
   node_id: string;
   node_type: string;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
-  input_data: Record<string, any>;
-  output_data: Record<string, any>;
+  input_data: Record<string, any> | null;
+  output_data: Record<string, any> | null;
   error_message: string | null;
-  started_at: string;
+  started_at: string | null;
   completed_at: string | null;
-  execution_time_ms: number;
+  execution_time_ms: number | null;
 }
 
 export interface ScrapedLead {
@@ -67,7 +67,7 @@ export interface ScrapedLead {
   portfolio_url: string | null;
   headline: string | null;
   location: string | null;
-  skills: string[];
+  skills: string[] | null;
   experience_years: number | null;
   source: string;
   source_url: string | null;

@@ -1,9 +1,12 @@
-import json
+import asyncio
 import logging
 from app.nodes.base import BaseNode
 from app.core.llm_provider import get_llm
+from app.utils.retry import safe_parse_json
 
 logger = logging.getLogger("svc-workflows")
+
+LLM_TIMEOUT_SECONDS = 60
 
 
 class AISourcePlannerNode(BaseNode):
@@ -21,6 +24,8 @@ class AISourcePlannerNode(BaseNode):
     async def execute(self, input_data):
         role = self.config.get("role", "Software Engineer")
         skills = self.config.get("skills", [])
+        if isinstance(skills, str):
+            skills = [s.strip() for s in skills.split(",") if s.strip()]
         location = self.config.get("location", "")
         experience = self.config.get("experience_range", "2-5")
 
@@ -38,12 +43,10 @@ class AISourcePlannerNode(BaseNode):
                 f"- strategy: a 1-2 sentence sourcing strategy\n"
                 f"Return ONLY valid JSON, no markdown."
             )
-            response = await llm.ainvoke(prompt)
-            text = response.content.strip()
-            # Strip markdown fences if present
-            if text.startswith("```"):
-                text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-            parsed = json.loads(text)
+            response = await asyncio.wait_for(llm.ainvoke(prompt), timeout=LLM_TIMEOUT_SECONDS)
+            parsed = safe_parse_json(response.content)
+            if not isinstance(parsed, dict):
+                raise ValueError(f"Expected JSON object from LLM, got: {type(parsed)}")
 
             return {
                 "role": role,
@@ -84,7 +87,12 @@ class AICandidateScoringNode(BaseNode):
 
     async def execute(self, input_data):
         leads = self._collect_leads(input_data)
+        if not leads:
+            return {"leads": [], "count": 0, "source": "scoring"}
+
         required_skills = self.config.get("required_skills", [])
+        if isinstance(required_skills, str):
+            required_skills = [s.strip() for s in required_skills.split(",") if s.strip()]
         role = self.config.get("role", "Software Engineer")
 
         # Try LLM-based scoring for richer evaluation
@@ -115,13 +123,14 @@ class AICandidateScoringNode(BaseNode):
                     f"- reasoning: 1 sentence explanation\n"
                     f"Return ONLY valid JSON array, no markdown."
                 )
-                response = await llm.ainvoke(prompt)
-                text = response.content.strip()
-                if text.startswith("```"):
-                    text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-                scores = json.loads(text)
+                response = await asyncio.wait_for(llm.ainvoke(prompt), timeout=LLM_TIMEOUT_SECONDS)
+                scores = safe_parse_json(response.content)
+                if not isinstance(scores, list):
+                    raise ValueError(f"Expected JSON array from LLM, got: {type(scores)}")
 
                 for score_data in scores:
+                    if not isinstance(score_data, dict):
+                        continue
                     idx = score_data.get("index", 1) - 1
                     if 0 <= idx < len(batch):
                         lead = batch[idx]
@@ -154,11 +163,13 @@ class AICandidateScoringNode(BaseNode):
             else:
                 skill_score = 25
 
-            raw = lead.get("raw_data", {})
-            repos = raw.get("repos", 0)
-            followers = raw.get("followers", 0)
-            reputation = raw.get("reputation", 0)
-            answer_count = raw.get("answer_count", 0)
+            raw = lead.get("raw_data") or {}
+            if not isinstance(raw, dict):
+                raw = {}
+            repos = raw.get("repos", 0) or 0
+            followers = raw.get("followers", 0) or 0
+            reputation = raw.get("reputation", 0) or 0
+            answer_count = raw.get("answer_count", 0) or 0
             activity_score = min(25, repos * 0.5 + followers * 0.3 + reputation * 0.001 + answer_count * 0.2)
 
             completeness = 0
@@ -195,6 +206,8 @@ class AIProfileExtractorNode(BaseNode):
 
     async def execute(self, input_data):
         leads = self._collect_leads(input_data)
+        if not leads:
+            return {"leads": [], "count": 0, "source": "extraction"}
 
         # Try LLM-based extraction for richer profiles
         try:
@@ -205,7 +218,9 @@ class AIProfileExtractorNode(BaseNode):
                 batch = leads[i:i + 10]
                 profiles = []
                 for idx, lead in enumerate(batch):
-                    raw = lead.get("raw_data", {})
+                    raw = lead.get("raw_data") or {}
+                    if not isinstance(raw, dict):
+                        raw = {}
                     profiles.append(
                         f"{idx + 1}. Name: {lead.get('name', 'Unknown')}, "
                         f"Headline: {lead.get('headline', '')[:150]}, "
@@ -228,17 +243,20 @@ class AIProfileExtractorNode(BaseNode):
                     f"- skills: array of inferred technical skills\n"
                     f"Return ONLY valid JSON array, no markdown."
                 )
-                response = await llm.ainvoke(prompt)
-                text = response.content.strip()
-                if text.startswith("```"):
-                    text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-                extractions = json.loads(text)
+                response = await asyncio.wait_for(llm.ainvoke(prompt), timeout=LLM_TIMEOUT_SECONDS)
+                extractions = safe_parse_json(response.content)
+                if not isinstance(extractions, list):
+                    raise ValueError(f"Expected JSON array from LLM, got: {type(extractions)}")
 
                 for ext in extractions:
+                    if not isinstance(ext, dict):
+                        continue
                     idx = ext.get("index", 1) - 1
                     if 0 <= idx < len(batch):
                         lead = batch[idx]
-                        raw = lead.get("raw_data", {})
+                        raw = lead.get("raw_data") or {}
+                        if not isinstance(raw, dict):
+                            raw = {}
                         extracted_leads.append({
                             **lead,
                             "name": ext.get("name") or lead.get("name", "Unknown"),
@@ -257,14 +275,16 @@ class AIProfileExtractorNode(BaseNode):
         # Heuristic fallback
         extracted_leads = []
         for lead in leads:
-            raw = lead.get("raw_data", {})
+            raw = lead.get("raw_data") or {}
+            if not isinstance(raw, dict):
+                raw = {}
             name = lead.get("name") or raw.get("display_name") or raw.get("login", "Unknown")
             email = lead.get("email") or raw.get("email")
             location = lead.get("location") or raw.get("location", "")
             headline = lead.get("headline") or raw.get("bio", "")
 
-            repos = raw.get("repos", 0)
-            reputation = raw.get("reputation", 0)
+            repos = raw.get("repos", 0) or 0
+            reputation = raw.get("reputation", 0) or 0
             estimated_years = 0.0
             if repos > 50 or reputation > 10000:
                 estimated_years = 8.0

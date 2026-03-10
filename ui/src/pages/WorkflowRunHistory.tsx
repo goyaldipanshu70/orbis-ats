@@ -30,6 +30,23 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   ChevronDown,
   ChevronRight,
   XCircle,
@@ -37,6 +54,8 @@ import {
   Clock,
   Play,
   AlertCircle,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -44,15 +63,20 @@ const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
   running: 'bg-blue-100 text-blue-800 border-blue-300 animate-pulse',
   completed: 'bg-green-100 text-green-800 border-green-300',
+  completed_with_errors: 'bg-orange-100 text-orange-800 border-orange-300',
   failed: 'bg-red-100 text-red-800 border-red-300',
   cancelled: 'bg-gray-100 text-gray-800 border-gray-300',
   skipped: 'bg-gray-100 text-gray-500 border-gray-300',
 };
 
-function formatDuration(startedAt: string, completedAt: string | null): string {
+function formatDuration(startedAt: string | null, completedAt: string | null): string {
+  if (!startedAt) return '-';
   const start = new Date(startedAt).getTime();
+  if (isNaN(start)) return '-';
   const end = completedAt ? new Date(completedAt).getTime() : Date.now();
+  if (isNaN(end)) return '-';
   const diffMs = end - start;
+  if (diffMs < 0) return '-';
 
   if (diffMs < 1000) return `${diffMs}ms`;
 
@@ -68,8 +92,11 @@ function formatDuration(startedAt: string, completedAt: string | null): string {
   return `${hours}h ${remainingMinutes}m`;
 }
 
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString(undefined, {
+function formatDateTime(dateStr: string | null): string {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '-';
+  return d.toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -116,8 +143,23 @@ function NodeRunsTable({ nodeRuns }: { nodeRuns: WorkflowNodeRun[] }) {
                     : `${(node.execution_time_ms / 1000).toFixed(1)}s`
                   : '-'}
               </TableCell>
-              <TableCell className="max-w-[300px] truncate text-xs text-red-600">
-                {node.error_message || '-'}
+              <TableCell className="max-w-[300px] text-xs text-red-600">
+                {node.error_message ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="block truncate cursor-default">
+                          {node.error_message}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[400px] whitespace-pre-wrap">
+                        {node.error_message}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  '-'
+                )}
               </TableCell>
             </TableRow>
           ))}
@@ -138,10 +180,11 @@ function RunRow({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: detailedRun } = useQuery({
+  const { data: detailedRun, isError: detailError } = useQuery({
     queryKey: ['workflow-run', run.id],
     queryFn: () => apiClient.request<WorkflowRun>(`/api/workflows/runs/${run.id}`),
     enabled: expanded,
+    retry: 1,
   });
 
   const cancelMutation = useMutation({
@@ -153,8 +196,8 @@ function RunRow({
       toast.success(data.message || 'Run cancelled');
       queryClient.invalidateQueries({ queryKey: ['workflow-runs'] });
     },
-    onError: () => {
-      toast.error('Failed to cancel run');
+    onError: (err: any) => {
+      toast.error(err?.detail || err?.message || 'Failed to cancel run');
     },
   });
 
@@ -181,7 +224,10 @@ function RunRow({
               {run.status === 'failed' && (
                 <AlertCircle className="h-3 w-3 mr-1 inline-block" />
               )}
-              {run.status}
+              {run.status === 'completed_with_errors' && (
+                <AlertTriangle className="h-3 w-3 mr-1 inline-block" />
+              )}
+              {run.status.replace(/_/g, ' ')}
             </Badge>
           </TableCell>
           <TableCell>{run.trigger_type}</TableCell>
@@ -195,15 +241,35 @@ function RunRow({
           <TableCell>
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
               {isActive && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => cancelMutation.mutate()}
-                  disabled={cancelMutation.isPending}
-                >
-                  <XCircle className="h-3 w-3 mr-1" />
-                  Cancel
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={cancelMutation.isPending}
+                    >
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Cancel
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel this run?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will stop execution and mark all pending nodes as skipped. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Keep Running</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => cancelMutation.mutate()}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Cancel Run
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               <Button
                 variant="outline"
@@ -220,8 +286,10 @@ function RunRow({
       <CollapsibleContent asChild>
         <tr>
           <td colSpan={8} className="p-0 bg-muted/30">
-            {detailedRun ? (
-              <NodeRunsTable nodeRuns={detailedRun.node_runs} />
+            {detailError ? (
+              <p className="text-sm text-red-500 py-3 px-4">Failed to load node details</p>
+            ) : detailedRun ? (
+              <NodeRunsTable nodeRuns={detailedRun.node_runs || []} />
             ) : (
               <p className="text-sm text-muted-foreground py-3 px-4">Loading...</p>
             )}
@@ -268,7 +336,7 @@ export default function WorkflowRunHistory() {
   const activeWorkflowId =
     selectedWorkflowId !== 'all' ? selectedWorkflowId : null;
 
-  const { data: runsData, isLoading } = useQuery({
+  const { data: runsData, isLoading, isFetching } = useQuery({
     queryKey: ['workflow-runs', activeWorkflowId, page],
     queryFn: () => {
       const endpoint = activeWorkflowId
@@ -287,12 +355,21 @@ export default function WorkflowRunHistory() {
   });
 
   const runs = runsData?.items || [];
+  const hasActiveRuns = runs.some((r) => r.status === 'running' || r.status === 'pending');
 
   return (
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Run History</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">Run History</h1>
+            {hasActiveRuns && isFetching && !isLoading && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Auto-updating
+              </span>
+            )}
+          </div>
           <Select value={selectedWorkflowId} onValueChange={setSelectedWorkflowId}>
             <SelectTrigger className="w-[280px]">
               <SelectValue placeholder="All Workflows" />

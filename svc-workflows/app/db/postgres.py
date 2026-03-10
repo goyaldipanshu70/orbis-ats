@@ -3,7 +3,14 @@ from app.core.config import settings
 from app.db.models import Base
 from typing import AsyncGenerator
 
-engine = create_async_engine(settings.DATABASE_URL, pool_pre_ping=True, pool_size=10, max_overflow=20)
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
+    pool_recycle=1800,
+)
 AsyncSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 
 
@@ -21,6 +28,12 @@ async def init_db():
         await conn.execute(t("CREATE INDEX IF NOT EXISTS ix_scraped_leads_run_id ON scraped_leads (workflow_run_id)"))
         await conn.execute(t("CREATE INDEX IF NOT EXISTS ix_scraped_leads_email ON scraped_leads (email)"))
         await conn.execute(t("CREATE INDEX IF NOT EXISTS ix_scraped_leads_source ON scraped_leads (source)"))
+
+        # Composite indexes for common query patterns
+        await conn.execute(t("CREATE INDEX IF NOT EXISTS ix_workflows_status_created_by ON workflows (status, created_by)"))
+        await conn.execute(t("CREATE INDEX IF NOT EXISTS ix_workflows_deleted_at ON workflows (deleted_at) WHERE deleted_at IS NULL"))
+        await conn.execute(t("CREATE INDEX IF NOT EXISTS ix_workflow_runs_wf_status ON workflow_runs (workflow_id, status)"))
+        await conn.execute(t("CREATE INDEX IF NOT EXISTS ix_scraped_leads_score ON scraped_leads (score DESC NULLS LAST)"))
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

@@ -179,7 +179,7 @@ export default function AppSidebar() {
       </AnimatePresence>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2 scrollbar-thin">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 scrollbar-thin">
         {sections.map(section => (
           <div key={section} className="mb-4">
             <AnimatePresence>
@@ -209,7 +209,7 @@ export default function AppSidebar() {
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     style={navGuardActive ? { pointerEvents: 'none' } : undefined}
                     className={cn(
-                      'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150',
+                      'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 overflow-hidden',
                       active
                         ? 'text-blue-400'
                         : 'text-slate-400 hover:bg-slate-800 hover:text-white'

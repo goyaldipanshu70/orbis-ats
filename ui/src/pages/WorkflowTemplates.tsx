@@ -91,8 +91,12 @@ export default function WorkflowTemplates() {
       toast.success('Workflow created from template');
       navigate(`/workflows/${workflow.id}`);
     },
-    onError: () => {
-      toast.error('Failed to create workflow');
+    onError: (err: any) => {
+      const detail = err?.detail;
+      const msg = typeof detail === 'object' && detail?.validation_errors
+        ? `Validation errors: ${detail.validation_errors.join(', ')}`
+        : detail || err?.message || 'Failed to create workflow';
+      toast.error(msg);
     },
   });
 

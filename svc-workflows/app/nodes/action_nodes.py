@@ -22,6 +22,11 @@ class SaveToTalentPoolNode(BaseNode):
         skipped = 0
         errors = []
 
+        headers = {"Content-Type": "application/json"}
+        internal_key = getattr(settings, "INTERNAL_API_KEY", None)
+        if internal_key:
+            headers["X-Internal-Key"] = internal_key
+
         async with httpx.AsyncClient(timeout=30) as client:
             for lead in leads:
                 name = lead.get("name", "Unknown")
@@ -48,6 +53,7 @@ class SaveToTalentPoolNode(BaseNode):
                     resp = await client.post(
                         f"{settings.RECRUITING_URL}/api/talent-pool/onboard-lead",
                         json=payload,
+                        headers=headers,
                     )
                     if resp.status_code < 300:
                         saved += 1
@@ -203,10 +209,10 @@ class NotifyHRNode(BaseNode):
         summary = {
             "total_candidates_found": len(leads),
             "with_email": sum(1 for l in leads if l.get("email")),
-            "avg_score": round(sum(l.get("score", 0) for l in leads) / max(len(leads), 1), 1),
+            "avg_score": round(sum((l.get("score") or 0) for l in leads) / max(len(leads), 1), 1),
             "top_candidates": [
                 {"name": l.get("name"), "score": l.get("score", 0), "source": l.get("source")}
-                for l in sorted(leads, key=lambda x: x.get("score", 0), reverse=True)[:5]
+                for l in sorted(leads, key=lambda x: (x.get("score") or 0), reverse=True)[:5]
             ],
         }
 

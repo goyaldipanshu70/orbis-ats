@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
     GITHUB_TOKEN: str = ""
     INTERNAL_API_KEY: str = "intesa-internal-key-dev"
+    FRONTEND_URL: str = "http://localhost:80"
+
+    # Execution limits
+    MAX_CONCURRENT_RUNS: int = 5
+    NODE_TIMEOUT_SECONDS: int = 120
+    MAX_WORKFLOW_NODES: int = 50
+    MAX_LEADS_PER_NODE: int = 500
 
     class Config:
         env_file = ".env"

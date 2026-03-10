@@ -40,6 +40,14 @@ services:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     restart: unless-stopped
 
+  intesahr-mailhog:
+    image: mailhog/mailhog:latest
+    container_name: intesahr-mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local

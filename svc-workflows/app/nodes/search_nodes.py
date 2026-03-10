@@ -1,9 +1,13 @@
+import asyncio
 import logging
 import httpx
 from app.nodes.base import BaseNode
 from app.core.config import settings
+from app.utils.retry import retry_async, safe_parse_json, is_safe_url
 
 logger = logging.getLogger("svc-workflows")
+
+LLM_TIMEOUT_SECONDS = 60
 
 
 class GitHubSearchNode(BaseNode):
@@ -27,14 +31,16 @@ class GitHubSearchNode(BaseNode):
                 break
 
         skills = self.config.get("skills") or planner_data.get("skills", [])
+        if isinstance(skills, str):
+            skills = [s.strip() for s in skills.split(",") if s.strip()]
         location = self.config.get("location") or planner_data.get("location", "")
-        max_results = self.config.get("max_results", 10)
+        max_results = int(self.config.get("max_results", 10))
 
         query_parts = []
         if skills:
             query_parts.append(" ".join(skills[:3]))
         if location:
-            query_parts.append(f"location:{location}")
+            query_parts.append(f'location:"{location}"')
 
         query = " ".join(query_parts) if query_parts else "developer"
 
@@ -46,16 +52,22 @@ class GitHubSearchNode(BaseNode):
 
         async with httpx.AsyncClient(timeout=30) as client:
             try:
-                resp = await client.get(
-                    "https://api.github.com/search/users",
-                    params={"q": query, "per_page": min(max_results, 30)},
-                    headers=headers,
+                resp = await retry_async(
+                    lambda: client.get(
+                        "https://api.github.com/search/users",
+                        params={"q": query, "per_page": min(max_results, 30)},
+                        headers=headers,
+                    ),
+                    max_retries=2, label="GitHub search",
                 )
                 if resp.status_code == 200:
                     data = resp.json()
                     for item in data.get("items", [])[:max_results]:
-                        profile_resp = await client.get(item["url"], headers=headers)
-                        profile = profile_resp.json() if profile_resp.status_code == 200 else {}
+                        try:
+                            profile_resp = await client.get(item["url"], headers=headers)
+                            profile = profile_resp.json() if profile_resp.status_code == 200 else {}
+                        except Exception:
+                            profile = {}
 
                         leads.append({
                             "name": profile.get("name") or item["login"],
@@ -73,6 +85,9 @@ class GitHubSearchNode(BaseNode):
                                 "company": profile.get("company"),
                             },
                         })
+                elif resp.status_code == 403:
+                    logger.warning("GitHub API rate limited: %s", resp.text[:200])
+                    return {"leads": [], "count": 0, "source": "github", "error": "GitHub API rate limit exceeded"}
                 else:
                     logger.warning("GitHub API returned %s: %s", resp.status_code, resp.text[:200])
             except Exception as e:
@@ -105,8 +120,10 @@ class TavilySearchNode(BaseNode):
 
         query = self.config.get("query", "")
         skills = self.config.get("skills") or planner_data.get("skills", [])
+        if isinstance(skills, str):
+            skills = [s.strip() for s in skills.split(",") if s.strip()]
         location = self.config.get("location") or planner_data.get("location", "")
-        max_results = self.config.get("max_results", 10)
+        max_results = int(self.config.get("max_results", 10))
 
         if not query:
             role = planner_data.get("role", "Software Engineer")
@@ -181,20 +198,25 @@ class StackOverflowSearchNode(BaseNode):
                 break
 
         skills = self.config.get("skills") or planner_data.get("skills", [])
-        min_reputation = self.config.get("min_reputation", 1000)
-        max_results = self.config.get("max_results", 10)
+        if isinstance(skills, str):
+            skills = [s.strip() for s in skills.split(",") if s.strip()]
+        min_reputation = int(self.config.get("min_reputation", 1000))
+        max_results = int(self.config.get("max_results", 10))
 
         tag = skills[0] if skills else "python"
 
         leads = []
         async with httpx.AsyncClient(timeout=30) as client:
             try:
-                resp = await client.get(
-                    "https://api.stackexchange.com/2.3/tags/{}/top-answerers/all_time".format(tag),
-                    params={
-                        "site": "stackoverflow",
-                        "pagesize": min(max_results, 20),
-                    },
+                resp = await retry_async(
+                    lambda: client.get(
+                        "https://api.stackexchange.com/2.3/tags/{}/top-answerers/all_time".format(tag),
+                        params={
+                            "site": "stackoverflow",
+                            "pagesize": min(max_results, 20),
+                        },
+                    ),
+                    max_retries=2, label="StackOverflow search",
                 )
                 if resp.status_code == 200:
                     data = resp.json()
@@ -253,9 +275,11 @@ class LinkedInSearchNode(BaseNode):
 
         role = self.config.get("role") or planner_data.get("role", "Software Engineer")
         skills = self.config.get("skills") or planner_data.get("skills", [])
+        if isinstance(skills, str):
+            skills = [s.strip() for s in skills.split(",") if s.strip()]
         location = self.config.get("location") or planner_data.get("location", "")
         company = self.config.get("company", "")
-        max_results = self.config.get("max_results", 10)
+        max_results = int(self.config.get("max_results", 10))
 
         tavily_key = settings.TAVILY_API_KEY
         if not tavily_key:
@@ -346,7 +370,6 @@ class WebScraperNode(BaseNode):
     async def execute(self, input_data):
         from bs4 import BeautifulSoup
         from app.core.llm_provider import get_llm
-        import json
 
         planner_data = {}
         for key, value in input_data.items():
@@ -358,10 +381,15 @@ class WebScraperNode(BaseNode):
 
         urls = self.config.get("urls") or planner_data.get("urls", [])
         css_selector = self.config.get("css_selector", "")
-        max_pages = self.config.get("max_pages", 5)
+        max_pages = int(self.config.get("max_pages", 5))
 
         if not urls:
             return {"leads": [], "count": 0, "source": "web_scraper", "error": "No URLs provided"}
+
+        # Filter out unsafe URLs (SSRF prevention)
+        urls = [u for u in urls if is_safe_url(u)]
+        if not urls:
+            return {"leads": [], "count": 0, "source": "web_scraper", "error": "No safe URLs provided"}
 
         urls = urls[:max_pages]
         all_leads = []
@@ -407,13 +435,14 @@ class WebScraperNode(BaseNode):
                             f"Source URL: {url}\n\n"
                             f"Content:\n{text_content}"
                         )
-                        response = await llm.ainvoke(prompt)
-                        text = response.content.strip()
-                        if text.startswith("```"):
-                            text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-                        profiles = json.loads(text)
+                        response = await asyncio.wait_for(llm.ainvoke(prompt), timeout=LLM_TIMEOUT_SECONDS)
+                        profiles = safe_parse_json(response.content)
+                        if not isinstance(profiles, list):
+                            raise ValueError("LLM did not return a JSON array")
 
                         for profile in profiles:
+                            if not isinstance(profile, dict):
+                                continue
                             all_leads.append({
                                 "name": profile.get("name") or "Unknown",
                                 "email": profile.get("email"),
@@ -470,7 +499,6 @@ class CustomSearchNode(BaseNode):
     async def execute(self, input_data):
         from bs4 import BeautifulSoup
         from app.core.llm_provider import get_llm
-        import json
 
         planner_data = {}
         for key, value in input_data.items():
@@ -483,8 +511,10 @@ class CustomSearchNode(BaseNode):
         url_template = self.config.get("url_template", "")
         query = self.config.get("query") or planner_data.get("role", "")
         skills = self.config.get("skills") or planner_data.get("skills", [])
+        if isinstance(skills, str):
+            skills = [s.strip() for s in skills.split(",") if s.strip()]
         location = self.config.get("location") or planner_data.get("location", "")
-        max_results = self.config.get("max_results", 10)
+        max_results = int(self.config.get("max_results", 10))
 
         # If no url_template, fall back to Tavily search
         if not url_template:
@@ -537,16 +567,13 @@ class CustomSearchNode(BaseNode):
 
             return {"leads": leads, "count": len(leads), "source": "custom"}
 
-        # Format the URL template with provided parameters
-        try:
-            formatted_url = url_template.format(
-                query=query,
-                skills="+".join(skills) if skills else "",
-                location=location,
-            )
-        except KeyError as e:
-            logger.error("URL template formatting failed, unknown placeholder: %s", e)
-            return {"leads": [], "count": 0, "source": "custom", "error": f"Bad URL template placeholder: {e}"}
+        # Format the URL template with safe string replacement (no .format() to prevent injection)
+        formatted_url = url_template.replace("{query}", query or "")
+        formatted_url = formatted_url.replace("{skills}", "+".join(skills) if skills else "")
+        formatted_url = formatted_url.replace("{location}", location or "")
+
+        if not is_safe_url(formatted_url):
+            return {"leads": [], "count": 0, "source": "custom", "error": "URL targets a private/internal network"}
 
         leads = []
         try:
@@ -583,13 +610,14 @@ class CustomSearchNode(BaseNode):
                         f"Source URL: {formatted_url}\n\n"
                         f"Content:\n{text_content}"
                     )
-                    response = await llm.ainvoke(prompt)
-                    text = response.content.strip()
-                    if text.startswith("```"):
-                        text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
-                    profiles = json.loads(text)
+                    response = await asyncio.wait_for(llm.ainvoke(prompt), timeout=LLM_TIMEOUT_SECONDS)
+                    profiles = safe_parse_json(response.content)
+                    if not isinstance(profiles, list):
+                        raise ValueError("LLM did not return a JSON array")
 
                     for profile in profiles[:max_results]:
+                        if not isinstance(profile, dict):
+                            continue
                         leads.append({
                             "name": profile.get("name") or "Unknown",
                             "email": profile.get("email"),

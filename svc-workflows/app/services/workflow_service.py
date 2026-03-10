@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, desc
 from app.db.models import Workflow, WorkflowRun
 
 logger = logging.getLogger("svc-workflows")
@@ -38,6 +38,7 @@ async def list_workflows(
     page_size: int = 20,
     status: Optional[str] = None,
     search: Optional[str] = None,
+    created_by: Optional[str] = None,
 ) -> dict:
     query = select(Workflow).where(Workflow.deleted_at.is_(None))
 
@@ -45,6 +46,8 @@ async def list_workflows(
         query = query.where(Workflow.status == status)
     if search:
         query = query.where(Workflow.name.ilike(f"%{search}%"))
+    if created_by:
+        query = query.where(Workflow.created_by == created_by)
 
     # Count
     count_query = select(func.count()).select_from(query.subquery())
@@ -58,8 +61,47 @@ async def list_workflows(
 
     total_pages = (total + page_size - 1) // page_size if page_size > 0 else 0
 
+    # Batch-load run counts and last_run_at to avoid N+1 queries
+    workflow_ids = [w.id for w in workflows]
+    run_counts = {}
+    last_run_dates = {}
+    if workflow_ids:
+        count_result = await db.execute(
+            select(WorkflowRun.workflow_id, func.count(WorkflowRun.id))
+            .where(WorkflowRun.workflow_id.in_(workflow_ids))
+            .group_by(WorkflowRun.workflow_id)
+        )
+        for wid, cnt in count_result.all():
+            run_counts[wid] = cnt
+
+        last_run_result = await db.execute(
+            select(WorkflowRun.workflow_id, func.max(WorkflowRun.created_at))
+            .where(WorkflowRun.workflow_id.in_(workflow_ids))
+            .group_by(WorkflowRun.workflow_id)
+        )
+        for wid, last_at in last_run_result.all():
+            last_run_dates[wid] = last_at
+
+    items = []
+    for w in workflows:
+        last_run = last_run_dates.get(w.id)
+        items.append({
+            "id": w.id,
+            "name": w.name,
+            "description": w.description,
+            "definition_json": w.definition_json,
+            "status": w.status,
+            "trigger_type": w.trigger_type,
+            "trigger_config": w.trigger_config,
+            "created_by": w.created_by,
+            "updated_at": w.updated_at.isoformat() if w.updated_at else None,
+            "created_at": w.created_at.isoformat() if w.created_at else None,
+            "runs_count": run_counts.get(w.id, 0),
+            "last_run_at": last_run.isoformat() if last_run else None,
+        })
+
     return {
-        "items": [await _workflow_to_dict(db, w) for w in workflows],
+        "items": items,
         "total": total,
         "page": page,
         "page_size": page_size,
@@ -144,11 +186,16 @@ async def duplicate_workflow(db: AsyncSession, workflow_id: int, created_by: str
 
 
 async def _workflow_to_dict(db: AsyncSession, workflow: Workflow) -> dict:
-    # Count runs
+    # Count runs and get last run date
     run_count_result = await db.execute(
         select(func.count()).where(WorkflowRun.workflow_id == workflow.id)
     )
     runs_count = run_count_result.scalar() or 0
+
+    last_run_result = await db.execute(
+        select(func.max(WorkflowRun.created_at)).where(WorkflowRun.workflow_id == workflow.id)
+    )
+    last_run_at = last_run_result.scalar()
 
     return {
         "id": workflow.id,
@@ -162,4 +209,5 @@ async def _workflow_to_dict(db: AsyncSession, workflow: Workflow) -> dict:
         "updated_at": workflow.updated_at.isoformat() if workflow.updated_at else None,
         "created_at": workflow.created_at.isoformat() if workflow.created_at else None,
         "runs_count": runs_count,
+        "last_run_at": last_run_at.isoformat() if last_run_at else None,
     }

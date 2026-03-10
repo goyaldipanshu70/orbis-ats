@@ -16,14 +16,16 @@ class FilterNode(BaseNode):
     async def execute(self, input_data):
         leads = self._collect_leads(input_data)
 
-        min_score = self.config.get("min_score", 0)
+        min_score = float(self.config.get("min_score", 0))
         required_location = self.config.get("location", "")
         has_email = self.config.get("has_email", False)
         max_results = self.config.get("max_results")
+        if max_results is not None:
+            max_results = int(max_results)
 
         filtered = []
         for lead in leads:
-            if lead.get("score", 0) < min_score:
+            if (lead.get("score") or 0) < min_score:
                 continue
             if required_location and required_location.lower() not in (lead.get("location", "") or "").lower():
                 continue
@@ -98,9 +100,11 @@ class RankCandidatesNode(BaseNode):
     async def execute(self, input_data):
         leads = self._collect_leads(input_data)
 
-        ranked = sorted(leads, key=lambda x: x.get("score", 0), reverse=True)
+        ranked = sorted(leads, key=lambda x: (x.get("score") or 0), reverse=True)
 
         top_n = self.config.get("top_n")
+        if top_n:
+            top_n = int(top_n)
         if top_n and top_n > 0:
             ranked = ranked[:top_n]
 
@@ -130,7 +134,7 @@ class ConditionalNode(BaseNode):
         leads = self._collect_leads(input_data)
 
         condition_type = self.config.get("condition_type", "score_threshold")
-        threshold = self.config.get("threshold", 50)
+        threshold = float(self.config.get("threshold", 50))
         match_value = (self.config.get("match_value") or "").lower()
 
         true_leads = []
@@ -138,7 +142,7 @@ class ConditionalNode(BaseNode):
 
         for lead in leads:
             if condition_type == "score_threshold":
-                passes = lead.get("score", 0) >= threshold
+                passes = (lead.get("score") or 0) >= threshold
             elif condition_type == "has_email":
                 passes = bool(lead.get("email"))
             elif condition_type == "has_linkedin":

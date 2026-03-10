@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -94,6 +94,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   action: '#14b8a6',
 };
 
+/** Map node type string to its category for color lookup */
+function nodeTypeToCategory(type: string): string {
+  if (type.includes('trigger')) return 'trigger';
+  if (type.includes('search') || type.includes('scraper') || type === 'linkedin_search') return 'search';
+  if (type.startsWith('ai_')) return 'ai';
+  if (type === 'save_to_talent_pool' || type === 'add_to_email_campaign' || type === 'notify_hr') return 'action';
+  return 'processing';
+}
+
 // ---------------------------------------------------------------------------
 // Mini flow visualisation (unchanged)
 // ---------------------------------------------------------------------------
@@ -145,7 +154,7 @@ function MiniFlowViz({ definition }: { definition: WorkflowDefinition }) {
       {nodes.map((n) => {
         const pos = posMap.get(n.id);
         if (!pos) return null;
-        const color = CATEGORY_COLORS[n.type] || '#6b7280';
+        const color = CATEGORY_COLORS[nodeTypeToCategory(n.type)] || '#6b7280';
         return (
           <circle key={n.id} cx={pos.x} cy={pos.y} r={4} fill={color} />
         );
@@ -160,7 +169,9 @@ function MiniFlowViz({ definition }: { definition: WorkflowDefinition }) {
 
 function formatTimeAgo(dateStr: string | null): string {
   if (!dateStr) return 'Never';
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const ts = new Date(dateStr).getTime();
+  if (isNaN(ts)) return 'Never';
+  const diff = Date.now() - ts;
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'Just now';
   if (mins < 60) return `${mins}m ago`;
@@ -179,9 +190,20 @@ export default function WorkflowList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Debounce search input
+  useEffect(() => {
+    debounceRef.current = setTimeout(() => {
+      setSearch(searchInput);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [searchInput]);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createName, setCreateName] = useState('');
@@ -240,7 +262,10 @@ export default function WorkflowList() {
 
   const runMutation = useMutation({
     mutationFn: (id: number) =>
-      apiClient.request(`/api/workflows/${id}/run`, { method: 'POST' }),
+      apiClient.request(`/api/workflows/${id}/run`, {
+        method: 'POST',
+        body: JSON.stringify({}),
+      }),
     onSuccess: () => {
       toast.success('Workflow run started');
       queryClient.invalidateQueries({ queryKey: ['workflows'] });
@@ -370,11 +395,8 @@ export default function WorkflowList() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search workflows..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-9"
               />
             </div>
@@ -482,12 +504,13 @@ export default function WorkflowList() {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              disabled={workflow.status !== 'active'}
                               onClick={() =>
                                 runMutation.mutate(workflow.id)
                               }
                             >
                               <Play className="h-4 w-4 mr-2" />
-                              Run
+                              Run{workflow.status !== 'active' ? ' (activate first)' : ''}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
@@ -534,7 +557,7 @@ export default function WorkflowList() {
                           size="sm"
                           variant="default"
                           className="h-8"
-                          disabled={runMutation.isPending}
+                          disabled={runMutation.isPending || workflow.status !== 'active'}
                           onClick={(e) => {
                             e.stopPropagation();
                             runMutation.mutate(workflow.id);
@@ -577,10 +600,12 @@ export default function WorkflowList() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {totalPages > 1 && workflowsResponse && (
           <DataPagination
             page={page}
             totalPages={totalPages}
+            total={workflowsResponse.total}
+            pageSize={pageSize}
             onPageChange={setPage}
           />
         )}

@@ -1,5 +1,4 @@
 import logging
-import asyncio
 from typing import Optional, List
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
@@ -25,23 +24,38 @@ class RunCreate(BaseModel):
 
 async def _run_workflow_background(workflow_id: int, run_id: int, input_data: dict = None):
     """Background task that executes a workflow run in its own DB session."""
-    async with AsyncSessionLocal() as db:
-        workflow = await workflow_service.get_workflow(db, workflow_id)
-        if not workflow:
-            logger.error("Workflow %d not found for background run", workflow_id)
-            return
+    try:
+        async with AsyncSessionLocal() as db:
+            workflow = await workflow_service.get_workflow(db, workflow_id)
+            if not workflow:
+                logger.error("Workflow %d not found for background run", workflow_id)
+                return
 
-        result = await db.execute(select(WorkflowRun).where(WorkflowRun.id == run_id))
-        run = result.scalar_one_or_none()
-        if not run:
-            logger.error("WorkflowRun %d not found", run_id)
-            return
+            result = await db.execute(select(WorkflowRun).where(WorkflowRun.id == run_id))
+            run = result.scalar_one_or_none()
+            if not run:
+                logger.error("WorkflowRun %d not found", run_id)
+                return
 
-        # Attach workflow relationship so the engine can read definition_json
-        run.workflow = workflow
+            # Attach workflow relationship so the engine can read definition_json
+            run.workflow = workflow
 
-        engine = ExecutionEngine(db)
-        await engine.execute(workflow, run, input_data)
+            engine = ExecutionEngine(db)
+            await engine.execute(workflow, run, input_data)
+    except Exception as e:
+        logger.exception("Background execution crashed for workflow %d run %d: %s", workflow_id, run_id, e)
+        # Mark the run as failed if we can
+        try:
+            async with AsyncSessionLocal() as db:
+                result = await db.execute(select(WorkflowRun).where(WorkflowRun.id == run_id))
+                run = result.scalar_one_or_none()
+                if run and run.status in ("pending", "running"):
+                    run.status = "failed"
+                    run.error_message = f"Background execution crashed: {str(e)[:500]}"
+                    run.completed_at = datetime.utcnow()
+                    await db.commit()
+        except Exception:
+            logger.exception("Failed to mark run %d as failed after crash", run_id)
 
 
 @router.post("/{workflow_id}/run")
@@ -56,6 +70,26 @@ async def start_run(
     workflow = await workflow_service.get_workflow(db, workflow_id)
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
+
+    if workflow.status != "active":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot run workflow with status '{workflow.status}'. Activate it first.",
+        )
+
+    # Check concurrent run limit
+    active_result = await db.execute(
+        select(func.count()).where(
+            WorkflowRun.workflow_id == workflow_id,
+            WorkflowRun.status.in_(["pending", "running"]),
+        )
+    )
+    active_count = active_result.scalar() or 0
+    if active_count >= settings.MAX_CONCURRENT_RUNS:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Workflow already has {active_count} active runs. Max is {settings.MAX_CONCURRENT_RUNS}.",
+        )
 
     run = WorkflowRun(
         workflow_id=workflow_id,
@@ -82,6 +116,34 @@ async def start_run(
     }
 
 
+@router.get("/runs")
+async def list_all_runs(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    user: dict = Depends(require_employee),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all workflow runs across all workflows."""
+    query = select(WorkflowRun)
+    count_q = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_q)).scalar() or 0
+
+    query = query.order_by(WorkflowRun.created_at.desc())
+    query = query.offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    runs = result.scalars().all()
+
+    total_pages = (total + page_size - 1) // page_size if page_size > 0 else 0
+
+    return {
+        "items": [_run_to_dict(r) for r in runs],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+    }
+
+
 @router.get("/{workflow_id}/runs")
 async def list_runs(
     workflow_id: int,
@@ -91,7 +153,6 @@ async def list_runs(
     db: AsyncSession = Depends(get_db),
 ):
     """List runs for a workflow."""
-    # Verify workflow exists
     workflow = await workflow_service.get_workflow(db, workflow_id)
     if not workflow:
         raise HTTPException(status_code=404, detail="Workflow not found")
@@ -267,6 +328,71 @@ def _lead_to_dict(lead: ScrapedLead) -> dict:
         "score_breakdown": lead.score_breakdown,
         "raw_data": lead.raw_data,
         "created_at": lead.created_at.isoformat() if lead.created_at else None,
+    }
+
+
+@router.get("/{workflow_id}/stats")
+async def get_workflow_stats(
+    workflow_id: int,
+    user: dict = Depends(require_employee),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get aggregated statistics for a workflow."""
+    workflow = await workflow_service.get_workflow(db, workflow_id)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    base_q = select(WorkflowRun).where(WorkflowRun.workflow_id == workflow_id)
+
+    total = (await db.execute(select(func.count()).select_from(base_q.subquery()))).scalar() or 0
+    completed = (await db.execute(
+        select(func.count()).where(
+            WorkflowRun.workflow_id == workflow_id,
+            WorkflowRun.status == "completed",
+        )
+    )).scalar() or 0
+    failed = (await db.execute(
+        select(func.count()).where(
+            WorkflowRun.workflow_id == workflow_id,
+            WorkflowRun.status == "failed",
+        )
+    )).scalar() or 0
+    completed_with_errors = (await db.execute(
+        select(func.count()).where(
+            WorkflowRun.workflow_id == workflow_id,
+            WorkflowRun.status == "completed_with_errors",
+        )
+    )).scalar() or 0
+
+    total_leads = (await db.execute(
+        select(func.count()).where(
+            ScrapedLead.workflow_run_id.in_(
+                select(WorkflowRun.id).where(WorkflowRun.workflow_id == workflow_id)
+            )
+        )
+    )).scalar() or 0
+
+    # Average execution time for completed runs
+    avg_time_result = await db.execute(
+        select(func.avg(
+            func.extract("epoch", WorkflowRun.completed_at) -
+            func.extract("epoch", WorkflowRun.started_at)
+        )).where(
+            WorkflowRun.workflow_id == workflow_id,
+            WorkflowRun.completed_at.isnot(None),
+            WorkflowRun.started_at.isnot(None),
+        )
+    )
+    avg_seconds = avg_time_result.scalar()
+
+    return {
+        "total_runs": total,
+        "completed": completed,
+        "completed_with_errors": completed_with_errors,
+        "failed": failed,
+        "success_rate": round(completed / total * 100, 1) if total else 0,
+        "avg_execution_seconds": round(avg_seconds, 1) if avg_seconds else None,
+        "total_leads_found": total_leads,
     }
 
 

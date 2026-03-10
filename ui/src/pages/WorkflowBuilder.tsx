@@ -35,6 +35,7 @@ import {
   Circle,
   Loader2,
   GitBranch,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AppLayout from '@/components/layout/AppLayout';
@@ -55,6 +56,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { apiClient } from '@/utils/api';
 import type { Workflow, NodeTypeInfo, WorkflowNode } from '@/types/workflow';
 
@@ -247,6 +258,31 @@ function WorkflowBuilderInner() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  // ── Warn before leaving with unsaved changes ─────────────────────
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
+
+  // ── Keyboard shortcuts ────────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveRef.current?.();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   // ── Queries ────────────────────────────────────────────────────────
 
@@ -257,7 +293,7 @@ function WorkflowBuilderInner() {
     enabled: !!workflow_id,
   });
 
-  const { data: nodeTypesData } = useQuery({
+  const { data: nodeTypesData, isLoading: nodeTypesLoading, isError: nodeTypesError } = useQuery({
     queryKey: ['workflow-node-types'],
     queryFn: () =>
       apiClient.request<NodeTypeInfo[]>('/api/workflows/node-types'),
@@ -307,7 +343,14 @@ function WorkflowBuilderInner() {
       setHasUnsavedChanges(false);
       queryClient.invalidateQueries({ queryKey: ['workflow', workflow_id] });
     },
-    onError: () => toast.error('Failed to save workflow'),
+    onError: (err: any) => {
+      const detail = err?.detail || err?.message || 'Failed to save workflow';
+      if (typeof detail === 'object' && detail?.validation_errors) {
+        toast.error(`Validation failed: ${detail.validation_errors.join('; ')}`);
+      } else {
+        toast.error(String(detail));
+      }
+    },
   });
 
   const runMutation = useMutation({
@@ -320,7 +363,10 @@ function WorkflowBuilderInner() {
       toast.success(`Workflow run started (ID: ${data.id})`);
       queryClient.invalidateQueries({ queryKey: ['workflow', workflow_id] });
     },
-    onError: () => toast.error('Failed to run workflow'),
+    onError: (err: any) => {
+      const detail = err?.detail || err?.message || 'Failed to run workflow';
+      toast.error(String(detail));
+    },
   });
 
   // ── Flow event handlers ────────────────────────────────────────────
@@ -381,8 +427,17 @@ function WorkflowBuilderInner() {
   // ── Save and status toggle ─────────────────────────────────────────
 
   const handleSave = useCallback(() => {
+    if (!workflowName.trim()) {
+      toast.error('Workflow name cannot be empty');
+      setEditingName(true);
+      return;
+    }
+    if (workflowName.length > 200) {
+      toast.error('Workflow name must be under 200 characters');
+      return;
+    }
     saveMutation.mutate({
-      name: workflowName,
+      name: workflowName.trim(),
       definition_json: {
         nodes: flowNodesToWorkflow(nodes),
         edges: flowEdgesToWorkflow(edges),
@@ -390,11 +445,40 @@ function WorkflowBuilderInner() {
     });
   }, [nodes, edges, workflowName, saveMutation]);
 
+  // Keep a ref so the keyboard shortcut always calls the latest version
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+
   const handleStatusToggle = useCallback(() => {
     if (!workflow) return;
     const newStatus = workflow.status === 'active' ? 'draft' : 'active';
+    if (newStatus === 'active' && nodes.length === 0) {
+      toast.error('Cannot activate an empty workflow. Add at least one node.');
+      return;
+    }
     saveMutation.mutate({ status: newStatus });
-  }, [workflow, saveMutation]);
+  }, [workflow, nodes, saveMutation]);
+
+  const handleRun = useCallback(() => {
+    if (nodes.length === 0) {
+      toast.error('Cannot run an empty workflow. Add nodes first.');
+      return;
+    }
+    if (workflow?.status !== 'active') {
+      toast.error('Workflow must be active to run. Click "Activate" first.');
+      return;
+    }
+    runMutation.mutate();
+  }, [nodes, workflow, runMutation]);
+
+  const handleBack = useCallback(() => {
+    if (hasUnsavedChanges) {
+      if (!window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        return;
+      }
+    }
+    navigate(-1);
+  }, [hasUnsavedChanges, navigate]);
 
   // ── Drag and drop from palette ─────────────────────────────────────
 
@@ -420,7 +504,7 @@ function WorkflowBuilderInner() {
       });
 
       const newNode: Node = {
-        id: `node_${Date.now()}`,
+        id: `node_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         type: 'workflowNode',
         position,
         data: {
@@ -477,6 +561,7 @@ function WorkflowBuilderInner() {
   const updateNodeLabel = useCallback(
     (value: string) => {
       if (!selectedNode) return;
+      if (value.length > 100) return; // cap label length
       setNodes((nds) =>
         nds.map((n) =>
           n.id === selectedNode.id
@@ -503,6 +588,7 @@ function WorkflowBuilderInner() {
     );
     setSelectedNode(null);
     setSheetOpen(false);
+    setDeleteConfirmOpen(false);
     setHasUnsavedChanges(true);
   }, [selectedNode, setNodes, setEdges]);
 
@@ -538,7 +624,7 @@ function WorkflowBuilderInner() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -548,13 +634,16 @@ function WorkflowBuilderInner() {
             <Input
               value={workflowName}
               onChange={(e) => {
-                setWorkflowName(e.target.value);
-                setHasUnsavedChanges(true);
+                if (e.target.value.length <= 200) {
+                  setWorkflowName(e.target.value);
+                  setHasUnsavedChanges(true);
+                }
               }}
               onBlur={() => setEditingName(false)}
               onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
               className="max-w-[260px] h-8 text-sm font-semibold"
               autoFocus
+              maxLength={200}
             />
           ) : (
             <button
@@ -595,7 +684,7 @@ function WorkflowBuilderInner() {
             </Button>
             <Button
               size="sm"
-              onClick={() => runMutation.mutate()}
+              onClick={handleRun}
               disabled={
                 runMutation.isPending || workflow?.status !== 'active'
               }
@@ -626,6 +715,18 @@ function WorkflowBuilderInner() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               </div>
+
+              {nodeTypesLoading && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground py-4">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading nodes...
+                </div>
+              )}
+
+              {nodeTypesError && (
+                <div className="flex items-center gap-2 text-xs text-destructive py-4">
+                  <AlertTriangle className="h-4 w-4" /> Failed to load node types
+                </div>
+              )}
 
               {CATEGORY_ORDER.map((cat) => {
                 const items = nodesByCategory[cat];
@@ -664,6 +765,10 @@ function WorkflowBuilderInner() {
                   </div>
                 );
               })}
+
+              {!nodeTypesLoading && !nodeTypesError && !nodeTypesData?.length && (
+                <p className="text-xs text-muted-foreground py-4">No node types available.</p>
+              )}
             </div>
           </div>
 
@@ -738,6 +843,7 @@ function WorkflowBuilderInner() {
                 <Input
                   value={selectedNodeData?.label || ''}
                   onChange={(e) => updateNodeLabel(e.target.value)}
+                  maxLength={100}
                 />
               </div>
 
@@ -846,11 +952,14 @@ function WorkflowBuilderInner() {
                               )}
                             </SelectContent>
                           </Select>
+                          {schema?.description && (
+                            <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+                          )}
                         </div>
                       );
                     }
 
-                    if (fieldType === 'number') {
+                    if (fieldType === 'number' || fieldType === 'integer') {
                       return (
                         <div key={key} className="space-y-1.5">
                           <Label className="text-xs capitalize">
@@ -866,7 +975,12 @@ function WorkflowBuilderInner() {
                               )
                             }
                             className="h-8"
+                            min={schema?.min}
+                            max={schema?.max}
                           />
+                          {schema?.description && (
+                            <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+                          )}
                         </div>
                       );
                     }
@@ -875,22 +989,27 @@ function WorkflowBuilderInner() {
                       return (
                         <div
                           key={key}
-                          className="flex items-center gap-2"
+                          className="space-y-1"
                         >
-                          <input
-                            type="checkbox"
-                            checked={!!value}
-                            onChange={(e) =>
-                              updateNodeConfig(
-                                key,
-                                e.target.checked,
-                              )
-                            }
-                            className="rounded"
-                          />
-                          <Label className="text-xs capitalize">
-                            {schema?.label || key.replace(/_/g, ' ')}
-                          </Label>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!value}
+                              onChange={(e) =>
+                                updateNodeConfig(
+                                  key,
+                                  e.target.checked,
+                                )
+                              }
+                              className="rounded"
+                            />
+                            <Label className="text-xs capitalize">
+                              {schema?.label || key.replace(/_/g, ' ')}
+                            </Label>
+                          </div>
+                          {schema?.description && (
+                            <p className="text-[10px] text-muted-foreground ml-5">{schema.description}</p>
+                          )}
                         </div>
                       );
                     }
@@ -931,9 +1050,12 @@ function WorkflowBuilderInner() {
                           onChange={(e) =>
                             updateNodeConfig(key, e.target.value)
                           }
-                          placeholder={schema?.placeholder || ''}
+                          placeholder={schema?.description || ''}
                           className="h-8"
                         />
+                        {schema?.description && (
+                          <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+                        )}
                       </div>
                     );
                   })}
@@ -946,7 +1068,7 @@ function WorkflowBuilderInner() {
                   variant="destructive"
                   size="sm"
                   className="w-full"
-                  onClick={deleteSelectedNode}
+                  onClick={() => setDeleteConfirmOpen(true)}
                 >
                   <X className="h-4 w-4 mr-1" />
                   Delete Node
@@ -956,6 +1078,24 @@ function WorkflowBuilderInner() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* ── Delete confirmation dialog ────────────────────────────── */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Node</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedNodeData?.label}"? This will also remove all connections to and from this node. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={deleteSelectedNode} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

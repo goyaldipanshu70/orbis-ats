@@ -56,14 +56,18 @@ async def _send_via_smtp(to: str, subject: str, html: str, config: dict) -> int:
     msg["Subject"] = subject
     msg["From"] = config["smtp_user"]
     msg["To"] = to
-    await aiosmtplib.send(
-        msg,
+    port = int(config.get("smtp_port", 587))
+    # MailHog (port 1025) and other dev SMTP servers don't support TLS
+    use_tls = port not in (1025, 25)
+    kwargs = dict(
         hostname=config["smtp_host"],
-        port=config["smtp_port"],
-        username=config["smtp_user"],
-        password=config["smtp_password"],
-        use_tls=True,
+        port=port,
+        use_tls=use_tls,
     )
+    if config.get("smtp_password"):
+        kwargs["username"] = config["smtp_user"]
+        kwargs["password"] = config["smtp_password"]
+    await aiosmtplib.send(msg, **kwargs)
     return 200
 
 

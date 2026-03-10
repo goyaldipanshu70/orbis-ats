@@ -40,9 +40,15 @@ async def send_email(subject: str, body: str, to: str):
         msg["Subject"] = subject
         msg["From"] = config["smtp_user"]
         msg["To"] = to
-        with smtplib.SMTP_SSL(config["smtp_host"], config["smtp_port"]) as server:
-            server.login(config["smtp_user"], config["smtp_password"])
-            server.send_message(msg)
+        port = int(config.get("smtp_port", 587))
+        # MailHog (port 1025) and dev SMTP servers don't need SSL/auth
+        if port in (1025, 25):
+            with smtplib.SMTP(config["smtp_host"], port) as server:
+                server.send_message(msg)
+        else:
+            with smtplib.SMTP_SSL(config["smtp_host"], port) as server:
+                server.login(config["smtp_user"], config["smtp_password"])
+                server.send_message(msg)
         return 200
 
     else:

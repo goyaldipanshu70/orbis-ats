@@ -15,6 +15,16 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger
 } from '@/components/ui/tooltip';
 import { DataPagination } from '@/components/DataPagination';
@@ -25,6 +35,17 @@ import {
   Search, ExternalLink, Github, Linkedin, Mail, Star,
   MapPin, User, Download, ArrowLeft, Users, BarChart3, AtSign
 } from 'lucide-react';
+
+/** Validate URL is safe (http/https only) to prevent javascript: XSS */
+function isSafeUrl(url: string | null | undefined): url is string {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
 
 function scoreColor(score: number) {
   if (score >= 70) return 'bg-green-500';
@@ -51,6 +72,7 @@ export default function WorkflowLeadResults() {
   const [maxScore, setMaxScore] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [detailLead, setDetailLead] = useState<ScrapedLead | null>(null);
+  const [talentPoolConfirmOpen, setTalentPoolConfirmOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['workflow-leads', run_id, page],
@@ -72,12 +94,14 @@ export default function WorkflowLeadResults() {
       const q = search.toLowerCase();
       result = result.filter(
         (l) =>
-          l.name.toLowerCase().includes(q) ||
-          l.skills.some((s) => s.toLowerCase().includes(q))
+          (l.name || '').toLowerCase().includes(q) ||
+          (l.skills || []).some((s) => s.toLowerCase().includes(q))
       );
     }
     const min = minScore ? Number(minScore) : null;
     const max = maxScore ? Number(maxScore) : null;
+    // Only apply score filters when valid (min <= max when both set)
+    if (min !== null && max !== null && min > max) return result;
     if (min !== null) result = result.filter((l) => (l.score ?? 0) >= min);
     if (max !== null) result = result.filter((l) => (l.score ?? 0) <= max);
     return result;
@@ -99,12 +123,12 @@ export default function WorkflowLeadResults() {
         method: 'POST',
         body: JSON.stringify({ lead_ids: leadIds }),
       }),
-    onSuccess: () => {
-      toast.success('Selected leads added to Talent Pool');
+    onSuccess: (data: any) => {
+      toast.success(data?.message || 'Selected leads added to Talent Pool');
       setSelectedIds(new Set());
     },
-    onError: () => {
-      toast.error('Failed to add leads to Talent Pool');
+    onError: (err: any) => {
+      toast.error(err?.detail || err?.message || 'Failed to add leads to Talent Pool');
     },
   });
 
@@ -148,7 +172,7 @@ export default function WorkflowLeadResults() {
           <div className="flex items-center gap-2">
             {selectedIds.size > 0 && (
               <Button
-                onClick={() => addToTalentPool.mutate(Array.from(selectedIds))}
+                onClick={() => setTalentPoolConfirmOpen(true)}
                 disabled={addToTalentPool.isPending}
               >
                 <Users className="mr-2 h-4 w-4" />
@@ -157,10 +181,35 @@ export default function WorkflowLeadResults() {
             )}
             <Button
               variant="outline"
-              onClick={() => toast.info('Export coming soon')}
+              disabled={filtered.length === 0}
+              onClick={() => {
+                const headers = ['Name', 'Email', 'Headline', 'Location', 'Skills', 'Score', 'Source', 'LinkedIn', 'GitHub', 'Portfolio'];
+                const esc = (v: unknown) => String(v ?? '').replace(/"/g, '""');
+                const rows = filtered.map((l) => [
+                  esc(l.name),
+                  esc(l.email),
+                  esc(l.headline),
+                  esc(l.location),
+                  esc((l.skills || []).join('; ')),
+                  l.score ?? '',
+                  esc(l.source),
+                  esc(l.linkedin_url),
+                  esc(l.github_url),
+                  esc(l.portfolio_url),
+                ]);
+                const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `leads-run-${run_id}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success(`Exported ${filtered.length} leads`);
+              }}
             >
               <Download className="mr-2 h-4 w-4" />
-              Export
+              Export CSV
             </Button>
           </div>
         </div>
@@ -232,7 +281,7 @@ export default function WorkflowLeadResults() {
                 placeholder="Min"
                 value={minScore}
                 onChange={(e) => setMinScore(e.target.value)}
-                className="w-20"
+                className={`w-20 ${minScore && maxScore && Number(minScore) > Number(maxScore) ? 'border-red-400' : ''}`}
               />
               <span className="text-muted-foreground">-</span>
               <Input
@@ -240,8 +289,11 @@ export default function WorkflowLeadResults() {
                 placeholder="Max"
                 value={maxScore}
                 onChange={(e) => setMaxScore(e.target.value)}
-                className="w-20"
+                className={`w-20 ${minScore && maxScore && Number(minScore) > Number(maxScore) ? 'border-red-400' : ''}`}
               />
+              {minScore && maxScore && Number(minScore) > Number(maxScore) && (
+                <span className="text-xs text-red-500 whitespace-nowrap">Min &gt; Max</span>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -297,9 +349,9 @@ export default function WorkflowLeadResults() {
                       <TableCell className="font-medium whitespace-nowrap">
                         <div className="flex items-center gap-2">
                           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                            {lead.name.charAt(0).toUpperCase()}
+                            {(lead.name || '?').charAt(0).toUpperCase()}
                           </div>
-                          {lead.name}
+                          {lead.name || 'Unknown'}
                         </div>
                       </TableCell>
                       <TableCell className="max-w-[200px] truncate text-muted-foreground">
@@ -328,21 +380,21 @@ export default function WorkflowLeadResults() {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1">
-                          {lead.github_url && (
+                          {isSafeUrl(lead.github_url) && (
                             <a href={lead.github_url} target="_blank" rel="noopener noreferrer">
                               <Button variant="ghost" size="icon" className="h-7 w-7">
                                 <Github className="h-3.5 w-3.5" />
                               </Button>
                             </a>
                           )}
-                          {lead.linkedin_url && (
+                          {isSafeUrl(lead.linkedin_url) && (
                             <a href={lead.linkedin_url} target="_blank" rel="noopener noreferrer">
                               <Button variant="ghost" size="icon" className="h-7 w-7">
                                 <Linkedin className="h-3.5 w-3.5" />
                               </Button>
                             </a>
                           )}
-                          {lead.portfolio_url && (
+                          {isSafeUrl(lead.portfolio_url) && (
                             <a href={lead.portfolio_url} target="_blank" rel="noopener noreferrer">
                               <Button variant="ghost" size="icon" className="h-7 w-7">
                                 <ExternalLink className="h-3.5 w-3.5" />
@@ -378,6 +430,29 @@ export default function WorkflowLeadResults() {
           onPageChange={onPageChange}
         />
 
+        {/* Talent Pool Confirmation */}
+        <AlertDialog open={talentPoolConfirmOpen} onOpenChange={setTalentPoolConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Add to Talent Pool?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will add {selectedIds.size} selected lead{selectedIds.size !== 1 ? 's' : ''} to the Talent Pool. Duplicates will be automatically skipped.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  addToTalentPool.mutate(Array.from(selectedIds));
+                  setTalentPoolConfirmOpen(false);
+                }}
+              >
+                Add to Talent Pool
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Lead Detail Dialog */}
         <Dialog open={!!detailLead} onOpenChange={(open) => !open && setDetailLead(null)}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
@@ -388,7 +463,7 @@ export default function WorkflowLeadResults() {
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
                       {detailLead.name.charAt(0).toUpperCase()}
                     </div>
-                    {detailLead.name}
+                    {detailLead.name || 'Unknown'}
                   </DialogTitle>
                   <DialogDescription>
                     {detailLead.headline || 'No headline'}
@@ -424,7 +499,7 @@ export default function WorkflowLeadResults() {
                       <p className="font-medium">
                         {detailLead.email ? (
                           <a
-                            href={`mailto:${detailLead.email}`}
+                            href={`mailto:${encodeURIComponent(detailLead.email)}`}
                             className="text-primary hover:underline flex items-center gap-1"
                           >
                             <Mail className="h-3 w-3" />
@@ -486,11 +561,11 @@ export default function WorkflowLeadResults() {
                     )}
 
                   {/* Skills */}
-                  {detailLead.skills.length > 0 && (
+                  {(detailLead.skills || []).length > 0 && (
                     <div>
                       <p className="text-sm text-muted-foreground mb-2">Skills</p>
                       <div className="flex flex-wrap gap-1.5">
-                        {detailLead.skills.map((skill) => (
+                        {(detailLead.skills || []).map((skill) => (
                           <Badge key={skill} variant="secondary" className="text-xs">
                             {skill}
                           </Badge>
@@ -503,7 +578,7 @@ export default function WorkflowLeadResults() {
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">Links</p>
                     <div className="flex flex-wrap gap-2">
-                      {detailLead.linkedin_url && (
+                      {isSafeUrl(detailLead.linkedin_url) && (
                         <a href={detailLead.linkedin_url} target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm">
                             <Linkedin className="mr-1.5 h-3.5 w-3.5" />
@@ -511,7 +586,7 @@ export default function WorkflowLeadResults() {
                           </Button>
                         </a>
                       )}
-                      {detailLead.github_url && (
+                      {isSafeUrl(detailLead.github_url) && (
                         <a href={detailLead.github_url} target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm">
                             <Github className="mr-1.5 h-3.5 w-3.5" />
@@ -519,7 +594,7 @@ export default function WorkflowLeadResults() {
                           </Button>
                         </a>
                       )}
-                      {detailLead.portfolio_url && (
+                      {isSafeUrl(detailLead.portfolio_url) && (
                         <a href={detailLead.portfolio_url} target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm">
                             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
@@ -527,7 +602,7 @@ export default function WorkflowLeadResults() {
                           </Button>
                         </a>
                       )}
-                      {detailLead.source_url && (
+                      {isSafeUrl(detailLead.source_url) && (
                         <a href={detailLead.source_url} target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm">
                             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
@@ -535,10 +610,10 @@ export default function WorkflowLeadResults() {
                           </Button>
                         </a>
                       )}
-                      {!detailLead.linkedin_url &&
-                        !detailLead.github_url &&
-                        !detailLead.portfolio_url &&
-                        !detailLead.source_url && (
+                      {!isSafeUrl(detailLead.linkedin_url) &&
+                        !isSafeUrl(detailLead.github_url) &&
+                        !isSafeUrl(detailLead.portfolio_url) &&
+                        !isSafeUrl(detailLead.source_url) && (
                           <span className="text-sm text-muted-foreground">No links available</span>
                         )}
                     </div>
@@ -555,8 +630,8 @@ export default function WorkflowLeadResults() {
 
 /* ── Sub-components ─────────────────────────────────────────────────────── */
 
-function SkillBadges({ skills }: { skills: string[] }) {
-  if (!skills.length) return <span className="text-muted-foreground">-</span>;
+function SkillBadges({ skills }: { skills: string[] | null }) {
+  if (!skills?.length) return <span className="text-muted-foreground">-</span>;
 
   const visible = skills.slice(0, 3);
   const remaining = skills.length - 3;
