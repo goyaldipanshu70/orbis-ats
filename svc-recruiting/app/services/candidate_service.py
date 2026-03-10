@@ -1088,11 +1088,20 @@ async def move_candidate_stage(db: AsyncSession, candidate_id: int, new_stage: s
     except Exception:
         pass
 
-    # Fire-and-forget: send stage-change email to candidate
-    _fire_stage_change_email(db, candidate_id, entry.jd_id, current_stage, new_stage)
+    # Create deferred email with document attachments
+    from app.services.document_service import auto_assign_and_generate_documents
+    from app.services.pending_email_service import create_pending_email
+
+    doc_ids = await auto_assign_and_generate_documents(db, candidate_id, entry.jd_id, new_stage, changed_by)
+    pending_email_id = await create_pending_email(
+        db, candidate_id, entry.jd_id, current_stage, new_stage, changed_by,
+        attachment_doc_ids=doc_ids,
+    )
 
     if new_stage == "hired":
         await _check_and_close_job_if_filled(db, entry.jd_id)
+
+    return {"pending_email_id": pending_email_id}
 
 
 async def _check_and_close_job_if_filled(db: AsyncSession, jd_id: int):

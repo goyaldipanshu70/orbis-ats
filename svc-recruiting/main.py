@@ -22,6 +22,7 @@ from app.core.http_client import init_http_client, close_http_client
 logger = setup_logging("svc-recruiting")
 from app.services.ai_worker import start_worker, stop_worker
 from app.services.notification_service import start_notification_worker, stop_notification_worker
+from app.services.pending_email_service import start_pending_email_worker, stop_pending_email_worker
 from app.services.event_bus import init_event_bus, close_event_bus
 from app.core.rate_limiter import RateLimitMiddleware
 import os
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     await init_event_bus()
     await start_worker()
     await start_notification_worker()
+    await start_pending_email_worker()
     # Pre-warm dashboard cache so first request is fast
     try:
         from app.db.postgres import AsyncSessionLocal
@@ -46,6 +48,7 @@ async def lifespan(app: FastAPI):
     yield
     await stop_worker()
     await stop_notification_worker()
+    await stop_pending_email_worker()
     await close_event_bus()
     await close_http_client()
 

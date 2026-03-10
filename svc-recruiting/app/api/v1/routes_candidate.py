@@ -247,6 +247,20 @@ async def bulk_move(
     return {"message": f"Moved {len(candidate_ids)} candidates to {stage}"}
 
 
+@router.delete("/stage-email/{email_id}")
+async def cancel_stage_email(
+    email_id: int,
+    user: dict = Depends(require_hiring_access),
+    db: AsyncSession = Depends(get_db),
+):
+    """Cancel a pending stage-change email."""
+    from app.services.pending_email_service import cancel_pending_email
+    cancelled = await cancel_pending_email(db, email_id)
+    if not cancelled:
+        raise HTTPException(status_code=404, detail="Email not found or already sent")
+    return {"message": "Email cancelled"}
+
+
 @router.get("/pipeline/{jd_id}")
 async def get_pipeline(
     jd_id: str,
@@ -267,8 +281,9 @@ async def move_stage(
     notes = body.get("notes")
     hired_location_id = body.get("hired_location_id")
     changed_by = f"{user['first_name']} {user['last_name']}"
-    await move_candidate_stage(db, candidate_id, stage, changed_by, notes, hired_location_id=hired_location_id)
-    return {"message": f"Candidate moved to {stage}"}
+    result = await move_candidate_stage(db, candidate_id, stage, changed_by, notes, hired_location_id=hired_location_id)
+    pending_email_id = result.get("pending_email_id") if isinstance(result, dict) else None
+    return {"message": f"Candidate moved to {stage}", "pending_email_id": pending_email_id}
 
 
 @router.get("/{candidate_id}/history")
@@ -392,3 +407,59 @@ async def csv_import(
     parsed_jd_id = int(jd_id) if jd_id else None
     result = await import_csv(db, parsed_jd_id, contents, mapping, user["sub"])
     return result
+
+
+@router.post("/{candidate_id}/offer-and-move")
+async def offer_and_move(
+    candidate_id: int,
+    body: dict,
+    user: dict = Depends(require_hiring_access),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create offer, move candidate to offer stage, and queue email with attachments."""
+    from app.services.offer_service import create_offer
+    from app.services.document_service import auto_assign_and_generate_documents
+    from app.services.pending_email_service import create_pending_email
+
+    changed_by = f"{user['first_name']} {user['last_name']}"
+    jd_id = body.get("jd_id")
+    if not jd_id:
+        raise HTTPException(status_code=400, detail="jd_id is required")
+
+    # 1. Create offer
+    offer_data = {
+        "candidate_id": candidate_id,
+        "salary": body.get("salary"),
+        "salary_currency": body.get("salary_currency", "USD"),
+        "start_date": body.get("start_date"),
+        "position_title": body.get("position_title"),
+        "template_id": body.get("template_ids", [None])[0],
+        "variables": body.get("variables", {}),
+    }
+    offer = await create_offer(db, str(jd_id), offer_data, user["sub"])
+
+    # 2. Move candidate to offer stage
+    result = await move_candidate_stage(db, candidate_id, "offer", changed_by, body.get("notes"))
+
+    # 3. Generate documents for the offer stage with extra variables
+    extra_vars = {
+        "salary": str(body.get("salary", "")),
+        "salary_currency": body.get("salary_currency", "USD"),
+        "start_date": body.get("start_date", ""),
+        "position_title": body.get("position_title", ""),
+    }
+    doc_ids = await auto_assign_and_generate_documents(
+        db, candidate_id, int(jd_id), "offer", changed_by, extra_variables=extra_vars
+    )
+
+    # 4. Create pending email with attachments
+    pending_email_id = await create_pending_email(
+        db, candidate_id, int(jd_id), body.get("from_stage", "interview"), "offer", changed_by,
+        attachment_doc_ids=doc_ids,
+    )
+
+    return {
+        "message": "Offer created and candidate moved to offer stage",
+        "offer_id": offer.get("id") if isinstance(offer, dict) else getattr(offer, "id", None),
+        "pending_email_id": pending_email_id,
+    }
