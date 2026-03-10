@@ -433,17 +433,64 @@ def _entry_to_dict(entry: CandidateJobEntry, profile: CandidateProfile) -> dict:
     }
 
 
-async def get_candidates(db: AsyncSession, jd_id: str = None, page: int = 1, page_size: int = 20) -> dict:
+async def get_candidates(
+    db: AsyncSession,
+    jd_id: str = None,
+    pipeline_stage: str = None,
+    search: str = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> dict:
     """Get candidates (job entries) with joined profile data."""
     base = select(CandidateJobEntry, CandidateProfile).join(
         CandidateProfile, CandidateJobEntry.profile_id == CandidateProfile.id
     ).where(CandidateJobEntry.deleted_at.is_(None))
 
-    count_q = select(func.count()).select_from(CandidateJobEntry).where(CandidateJobEntry.deleted_at.is_(None))
+    count_q = select(func.count()).select_from(
+        select(CandidateJobEntry).join(
+            CandidateProfile, CandidateJobEntry.profile_id == CandidateProfile.id
+        ).where(CandidateJobEntry.deleted_at.is_(None)).subquery()
+    )
 
     if jd_id:
         base = base.where(CandidateJobEntry.jd_id == int(jd_id))
-        count_q = count_q.where(CandidateJobEntry.jd_id == int(jd_id))
+        count_q = select(func.count()).select_from(
+            select(CandidateJobEntry).join(
+                CandidateProfile, CandidateJobEntry.profile_id == CandidateProfile.id
+            ).where(CandidateJobEntry.deleted_at.is_(None), CandidateJobEntry.jd_id == int(jd_id)).subquery()
+        )
+
+    if pipeline_stage:
+        valid_stages = {"applied", "screening", "ai_interview", "interview", "offer", "hired", "rejected"}
+        if pipeline_stage in valid_stages:
+            base = base.where(CandidateJobEntry.pipeline_stage == pipeline_stage)
+            # Rebuild count query with all filters
+            count_sub = select(CandidateJobEntry.id).join(
+                CandidateProfile, CandidateJobEntry.profile_id == CandidateProfile.id
+            ).where(CandidateJobEntry.deleted_at.is_(None), CandidateJobEntry.pipeline_stage == pipeline_stage)
+            if jd_id:
+                count_sub = count_sub.where(CandidateJobEntry.jd_id == int(jd_id))
+            count_q = select(func.count()).select_from(count_sub.subquery())
+
+    if search:
+        search_filter = f"%{search}%"
+        base = base.where(
+            (CandidateProfile.full_name.ilike(search_filter)) |
+            (CandidateProfile.email.ilike(search_filter))
+        )
+        # Rebuild count query with search
+        count_sub = select(CandidateJobEntry.id).join(
+            CandidateProfile, CandidateJobEntry.profile_id == CandidateProfile.id
+        ).where(
+            CandidateJobEntry.deleted_at.is_(None),
+            (CandidateProfile.full_name.ilike(search_filter)) |
+            (CandidateProfile.email.ilike(search_filter))
+        )
+        if jd_id:
+            count_sub = count_sub.where(CandidateJobEntry.jd_id == int(jd_id))
+        if pipeline_stage and pipeline_stage in {"applied", "screening", "ai_interview", "interview", "offer", "hired", "rejected"}:
+            count_sub = count_sub.where(CandidateJobEntry.pipeline_stage == pipeline_stage)
+        count_q = select(func.count()).select_from(count_sub.subquery())
 
     total = (await db.execute(count_q)).scalar_one()
     offset = (page - 1) * page_size

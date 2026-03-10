@@ -141,6 +141,7 @@ const JobDetail = () => {
       setMembers(data || []);
     } catch {
       setMembers([]);
+      toast({ title: 'Error', description: 'Failed to load team members.', variant: 'destructive' });
     } finally {
       setIsMembersLoading(false);
     }
@@ -148,8 +149,13 @@ const JobDetail = () => {
 
   const handleAddMember = async () => {
     if (!jobId || !newMemberUserId.trim()) return;
+    const userId = parseInt(newMemberUserId);
+    if (isNaN(userId) || userId <= 0) {
+      toast({ title: 'Invalid ID', description: 'Please enter a valid user ID.', variant: 'destructive' });
+      return;
+    }
     try {
-      await apiClient.addJobMember(jobId, parseInt(newMemberUserId), newMemberRole);
+      await apiClient.addJobMember(jobId, userId, newMemberRole);
       toast({ title: 'Success', description: 'Team member added.' });
       setNewMemberUserId('');
       setNewMemberRole('viewer');
@@ -177,7 +183,10 @@ const JobDetail = () => {
     try {
       const data = await apiClient.getScreeningQuestions(jobId);
       setScreeningQuestions(data || []);
-    } catch { setScreeningQuestions([]); }
+    } catch {
+      setScreeningQuestions([]);
+      toast({ title: 'Error', description: 'Failed to load screening questions.', variant: 'destructive' });
+    }
     finally { setIsScreeningLoading(false); }
   };
 
@@ -203,6 +212,7 @@ const JobDetail = () => {
 
   const handleDeleteScreeningQuestion = async (questionId: number) => {
     if (!jobId) return;
+    if (!confirm('Are you sure you want to delete this screening question?')) return;
     try {
       await apiClient.deleteScreeningQuestion(jobId, questionId);
       toast({ title: 'Deleted', description: 'Question removed.' });

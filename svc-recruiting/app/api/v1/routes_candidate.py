@@ -141,12 +141,14 @@ async def screen_candidate(
 @router.get("")
 async def list_candidates(
     jd_id: Optional[str] = None,
+    pipeline_stage: Optional[str] = Query(None, description="Filter by pipeline stage"),
+    search: Optional[str] = Query(None, description="Search by name or email"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     user: dict = Depends(require_employee),
     db: AsyncSession = Depends(get_db)
 ):
-    return await get_candidates(db, jd_id=jd_id, page=page, page_size=page_size)
+    return await get_candidates(db, jd_id=jd_id, pipeline_stage=pipeline_stage, search=search, page=page, page_size=page_size)
 
 
 @router.get("/id/{candidate_id}", response_model=CandidateJobEntryResponse)

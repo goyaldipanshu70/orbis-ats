@@ -341,8 +341,11 @@ class ApiClient {
 
   // ── Jobs ─────────────────────────────────────────────────────────────
 
-  async getJobs(page = 1, pageSize = 20): Promise<PaginatedResponse<Job>> {
-    return await this.request<PaginatedResponse<Job>>(`/api/job?page=${page}&page_size=${pageSize}`);
+  async getJobs(page = 1, pageSize = 20, filters?: { search?: string; status?: string }): Promise<PaginatedResponse<Job>> {
+    const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+    if (filters?.search) params.set('search', filters.search);
+    if (filters?.status) params.set('status', filters.status);
+    return await this.request<PaginatedResponse<Job>>(`/api/job?${params}`);
   }
 
   async getJobById(jobId: string): Promise<Job> {
@@ -419,11 +422,18 @@ class ApiClient {
 
   // ── Candidates ───────────────────────────────────────────────────────
 
-  async getCandidates(jdId?: string, page = 1, pageSize = 20): Promise<PaginatedResponse<any>> {
+  async getCandidates(
+    jdId?: string,
+    page = 1,
+    pageSize = 20,
+    filters?: { pipeline_stage?: string; search?: string },
+  ): Promise<PaginatedResponse<any>> {
     const params = new URLSearchParams();
     if (jdId) params.set('jd_id', jdId);
     params.set('page', String(page));
     params.set('page_size', String(pageSize));
+    if (filters?.pipeline_stage) params.set('pipeline_stage', filters.pipeline_stage);
+    if (filters?.search) params.set('search', filters.search);
     return await this.request<PaginatedResponse<any>>(`/api/candidates?${params}`);
   }
 

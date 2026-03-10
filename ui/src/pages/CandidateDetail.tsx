@@ -60,15 +60,13 @@ const CandidateDetail = () => {
   const [candidateProfile, setCandidateProfile] = useState<CandidateProfile | null>(null);
 
   useEffect(() => {
-    if (candidateId) {
-      loadCandidateDetails();
-      loadCandidateProfile();
-    } else {
+    if (!candidateId) {
       setIsLoading(false);
+      return;
     }
-    if (jobId && candidateId) {
-      loadCompatibility();
-    }
+    const promises: Promise<void>[] = [loadCandidateDetails(), loadCandidateProfile()];
+    if (jobId) promises.push(loadCompatibility());
+    Promise.all(promises);
   }, [jobId, candidateId]);
 
   const loadCompatibility = async () => {
@@ -152,6 +150,14 @@ const CandidateDetail = () => {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !candidateId) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Photo must be under 5 MB.', variant: 'destructive' });
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid file', description: 'Please select an image file.', variant: 'destructive' });
+      return;
+    }
     const profileId = candidateProfile?.profile_id || candidateProfile?.id || Number(candidateId);
     setPhotoUploading(true);
     try {
@@ -806,7 +812,7 @@ const CandidateDetail = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditProfile(false)}>Cancel</Button>
-            <Button onClick={handleSaveProfile} disabled={isSavingProfile}>
+            <Button onClick={handleSaveProfile} disabled={isSavingProfile || photoUploading}>
               {isSavingProfile ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...</> : 'Save Changes'}
             </Button>
           </DialogFooter>

@@ -176,17 +176,22 @@ def _jd_to_dict(jd: JobDescription) -> dict:
     }
 
 
-async def get_all_jobs(db: AsyncSession, job_id: Optional[str] = None, page: int = 1, page_size: int = 20) -> Union[Dict, None]:
+async def get_all_jobs(db: AsyncSession, job_id: Optional[str] = None, page: int = 1, page_size: int = 20, search: Optional[str] = None, status: Optional[str] = None) -> Union[Dict, None]:
     if job_id:
         result = await db.execute(
             select(JobDescription).where(JobDescription.id == int(job_id), JobDescription.deleted_at.is_(None))
         )
         jd = result.scalar_one_or_none()
         return _jd_to_dict(jd) if jd else None
-    total = (await db.execute(select(func.count()).select_from(JobDescription).where(JobDescription.deleted_at.is_(None)))).scalar_one()
+    conditions = [JobDescription.deleted_at.is_(None)]
+    if status:
+        conditions.append(JobDescription.status == status)
+    if search:
+        conditions.append(JobDescription.ai_result['job_title'].astext.ilike(f'%{search}%'))
+    total = (await db.execute(select(func.count()).select_from(JobDescription).where(*conditions))).scalar_one()
     offset = (page - 1) * page_size
     result = await db.execute(
-        select(JobDescription).where(JobDescription.deleted_at.is_(None)).order_by(JobDescription.created_at.desc()).offset(offset).limit(page_size)
+        select(JobDescription).where(*conditions).order_by(JobDescription.created_at.desc()).offset(offset).limit(page_size)
     )
     return {
         "items": [_jd_to_dict(jd) for jd in result.scalars().all()],
@@ -197,7 +202,7 @@ async def get_all_jobs(db: AsyncSession, job_id: Optional[str] = None, page: int
     }
 
 
-async def get_jobs_for_user(db: AsyncSession, user_id: str, job_id: Optional[str] = None, page: int = 1, page_size: int = 20) -> Union[Dict, None]:
+async def get_jobs_for_user(db: AsyncSession, user_id: str, job_id: Optional[str] = None, page: int = 1, page_size: int = 20, search: Optional[str] = None, status: Optional[str] = None) -> Union[Dict, None]:
     if job_id:
         result = await db.execute(
             select(JobDescription).where(JobDescription.id == int(job_id), JobDescription.user_id == user_id, JobDescription.deleted_at.is_(None))
@@ -205,6 +210,10 @@ async def get_jobs_for_user(db: AsyncSession, user_id: str, job_id: Optional[str
         jd = result.scalar_one_or_none()
         return _jd_to_dict(jd) if jd else None
     base = [JobDescription.user_id == user_id, JobDescription.deleted_at.is_(None)]
+    if status:
+        base.append(JobDescription.status == status)
+    if search:
+        base.append(JobDescription.ai_result['job_title'].astext.ilike(f'%{search}%'))
     total = (await db.execute(select(func.count()).select_from(JobDescription).where(*base))).scalar_one()
     offset = (page - 1) * page_size
     result = await db.execute(

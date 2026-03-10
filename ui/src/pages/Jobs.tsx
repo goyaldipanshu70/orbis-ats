@@ -115,9 +115,12 @@ export default function Jobs() {
     data: jobsData,
     isLoading,
   } = useQuery({
-    queryKey: ['jobs', currentPage],
+    queryKey: ['jobs', currentPage, debouncedSearch, statusFilter],
     queryFn: async () => {
-      const data: PaginatedResponse<Job> = await apiClient.getJobs(currentPage, 20);
+      const data: PaginatedResponse<Job> = await apiClient.getJobs(currentPage, 20, {
+        search: debouncedSearch || undefined,
+        status: statusFilter !== 'All' ? (statusFilter === 'On Hold' ? 'Archived' : statusFilter) : undefined,
+      });
       return data;
     },
   });
@@ -162,18 +165,6 @@ export default function Jobs() {
 
   const filteredJobs = useMemo(() => {
     let result = [...jobs];
-    if (debouncedSearch.trim()) {
-      const q = debouncedSearch.toLowerCase();
-      result = result.filter(
-        (j) =>
-          j.job_title?.toLowerCase().includes(q) ||
-          j.key_requirements?.some((r) => r.toLowerCase().includes(q)),
-      );
-    }
-    if (statusFilter !== 'All') {
-      const filterValue = statusFilter === 'On Hold' ? 'Archived' : statusFilter;
-      result = result.filter((j) => j.status === filterValue);
-    }
     result.sort((a, b) => {
       switch (sortBy) {
         case 'newest':
@@ -187,7 +178,7 @@ export default function Jobs() {
       }
     });
     return result;
-  }, [jobs, debouncedSearch, statusFilter, sortBy]);
+  }, [jobs, sortBy]);
 
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -260,9 +251,9 @@ export default function Jobs() {
           </SelectContent>
         </Select>
 
-        {filteredJobs.length !== jobs.length && (
+        {(debouncedSearch || statusFilter !== 'All') && (
           <span className="text-xs text-muted-foreground font-medium whitespace-nowrap ml-auto">
-            {filteredJobs.length} of {jobs.length} jobs
+            {paginationMeta.total} matching jobs
           </span>
         )}
       </div>

@@ -61,6 +61,7 @@ interface CandidateData {
   resumeUrl: string | null;
   interviewCompleted: boolean;
   screened: boolean;
+  pipelineStage: string;
   source: "manual" | "portal";
   isProcessing: boolean;
   rawCandidateId: number;
@@ -199,13 +200,25 @@ const CandidateEvaluation = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const { toast } = useToast();
-  const [filters, setFilters] = useState({ recommendation: "All", interviewStatus: "All", screened: "All" });
+  const [filters, setFilters] = useState({ recommendation: "All", interviewStatus: "All", pipelineStage: "All" });
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 0, pageSize: 20 });
   const [resumeViewerUrl, setResumeViewerUrl] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  useEffect(() => { if (jobId) loadCandidates(); }, [jobId, currentPage]);
+  // Debounce search input
+  useEffect(() => {
+    searchDebounceRef.current = setTimeout(() => {
+      setSearch(searchInput);
+      setCurrentPage(1);
+    }, 400);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [searchInput]);
+
+  useEffect(() => { if (jobId) loadCandidates(); }, [jobId, currentPage, filters.pipelineStage, search]);
 
   // Real-time SSE events for candidate evaluation updates
   const hasProcessing = candidates.some((c) => c.isProcessing);
@@ -254,7 +267,10 @@ const CandidateEvaluation = () => {
   const loadCandidates = async () => {
     setIsLoading(true);
     try {
-      const response = await apiClient.getCandidates(jobId, currentPage, 20);
+      const response = await apiClient.getCandidates(jobId, currentPage, 20, {
+        pipeline_stage: filters.pipelineStage !== "All" ? filters.pipelineStage : undefined,
+        search: search || undefined,
+      });
       const backendCandidates = response.items;
       setPaginationMeta({ total: response.total, totalPages: response.total_pages, pageSize: response.page_size });
       const transformedCandidates: CandidateData[] = backendCandidates.map((candidate: any) => {
@@ -311,6 +327,7 @@ const CandidateEvaluation = () => {
           notes: candidate.ai_resume_analysis?.notes || "",
           interviewCompleted: candidate.interview_status || false,
           screened: candidate.screening || false,
+          pipelineStage: candidate.pipeline_stage || "applied",
           source: candidate.source || "manual",
           isProcessing,
           rawCandidateId: candidate._id,
@@ -359,10 +376,6 @@ const CandidateEvaluation = () => {
     .filter((c) => {
       if (filters.interviewStatus === "All") return true;
       return filters.interviewStatus === "Completed" ? c.interviewCompleted : !c.interviewCompleted;
-    })
-    .filter((c) => {
-      if (filters.screened === "All") return true;
-      return filters.screened === "Screened" ? c.screened : !c.screened;
     });
 
   const sortedCandidates = [...filteredCandidates].sort((a, b) => {
@@ -401,7 +414,8 @@ const CandidateEvaluation = () => {
   const activeFilterCount = [
     filters.recommendation !== "All",
     filters.interviewStatus !== "All",
-    filters.screened !== "All",
+    filters.pipelineStage !== "All",
+    search.length > 0,
   ].filter(Boolean).length;
 
   if (isLoading) {
@@ -580,16 +594,31 @@ const CandidateEvaluation = () => {
                   <SelectItem value="Pending">Pending</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={filters.screened} onValueChange={(v) => { setFilters((p) => ({ ...p, screened: v })); setCurrentPage(1); }}>
-                <SelectTrigger className="w-40 h-9 rounded-xl border-border/50 text-xs bg-background/60 hover:bg-background transition-colors">
-                  <SelectValue placeholder="Screening" />
+              <Select value={filters.pipelineStage} onValueChange={(v) => { setFilters((p) => ({ ...p, pipelineStage: v })); setCurrentPage(1); }}>
+                <SelectTrigger className="w-44 h-9 rounded-xl border-border/50 text-xs bg-background/60 hover:bg-background transition-colors">
+                  <SelectValue placeholder="Pipeline Stage" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All</SelectItem>
-                  <SelectItem value="Screened">Screened</SelectItem>
-                  <SelectItem value="Not Screened">Not Screened</SelectItem>
+                  <SelectItem value="All">All Stages</SelectItem>
+                  <SelectItem value="applied">Applied</SelectItem>
+                  <SelectItem value="screening">Screening</SelectItem>
+                  <SelectItem value="ai_interview">AI Interview</SelectItem>
+                  <SelectItem value="interview">Interview</SelectItem>
+                  <SelectItem value="offer">Offer</SelectItem>
+                  <SelectItem value="hired">Hired</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
                 </SelectContent>
               </Select>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="h-9 w-52 rounded-xl border border-border/50 bg-background/60 pl-8 pr-3 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/40 hover:bg-background transition-colors"
+                />
+              </div>
               <span className="ml-auto text-xs text-muted-foreground/70 font-medium tabular-nums">
                 {filteredCandidates.length} of {candidates.length} shown
               </span>
@@ -791,7 +820,7 @@ const CandidateEvaluation = () => {
                     variant="outline"
                     size="sm"
                     className="mt-4 rounded-xl text-xs"
-                    onClick={() => setFilters({ recommendation: "All", interviewStatus: "All", screened: "All" })}
+                    onClick={() => { setFilters({ recommendation: "All", interviewStatus: "All", pipelineStage: "All" }); setSearchInput(""); }}
                   >
                     Clear all filters
                   </Button>

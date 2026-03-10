@@ -199,14 +199,16 @@ async def submit_all_data(
 async def get_user_jobs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
+    search: Optional[str] = Query(None, description="Search by job title"),
+    status: Optional[str] = Query(None, description="Filter by job status"),
     user: dict = Depends(require_employee),
     db: AsyncSession = Depends(get_db)
 ):
     user_id = user["sub"]
     if user["role"] == "admin" or user["role"] in ("admin", "hr", "hiring_manager"):
-        paginated = await get_all_jobs_service(db, page=page, page_size=page_size)
+        paginated = await get_all_jobs_service(db, page=page, page_size=page_size, search=search, status=status)
     else:
-        paginated = await get_jobs_for_user_service(db, user_id, page=page, page_size=page_size)
+        paginated = await get_jobs_for_user_service(db, user_id, page=page, page_size=page_size, search=search, status=status)
     job_documents = paginated["items"]
     if not job_documents:
         return {"items": [], "total": 0, "page": page, "page_size": page_size, "total_pages": 0}

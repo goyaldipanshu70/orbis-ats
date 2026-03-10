@@ -29,6 +29,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { slideInLeft, fadeInUp } from '@/lib/animations';
 import { StaggerGrid } from '@/components/ui/stagger-grid';
 
+function useDebounce(value: string, delay: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
+
 const EMPTY_PIPELINE: PipelineSummary = {
   applied: [], screening: [], ai_interview: [], interview: [], offer: [], hired: [], rejected: [],
 };
@@ -61,6 +70,8 @@ export default function Pipeline() {
   const [recFilter, setRecFilter] = useState<string>('all');
   const [scoreMin, setScoreMin] = useState('');
   const [scoreMax, setScoreMax] = useState('');
+  const debouncedScoreMin = useDebounce(scoreMin, 400);
+  const debouncedScoreMax = useDebounce(scoreMax, 400);
 
   // Filtered pipeline data
   const filteredData = useMemo(() => {
@@ -76,8 +87,8 @@ export default function Pipeline() {
       if (recFilter && recFilter !== 'all') {
         result = result.filter(c => c.recommendation === recFilter);
       }
-      const min = scoreMin ? Number(scoreMin) : null;
-      const max = scoreMax ? Number(scoreMax) : null;
+      const min = debouncedScoreMin ? Number(debouncedScoreMin) : null;
+      const max = debouncedScoreMax ? Number(debouncedScoreMax) : null;
       if (min !== null) result = result.filter(c => (c.score ?? 0) >= min);
       if (max !== null) result = result.filter(c => (c.score ?? 0) <= max);
       return result;
@@ -88,9 +99,10 @@ export default function Pipeline() {
       filtered[stage] = filterCandidates(data[stage]);
     }
     return filtered;
-  }, [data, searchTerm, recFilter, scoreMin, scoreMax]);
+  }, [data, searchTerm, recFilter, debouncedScoreMin, debouncedScoreMax]);
 
   const hasActiveFilters = searchTerm || recFilter !== 'all' || scoreMin || scoreMax;
+  const activeFilterCount = [searchTerm, recFilter !== 'all', scoreMin, scoreMax].filter(Boolean).length;
   const clearFilters = () => { setSearchTerm(''); setRecFilter('all'); setScoreMin(''); setScoreMax(''); };
 
   const totalCandidates = useMemo(() =>
@@ -160,6 +172,7 @@ export default function Pipeline() {
       setLocationVacancies(job.location_vacancies || []);
     } catch (error) {
       console.error('Failed to fetch pipeline:', error);
+      toast({ title: 'Error', description: 'Failed to load pipeline data.', variant: 'destructive' });
     }
     setIsLoading(false);
   }, [jobId]);
@@ -401,6 +414,11 @@ export default function Pipeline() {
                 />
               </div>
 
+              {activeFilterCount > 0 && (
+                  <Badge className="h-6 px-2 rounded-full bg-blue-500 text-white text-[10px] font-bold border-0">
+                      {activeFilterCount} active
+                  </Badge>
+              )}
               <AnimatePresence>
                 {hasActiveFilters && (
                   <motion.div

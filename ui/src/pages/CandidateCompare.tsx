@@ -215,7 +215,7 @@ const avatarGradients = [
 /* -------------------------------------------------------------------------- */
 
 export default function CandidateCompare() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialJdId = searchParams.get('jd_id') || '';
   const { toast } = useToast();
 
@@ -228,6 +228,7 @@ export default function CandidateCompare() {
   const [candidates, setCandidates] = useState<CandidateOption[]>([]);
   const [candidatesLoading, setCandidatesLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [candidateSearch, setCandidateSearch] = useState('');
 
   // State: comparison result
   const [result, setResult] = useState<ComparisonResult | null>(null);
@@ -255,6 +256,7 @@ export default function CandidateCompare() {
 
     setCandidatesLoading(true);
     setSelectedIds(new Set());
+    setCandidateSearch('');
     setResult(null);
 
     apiClient
@@ -273,6 +275,12 @@ export default function CandidateCompare() {
         setCandidates([]);
       })
       .finally(() => setCandidatesLoading(false));
+  }, [selectedJobId]);
+
+  useEffect(() => {
+    if (selectedJobId) {
+      setSearchParams({ jd_id: selectedJobId }, { replace: true });
+    }
   }, [selectedJobId]);
 
   /* ---- Toggle candidate selection ---- */
@@ -424,8 +432,23 @@ export default function CandidateCompare() {
                         <p className="text-xs text-muted-foreground/70 mt-1">This job has no candidates yet</p>
                       </div>
                     ) : (
+                      <>
+                      <div className="relative mb-2">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+                        <input
+                            type="text"
+                            placeholder="Search candidates..."
+                            value={candidateSearch}
+                            onChange={(e) => setCandidateSearch(e.target.value)}
+                            className="w-full h-9 rounded-xl border border-border/50 bg-muted/30 pl-9 pr-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/40"
+                        />
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
-                        {candidates.map((c) => {
+                        {candidates.filter((c) => {
+                            if (!candidateSearch.trim()) return true;
+                            const q = candidateSearch.toLowerCase();
+                            return c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q);
+                        }).map((c) => {
                           const isSelected = selectedIds.has(c.id);
                           return (
                             <motion.label
@@ -459,6 +482,7 @@ export default function CandidateCompare() {
                           );
                         })}
                       </div>
+                    </>
                     )}
 
                     {/* Compare button */}
@@ -504,6 +528,14 @@ export default function CandidateCompare() {
                   </div>
                   <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Something went wrong</p>
                   <p className="text-xs text-amber-600/80 dark:text-amber-400/60 mt-1">{error}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 rounded-xl"
+                    onClick={handleCompare}
+                  >
+                    Try Again
+                  </Button>
                 </CardContent>
               </Card>
             </motion.div>
