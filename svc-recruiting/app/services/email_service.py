@@ -95,6 +95,53 @@ def _send_smtp(to: str, subject: str, body_html: str) -> None:
         server.sendmail(settings.SMTP_FROM, [to], msg.as_string())
 
 
+async def send_email_with_attachments(
+    to: str,
+    subject: str,
+    body_html: str,
+    attachments: list[dict] | None = None,
+) -> bool:
+    """
+    Send email with optional attachments.
+    attachments: list of {"filename": str, "content": str, "content_type": str}
+    """
+    if not settings.EMAIL_ENABLED:
+        att_names = [a["filename"] for a in (attachments or [])]
+        logger.info("EMAIL (dev) to=%s subject=%s attachments=%s", to, subject, att_names)
+        _log_email(to, subject, body_html)
+        return True
+
+    try:
+        await asyncio.to_thread(_send_smtp_with_attachments, to, subject, body_html, attachments or [])
+        logger.info("Email sent to %s — %s (attachments: %d)", to, subject, len(attachments or []))
+        return True
+    except Exception:
+        logger.exception("Failed to send email to %s — %s", to, subject)
+        return False
+
+
+def _send_smtp_with_attachments(to: str, subject: str, body_html: str, attachments: list[dict]):
+    """Synchronous SMTP send with attachments (called via asyncio.to_thread)."""
+    msg = MIMEMultipart()
+    msg["From"] = settings.SMTP_FROM
+    msg["To"] = to
+    msg["Subject"] = subject
+
+    msg.attach(MIMEText(body_html, "html"))
+
+    for att in attachments:
+        part = MIMEText(att["content"], "html")
+        part.add_header("Content-Disposition", "attachment", filename=att["filename"])
+        msg.attach(part)
+
+    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        if settings.SMTP_PORT != 25:
+            server.starttls()
+        if settings.SMTP_USER and settings.SMTP_PASSWORD:
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+        server.sendmail(settings.SMTP_FROM, to, msg.as_string())
+
+
 def _log_email(to: str, subject: str, body_html: str) -> None:
     """Pretty-print email to console when EMAIL_ENABLED=False."""
     border = "=" * 60
