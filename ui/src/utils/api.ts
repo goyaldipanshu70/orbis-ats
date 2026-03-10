@@ -511,9 +511,32 @@ class ApiClient {
   }
 
   async moveCandidateStage(candidateId: number, stage: string, notes?: string, hiredLocationId?: number) {
-    return await this.request<{ message: string }>(`/api/candidates/${candidateId}/stage`, {
+    return await this.request<{ message: string; pending_email_id: number | null }>(`/api/candidates/${candidateId}/stage`, {
       method: 'PUT',
       body: JSON.stringify({ stage, notes, ...(hiredLocationId ? { hired_location_id: hiredLocationId } : {}) }),
+    });
+  }
+
+  async cancelStageEmail(emailId: number) {
+    return await this.request<{ message: string }>(`/api/candidates/stage-email/${emailId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async offerAndMove(candidateId: number, data: {
+    jd_id: number;
+    salary?: number;
+    salary_currency?: string;
+    start_date?: string;
+    position_title?: string;
+    template_ids?: number[];
+    variables?: Record<string, string>;
+    notes?: string;
+    from_stage?: string;
+  }) {
+    return await this.request<{ message: string; offer_id: number; pending_email_id: number }>(`/api/candidates/${candidateId}/offer-and-move`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 
