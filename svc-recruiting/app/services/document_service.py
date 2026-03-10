@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from app.core.config import settings
 from app.db.models import StageDocumentRule, CandidateDocument
 
 logger = logging.getLogger(__name__)
@@ -113,6 +114,115 @@ async def auto_assign_documents(
     await db.commit()
     logger.info(f"Auto-assigned {count} documents for candidate {candidate_id} at stage {stage}")
     return count
+
+
+async def auto_assign_and_generate_documents(
+    db: AsyncSession,
+    candidate_id: int,
+    jd_id: int,
+    stage: str,
+    created_by: str,
+    extra_variables: dict | None = None,
+) -> list[int]:
+    """Auto-assign documents for a stage, then generate them with candidate/job variables.
+    Returns list of generated CandidateDocument IDs."""
+    # First, assign documents based on stage rules
+    await auto_assign_documents(db, candidate_id, jd_id, stage, created_by)
+
+    # Fetch all pending documents for this candidate/job/stage
+    result = await db.execute(
+        select(CandidateDocument).where(
+            CandidateDocument.candidate_id == candidate_id,
+            CandidateDocument.jd_id == jd_id,
+            CandidateDocument.stage == stage,
+            CandidateDocument.status == "pending",
+        )
+    )
+    docs = result.scalars().all()
+    if not docs:
+        return []
+
+    # Build variables from candidate profile and job data
+    variables = await _build_template_variables(db, candidate_id, jd_id)
+    if extra_variables:
+        variables.update(extra_variables)
+
+    generated_ids = []
+    for doc in docs:
+        try:
+            # Fetch template content from svc-admin
+            template_content = await _fetch_template_content(doc.template_id)
+            if not template_content:
+                continue
+
+            # Render template
+            rendered = template_content
+            for key, value in variables.items():
+                rendered = rendered.replace("{{" + key + "}}", str(value or ""))
+
+            doc.content = rendered
+            doc.variables = variables
+            doc.status = "generated"
+            doc.generated_by = created_by
+            doc.generated_at = datetime.utcnow()
+            generated_ids.append(doc.id)
+        except Exception:
+            logger.exception(f"Failed to generate document {doc.id} for candidate {candidate_id}")
+
+    await db.commit()
+    logger.info(f"Auto-generated {len(generated_ids)} documents for candidate {candidate_id} at stage {stage}")
+    return generated_ids
+
+
+async def _build_template_variables(db: AsyncSession, candidate_id: int, jd_id: int) -> dict:
+    """Build a variables dict from candidate profile and job data."""
+    from app.db.models import CandidateJobEntry, CandidateProfile, JobDescription
+
+    # Get candidate info
+    entry_result = await db.execute(
+        select(CandidateJobEntry).where(CandidateJobEntry.id == candidate_id)
+    )
+    entry = entry_result.scalar_one_or_none()
+
+    profile = None
+    if entry:
+        profile_result = await db.execute(
+            select(CandidateProfile).where(CandidateProfile.id == entry.profile_id)
+        )
+        profile = profile_result.scalar_one_or_none()
+
+    # Get job info
+    jd_result = await db.execute(
+        select(JobDescription).where(JobDescription.id == jd_id)
+    )
+    jd = jd_result.scalar_one_or_none()
+    ai = jd.ai_result if jd and isinstance(jd.ai_result, dict) else {}
+
+    return {
+        "candidate_name": profile.full_name if profile else "Candidate",
+        "email": profile.email if profile else "",
+        "phone": profile.phone if profile else "",
+        "job_title": ai.get("job_title", "Open Position"),
+        "company_name": settings.COMPANY_NAME if hasattr(settings, "COMPANY_NAME") else "Our Company",
+        "position_title": ai.get("job_title", ""),
+        "date": datetime.utcnow().strftime("%B %d, %Y"),
+    }
+
+
+async def _fetch_template_content(template_id: int) -> str | None:
+    """Fetch template content from svc-admin."""
+    try:
+        from app.core.config import settings
+        import httpx
+        async with httpx.AsyncClient() as client:
+            url = f"{settings.ADMIN_SERVICE_URL}/api/admin/templates/{template_id}"
+            resp = await client.get(url, headers={"X-Internal-Key": settings.INTERNAL_KEY}, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                return data.get("content", "")
+    except Exception:
+        logger.exception(f"Failed to fetch template {template_id} from svc-admin")
+    return None
 
 
 async def get_candidate_documents(
