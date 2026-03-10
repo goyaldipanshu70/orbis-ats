@@ -4,6 +4,7 @@ import { PipelineCandidate, PipelineStage, PipelineSummary } from '@/types/api';
 import KanbanColumn from './KanbanColumn';
 import StageTransitionModal from './StageTransitionModal';
 import HireLocationModal from './HireLocationModal';
+import OfferStageModal from './OfferStageModal';
 import PanelBuilderModal from '@/components/PanelBuilderModal';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +44,7 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
   } | null>(null);
   const [panelBuilderOpen, setPanelBuilderOpen] = useState(false);
   const [panelBuilderCandidate, setPanelBuilderCandidate] = useState<PipelineCandidate | null>(null);
+  const [offerMoveCandidate, setOfferMoveCandidate] = useState<{ candidate: PipelineCandidate; fromStage: PipelineStage } | null>(null);
 
   const handleDragEnd = useCallback((result: DropResult) => {
     const { source, destination, draggableId } = result;
@@ -104,6 +106,12 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
       return;
     }
 
+    // Offer stage — redirect to offer modal
+    if (toStage === 'offer') {
+      setOfferMoveCandidate({ candidate, fromStage });
+      return;
+    }
+
     // Optimistic update
     performMove(candidate, fromStage, toStage, '');
   }, [data, onDataChange, jdId]);
@@ -116,8 +124,30 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
     onDataChange(newData);
 
     try {
-      await apiClient.moveCandidateStage(candidate.id, toStage, notes || undefined, hiredLocationId);
-      toast({ title: 'Moved', description: `${candidate.full_name} moved to ${toStage}` });
+      const result = await apiClient.moveCandidateStage(candidate.id, toStage, notes || undefined, hiredLocationId);
+      const pendingEmailId = result.pending_email_id;
+
+      if (pendingEmailId) {
+        toast({
+          title: `${candidate.full_name} moved to ${toStage}`,
+          description: 'Email notification will be sent in 10 seconds.',
+          action: {
+            label: 'Cancel Email',
+            onClick: async () => {
+              try {
+                await apiClient.cancelStageEmail(pendingEmailId);
+                toast({ title: 'Email cancelled', description: 'Stage notification email was cancelled.' });
+              } catch {
+                toast({ title: 'Could not cancel', description: 'Email may have already been sent.', variant: 'destructive' });
+              }
+            },
+          },
+          duration: 12000,
+        });
+      } else {
+        toast({ title: 'Moved', description: `${candidate.full_name} moved to ${toStage}` });
+      }
+
       if (onRefresh) onRefresh();
     } catch (error: any) {
       // Rollback
@@ -203,6 +233,41 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
           candidateName={panelBuilderCandidate.full_name}
           jobTitle={jobTitle || ''}
           onSuccess={handlePanelBuilderSuccess}
+        />
+      )}
+
+      {offerMoveCandidate && (
+        <OfferStageModal
+          isOpen={!!offerMoveCandidate}
+          onClose={() => setOfferMoveCandidate(null)}
+          candidateId={offerMoveCandidate.candidate.id}
+          candidateName={offerMoveCandidate.candidate.full_name}
+          candidateEmail={offerMoveCandidate.candidate.email}
+          jdId={jdId || 0}
+          jobTitle={jobTitle || ''}
+          fromStage={offerMoveCandidate.fromStage}
+          onComplete={(pendingEmailId) => {
+            setOfferMoveCandidate(null);
+            if (pendingEmailId) {
+              toast({
+                title: `Offer sent to ${offerMoveCandidate.candidate.full_name}`,
+                description: 'Email with documents will be sent in 10 seconds.',
+                action: {
+                  label: 'Cancel Email',
+                  onClick: async () => {
+                    try {
+                      await apiClient.cancelStageEmail(pendingEmailId);
+                      toast({ title: 'Email cancelled' });
+                    } catch {
+                      toast({ title: 'Could not cancel', variant: 'destructive' });
+                    }
+                  },
+                },
+                duration: 12000,
+              });
+            }
+            if (onRefresh) onRefresh();
+          }}
         />
       )}
     </>
