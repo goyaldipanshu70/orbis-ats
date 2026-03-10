@@ -832,3 +832,25 @@ class InboxCaptureLog(Base):
     candidate_id = Column(Integer, nullable=True)
     processed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+# ── Feature: Deferred Stage-Change Emails ────────────────────────────────
+
+class PendingStageEmail(Base):
+    """Queued email triggered by a pipeline stage change; held for ~10 s so HR can cancel."""
+    __tablename__ = "pending_stage_emails"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    candidate_id = Column(Integer, ForeignKey("candidate_job_entries.id", ondelete="CASCADE"), nullable=False, index=True)
+    jd_id = Column(Integer, ForeignKey("job_descriptions.id", ondelete="CASCADE"), nullable=False, index=True)
+    from_stage = Column(String(30), nullable=True)
+    to_stage = Column(String(30), nullable=False)
+    subject = Column(Text, nullable=False)
+    body_html = Column(Text, nullable=False)
+    attachment_doc_ids = Column(JSONB, nullable=False, default=list)
+    status = Column(String(20), nullable=False, default="pending", index=True)  # pending, sent, cancelled
+    send_after = Column(DateTime, nullable=False)
+    sent_at = Column(DateTime, nullable=True)
+    cancelled_at = Column(DateTime, nullable=True)
+    created_by = Column(String(50), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
