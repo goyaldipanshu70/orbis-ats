@@ -212,14 +212,13 @@ async def _build_template_variables(db: AsyncSession, candidate_id: int, jd_id: 
 async def _fetch_template_content(template_id: int) -> str | None:
     """Fetch template content from svc-admin."""
     try:
-        from app.core.config import settings
-        import httpx
-        async with httpx.AsyncClient() as client:
-            url = f"{settings.ADMIN_SERVICE_URL}/api/admin/templates/{template_id}"
-            resp = await client.get(url, headers={"X-Internal-Key": settings.INTERNAL_KEY}, timeout=10)
-            if resp.status_code == 200:
-                data = resp.json()
-                return data.get("content", "")
+        from app.core.http_client import get_ai_client
+        client = get_ai_client()
+        resp = await client.get(f"{settings.ADMIN_URL}/api/admin/templates/{template_id}")
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get("content", "")
+        logger.warning("Failed to fetch template %d: %s", template_id, resp.status_code)
     except Exception:
         logger.exception(f"Failed to fetch template {template_id} from svc-admin")
     return None

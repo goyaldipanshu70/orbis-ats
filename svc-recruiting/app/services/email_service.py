@@ -135,11 +135,13 @@ def _send_smtp_with_attachments(to: str, subject: str, body_html: str, attachmen
         msg.attach(part)
 
     with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-        if settings.SMTP_PORT != 25:
+        server.ehlo()
+        if settings.SMTP_PORT in (587, 2525):
             server.starttls()
+            server.ehlo()
         if settings.SMTP_USER and settings.SMTP_PASSWORD:
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        server.sendmail(settings.SMTP_FROM, to, msg.as_string())
+        server.sendmail(settings.SMTP_FROM, [to], msg.as_string())
 
 
 def _log_email(to: str, subject: str, body_html: str) -> None:

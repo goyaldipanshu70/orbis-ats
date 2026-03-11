@@ -534,7 +534,7 @@ class ApiClient {
     notes?: string;
     from_stage?: string;
   }) {
-    return await this.request<{ message: string; offer_id: number; pending_email_id: number }>(`/api/candidates/${candidateId}/offer-and-move`, {
+    return await this.request<{ message: string; offer_id: number | null; pending_email_id: number | null }>(`/api/candidates/${candidateId}/offer-and-move`, {
       method: 'POST',
       body: JSON.stringify(data),
     });

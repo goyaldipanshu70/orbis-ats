@@ -420,6 +420,7 @@ async def offer_and_move(
     from app.services.offer_service import create_offer
     from app.services.document_service import auto_assign_and_generate_documents
     from app.services.pending_email_service import create_pending_email
+    from app.schemas.offer_schema import OfferCreate
 
     changed_by = f"{user['first_name']} {user['last_name']}"
     jd_id = body.get("jd_id")
@@ -427,36 +428,41 @@ async def offer_and_move(
         raise HTTPException(status_code=400, detail="jd_id is required")
 
     # 1. Create offer
-    offer_data = {
-        "candidate_id": candidate_id,
-        "salary": body.get("salary"),
-        "salary_currency": body.get("salary_currency", "USD"),
-        "start_date": body.get("start_date"),
-        "position_title": body.get("position_title"),
-        "template_id": body.get("template_ids", [None])[0],
-        "variables": body.get("variables", {}),
-    }
-    offer = await create_offer(db, str(jd_id), offer_data, user["sub"])
-
-    # 2. Move candidate to offer stage
-    result = await move_candidate_stage(db, candidate_id, "offer", changed_by, body.get("notes"))
-
-    # 3. Generate documents for the offer stage with extra variables
-    extra_vars = {
-        "salary": str(body.get("salary", "")),
-        "salary_currency": body.get("salary_currency", "USD"),
-        "start_date": body.get("start_date", ""),
-        "position_title": body.get("position_title", ""),
-    }
-    doc_ids = await auto_assign_and_generate_documents(
-        db, candidate_id, int(jd_id), "offer", changed_by, extra_variables=extra_vars
+    template_ids = body.get("template_ids") or []
+    offer_data = OfferCreate(
+        candidate_id=candidate_id,
+        salary=body.get("salary"),
+        salary_currency=body.get("salary_currency", "USD"),
+        start_date=body.get("start_date"),
+        position_title=body.get("position_title"),
+        template_id=template_ids[0] if template_ids else None,
+        variables=body.get("variables"),
     )
+    offer = await create_offer(db, int(jd_id), offer_data, user["sub"])
 
-    # 4. Create pending email with attachments
-    pending_email_id = await create_pending_email(
-        db, candidate_id, int(jd_id), body.get("from_stage", "interview"), "offer", changed_by,
-        attachment_doc_ids=doc_ids,
-    )
+    # 2. Move candidate to offer stage (skip_email=True: we handle email below with offer-specific content)
+    result = await move_candidate_stage(db, candidate_id, "offer", changed_by, body.get("notes"), skip_email=True)
+
+    # 3. Generate documents and queue email (non-fatal — offer + stage move already committed)
+    pending_email_id = None
+    try:
+        extra_vars = {
+            "salary": str(body.get("salary", "")),
+            "salary_currency": body.get("salary_currency", "USD"),
+            "start_date": body.get("start_date", ""),
+            "position_title": body.get("position_title", ""),
+        }
+        doc_ids = await auto_assign_and_generate_documents(
+            db, candidate_id, int(jd_id), "offer", changed_by, extra_variables=extra_vars
+        )
+
+        pending_email_id = await create_pending_email(
+            db, candidate_id, int(jd_id), body.get("from_stage", "interview"), "offer", changed_by,
+            attachment_doc_ids=doc_ids,
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning(f"Offer email/docs failed (non-fatal) for candidate {candidate_id}")
 
     return {
         "message": "Offer created and candidate moved to offer stage",

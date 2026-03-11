@@ -1010,7 +1010,7 @@ async def get_job_statistics(db: AsyncSession, job_id: str) -> dict:
 VALID_PIPELINE_STAGES = {"applied", "screening", "ai_interview", "interview", "offer", "hired", "rejected"}
 
 
-async def move_candidate_stage(db: AsyncSession, candidate_id: int, new_stage: str, changed_by: str, notes: str = None, hired_location_id: int = None):
+async def move_candidate_stage(db: AsyncSession, candidate_id: int, new_stage: str, changed_by: str, notes: str = None, hired_location_id: int = None, skip_email: bool = False):
     if new_stage not in VALID_PIPELINE_STAGES:
         raise ValueError(f"Invalid stage. Must be one of: {', '.join(VALID_PIPELINE_STAGES)}")
 
@@ -1071,13 +1071,6 @@ async def move_candidate_stage(db: AsyncSession, candidate_id: int, new_stage: s
     db.add(history_entry)
     await db.commit()
 
-    # Auto-assign documents based on stage rules
-    try:
-        from app.services.document_service import auto_assign_documents
-        await auto_assign_documents(db, candidate_id, entry.jd_id, new_stage, changed_by)
-    except Exception as e:
-        logger.warning(f"Document auto-assign failed (non-fatal): {e}")
-
     # Publish real-time event
     try:
         from app.services.event_bus import publish_broadcast_event
@@ -1088,15 +1081,20 @@ async def move_candidate_stage(db: AsyncSession, candidate_id: int, new_stage: s
     except Exception:
         pass
 
-    # Create deferred email with document attachments
-    from app.services.document_service import auto_assign_and_generate_documents
-    from app.services.pending_email_service import create_pending_email
+    pending_email_id = None
+    if not skip_email:
+        # Auto-assign, generate documents, and create deferred email (non-fatal)
+        try:
+            from app.services.document_service import auto_assign_and_generate_documents
+            from app.services.pending_email_service import create_pending_email
 
-    doc_ids = await auto_assign_and_generate_documents(db, candidate_id, entry.jd_id, new_stage, changed_by)
-    pending_email_id = await create_pending_email(
-        db, candidate_id, entry.jd_id, current_stage, new_stage, changed_by,
-        attachment_doc_ids=doc_ids,
-    )
+            doc_ids = await auto_assign_and_generate_documents(db, candidate_id, entry.jd_id, new_stage, changed_by)
+            pending_email_id = await create_pending_email(
+                db, candidate_id, entry.jd_id, current_stage, new_stage, changed_by,
+                attachment_doc_ids=doc_ids,
+            )
+        except Exception as e:
+            logger.warning(f"Deferred email creation failed (non-fatal): {e}")
 
     if new_stage == "hired":
         await _check_and_close_job_if_filled(db, entry.jd_id)
