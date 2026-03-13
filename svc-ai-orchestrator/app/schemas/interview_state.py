@@ -16,3 +16,15 @@ class InterviewEvalState(TypedDict):
     retry_count: int
     error: Optional[str]
     provider: str
+
+
+class InterviewQuestionsState(TypedDict, total=False):
+    candidate_id: int
+    jd_id: int
+    interview_type: Optional[str]
+    job_context: Optional[dict]
+    candidate_context: Optional[dict]
+    skills_gap: Optional[list]
+    questions: Optional[list]
+    error: Optional[str]
+    execution_id: str
