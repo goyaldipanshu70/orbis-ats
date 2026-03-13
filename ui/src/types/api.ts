@@ -470,52 +470,6 @@ export interface StageAutomation {
   created_at: string;
 }
 
-// ── AI Toolkit types ────────────────────────────────────────────────────
-export interface CandidateRanking {
-  candidate_id: number;
-  name: string;
-  email: string | null;
-  composite_score: number;
-  resume_score: number;
-  interview_score: number;
-  feedback_score: number;
-  screening_score: number;
-}
-
-export interface InterviewQuestion {
-  question: string;
-  type: string;
-  rationale: string;
-}
-
-export interface SalaryIntelligence {
-  job_title: string;
-  location: string | null;
-  currency: string;
-  bands: { min: number; p10: number; p25: number; median: number; p75: number; p90: number; max: number };
-  total_compensation?: { base: number; bonus: number; equity: number; benefits: number; total: number };
-  trends?: { yoy_growth: number; demand: string };
-  cost_of_living?: { index: number; vs_us_pct: number };
-  data_sources?: { name: string; url: string; sample_size: number; last_updated: string; confidence: number }[];
-  country: string | null;
-  available_countries: string[];
-  data_source: string;
-}
-
-export interface SkillsGap {
-  matched: string[];
-  missing: string[];
-  bonus: string[];
-  match_percentage: number;
-}
-
-export interface ScreeningScore {
-  question: string;
-  response: string;
-  score: number;
-  reasoning: string;
-}
-
 // ── Scorecard types ─────────────────────────────────────────────────────
 export interface CandidateScorecard {
   candidate: {

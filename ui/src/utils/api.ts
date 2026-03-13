@@ -1697,30 +1697,48 @@ class ApiClient {
     return await this.request<any>(`/api/outreach/automations/${id}`, { method: 'DELETE' });
   }
 
-  // ── AI Toolkit ─────────────────────────────────────────────────────────
+  // ── AI Orchestrator endpoints ──
 
-  async rankCandidates(jdId: number) {
-    const res = await this.request<any>(`/api/ai-tools/rank/${jdId}`);
-    return (res?.rankings ?? res ?? []) as any[];
+  async generateJD(data: { job_title: string; department?: string; seniority?: string; location?: string; additional_context?: string }) {
+    return this.request('/api/orchestrator/jd/generate', { method: 'POST', body: JSON.stringify(data) });
   }
 
-  async generateInterviewQuestions(jdId: number, candidateId: number) {
-    const res = await this.request<any>(`/api/ai-tools/questions/${jdId}/${candidateId}`);
-    return (res?.questions ?? res ?? []) as any[];
+  async checkJDBias(data: { text: string }) {
+    return this.request('/api/orchestrator/jd/bias-check', { method: 'POST', body: JSON.stringify(data) });
   }
 
-  async getSalaryIntelligence(jdId: number, country?: string) {
-    const params = country ? `?country=${encodeURIComponent(country)}` : '';
-    return await this.request<any>(`/api/ai-tools/salary/${jdId}${params}`);
+  async getCandidateFitSummary(data: { candidate_id: number; jd_id: number }) {
+    return this.request('/api/orchestrator/candidate/fit-summary', { method: 'POST', body: JSON.stringify(data) });
   }
 
-  async getSkillsGap(jdId: number, candidateId: number) {
-    return await this.request<any>(`/api/ai-tools/skills-gap/${jdId}/${candidateId}`);
+  async rankCandidates(data: { jd_id: number }) {
+    return this.request('/api/orchestrator/candidate/rank', { method: 'POST', body: JSON.stringify(data) });
   }
 
-  async scoreScreening(jdId: number, candidateId: number) {
-    const res = await this.request<any>(`/api/ai-tools/score-screening/${jdId}/${candidateId}`, { method: 'POST' });
-    return (res?.scores ?? res ?? []) as any[];
+  async getSkillsGap(data: { candidate_id: number; jd_id: number }) {
+    return this.request('/api/orchestrator/candidate/skills-gap', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async generateInterviewQuestions(data: { candidate_id: number; jd_id: number; interview_type?: string }) {
+    return this.request('/api/orchestrator/interview/questions', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async scoreScreening(data: { candidate_id: number; jd_id: number }) {
+    return this.request('/api/orchestrator/screening/score', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async estimateSalary(data: { job_title: string; location?: string; country?: string; seniority?: string }) {
+    return this.request('/api/orchestrator/salary/estimate', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  // ── AI Cache endpoints ──
+
+  async getAICache(entity: string, id: number, field: string) {
+    return this.request(`/api/ai-cache/${entity}/${id}/${field}`);
+  }
+
+  async setAICache(entity: string, id: number, field: string, data: any) {
+    return this.request(`/api/ai-cache/${entity}/${id}/${field}`, { method: 'PUT', body: JSON.stringify(data) });
   }
 
   // ── Candidate Scorecard ────────────────────────────────────────────────

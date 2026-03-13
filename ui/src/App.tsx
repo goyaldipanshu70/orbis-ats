@@ -48,7 +48,6 @@ const Announcements = lazy(() => import("./pages/Announcements"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Referrals = lazy(() => import("./pages/Referrals"));
 const Outreach = lazy(() => import("./pages/Outreach"));
-const AIToolkit = lazy(() => import("./pages/AIToolkit"));
 const CandidateScorecard = lazy(() => import("./pages/CandidateScorecard"));
 const CandidateCompare = lazy(() => import("./pages/CandidateCompare"));
 const Compliance = lazy(() => import("./pages/Compliance"));
@@ -129,7 +128,6 @@ const App = () => (
             <Route path="/templates" element={<HRRoute><DocumentTemplates /></HRRoute>} />
             <Route path="/referrals" element={<ProtectedRoute><Suspense fallback={null}><Referrals /></Suspense></ProtectedRoute>} />
             <Route path="/outreach" element={<HRRoute><Suspense fallback={null}><Outreach /></Suspense></HRRoute>} />
-            <Route path="/ai-toolkit" element={<HRRoute><Suspense fallback={null}><AIToolkit /></Suspense></HRRoute>} />
             <Route path="/scorecard/:candidateId" element={<HiringRoute><Suspense fallback={null}><CandidateScorecard /></Suspense></HiringRoute>} />
             <Route path="/compare" element={<HiringRoute><Suspense fallback={null}><CandidateCompare /></Suspense></HiringRoute>} />
             <Route path="/compliance" element={<HRRoute><Suspense fallback={null}><Compliance /></Suspense></HRRoute>} />
