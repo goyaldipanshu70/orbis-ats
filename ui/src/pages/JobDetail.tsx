@@ -835,7 +835,7 @@ const JobDetail = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate(`/ai-toolkit?tool=ranking&job=${jobId}`)}
+                            onClick={() => navigate(`/jobs/${jobId}/pipeline`)}
                             className="h-9 text-xs justify-start"
                           >
                             <Sparkles className="w-3.5 h-3.5 mr-1.5 shrink-0" />

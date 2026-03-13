@@ -6,7 +6,7 @@ import { apiClient } from '@/utils/api';
 import {
   LayoutDashboard, Bot, Settings, Shield, BarChart3,
   LogOut, Zap, Plus, FileText, UserCheck, Workflow, Calendar, Users, Briefcase,
-  Megaphone, ClipboardCheck, Share2, Mail, Brain, ShieldCheck,
+  Megaphone, ClipboardCheck, Share2, Mail, ShieldCheck,
   GitPullRequest, FileStack, Globe2, Target, Inbox, Activity,
   Pin, PinOff,
 } from 'lucide-react';
@@ -46,7 +46,6 @@ const navItems: NavItem[] = [
 
   // ── AI & Tools ──
   { icon: Bot, label: 'Hiring Assistant', path: '/hiring-assistant', section: 'AI & Tools' },
-  { icon: Brain, label: 'AI Toolkit', path: '/ai-toolkit', section: 'AI & Tools', hrOnly: true },
   { icon: Workflow, label: 'AI Workflows', path: '/workflows', section: 'AI & Tools', hrOnly: true },
   { icon: FileStack, label: 'JD Templates', path: '/jd-templates', section: 'AI & Tools', hrOnly: true },
   { icon: FileText, label: 'Templates', path: '/templates', section: 'AI & Tools', hrOnly: true },

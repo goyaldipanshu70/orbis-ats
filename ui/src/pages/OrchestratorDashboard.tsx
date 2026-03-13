@@ -160,7 +160,7 @@ const QUICK_ACTIONS = [
     title: 'Resume Scoring',
     description: 'AI-powered candidate evaluation',
     icon: FileSearch,
-    path: '/ai-toolkit?tool=ranking',
+    path: '/jobs',
     color: 'from-emerald-500/20 to-emerald-600/10',
     iconBg: 'bg-emerald-500/15',
     iconColor: 'text-emerald-400',
@@ -329,7 +329,7 @@ export default function OrchestratorDashboard() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-[#151d2e] border-slate-700/50 rounded-xl shadow-xl shadow-black/30 p-1.5">
-                  <DropdownMenuItem onClick={() => navigate('/ai-toolkit?tool=ranking')} className="text-slate-200 hover:bg-slate-700/50 focus:bg-slate-700/50 rounded-lg px-3 py-2.5">
+                  <DropdownMenuItem onClick={() => navigate('/jobs')} className="text-slate-200 hover:bg-slate-700/50 focus:bg-slate-700/50 rounded-lg px-3 py-2.5">
                     <FileSearch className="w-4 h-4 mr-2.5 text-emerald-400" /> Resume Scoring
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/interviews')} className="text-slate-200 hover:bg-slate-700/50 focus:bg-slate-700/50 rounded-lg px-3 py-2.5">

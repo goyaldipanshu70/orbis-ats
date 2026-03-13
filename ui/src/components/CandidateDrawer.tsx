@@ -200,7 +200,7 @@ export function CandidateDrawer({ candidateId, open, onClose }: CandidateDrawerP
                   size="icon"
                   className="h-8 w-8"
                   title="Skills Gap Analysis"
-                  onClick={() => { onClose(); window.location.href = `/ai-toolkit?tool=skills-gap&candidate=${candidateId}`; }}
+                  onClick={() => { onClose(); window.location.href = `/scorecard/${candidateId}`; }}
                 >
                   <Code2 className="h-4 w-4" />
                 </Button>

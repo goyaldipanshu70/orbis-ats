@@ -199,10 +199,10 @@ export default function KanbanCard({ candidate, index, onClick, onFeedbackClick,
                       )}
                       {jdId && (
                         <>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/ai-toolkit?tool=ranking&job=${jdId}`); }}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/jobs/${jdId}/pipeline`); }}>
                             <Trophy className="h-4 w-4 mr-2" /> AI Ranking
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/ai-toolkit?tool=skills-gap&job=${jdId}&candidate=${candidate.id}`); }}>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/jobs/${jdId}/candidates/${candidate.id}`); }}>
                             <PuzzleIcon className="h-4 w-4 mr-2" /> Skills Gap
                           </DropdownMenuItem>
                         </>

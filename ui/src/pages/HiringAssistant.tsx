@@ -145,7 +145,7 @@ const SUGGESTIONS = [
     color: 'from-orange-500/20 to-orange-600/10 text-orange-500 border-orange-500/20',
     title: 'View candidate scorecards',
     desc: 'Detailed evaluation breakdowns',
-    href: '/ai-toolkit?tool=screening',
+    href: '/jobs',
   },
 ];
 
