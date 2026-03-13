@@ -38,6 +38,10 @@ class JobDescription(Base):
     location_type = Column(String(20), nullable=True)  # onsite, remote, hybrid
     # Feature 13: Hiring Close Date
     hiring_close_date = Column(DateTime, nullable=True)
+    # AI cache columns
+    ai_generated_jd = Column(JSONB, nullable=True)
+    ai_bias_check = Column(JSONB, nullable=True)
+    ai_salary_estimate = Column(JSONB, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
@@ -129,6 +133,10 @@ class CandidateJobEntry(Base):
     application_id = Column(Integer, ForeignKey("job_applications.id"), nullable=True)
     imported_at = Column(DateTime, nullable=True)
     hired_location_id = Column(Integer, ForeignKey("job_location_vacancies.id", ondelete="SET NULL"), nullable=True)
+    # AI cache columns
+    ai_fit_summary = Column(JSONB, nullable=True)
+    ai_ranking_score = Column(JSONB, nullable=True)
+    ai_skills_gap = Column(JSONB, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     deleted_at = Column(DateTime, nullable=True)
 
@@ -251,6 +259,8 @@ class InterviewSchedule(Base):
     reschedule_reason = Column(Text, nullable=True)
     original_date = Column(String(10), nullable=True)
     original_time = Column(String(5), nullable=True)
+    # AI cache columns
+    ai_suggested_questions = Column(JSONB, nullable=True)
 
 
 class Offer(Base):
