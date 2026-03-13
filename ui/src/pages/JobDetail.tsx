@@ -23,6 +23,7 @@ import ImportCandidatesModal from '@/components/ImportCandidatesModal';
 import ApprovalBadge from '@/components/ApprovalBadge';
 import AIInterviewModal from '@/components/pipeline/AIInterviewModal';
 import AIInterviewResultsSheet from '@/components/pipeline/AIInterviewResultsSheet';
+import RankCandidatesButton from '@/components/ai/RankCandidatesButton';
 import type { Job, UploadedFile, JobStatistics, ScreeningQuestion, AIInterviewSession } from '@/types/api';
 import { COUNTRIES, getCitiesForCountry, CURRENCIES, EXPERIENCE_RANGES } from '@/data/locations';
 import { apiClient } from '@/utils/api';
@@ -610,6 +611,8 @@ const JobDetail = () => {
                         Edit Job
                       </Button>
                     )}
+                    <RankCandidatesButton jdId={Number(jobId)} />
+                    {/* TODO: Add CandidateRankBadge to individual candidate cards in the pipeline view */}
                     <Button
                       variant="outline"
                       size="sm"

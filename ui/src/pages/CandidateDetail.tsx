@@ -26,6 +26,8 @@ import RecommendationBadge from '@/components/RecommendationBadge';
 import ScoreDisplay from '@/components/ScoreDisplay';
 import { InterviewEvaluationResponse } from '@/types/api';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
+import AIFitSummaryCard from '@/components/ai/AIFitSummaryCard';
+import SemanticSkillsGap from '@/components/ai/SemanticSkillsGap';
 
 const container = {
   hidden: {},
@@ -261,8 +263,7 @@ const CandidateDetail = () => {
     { label: 'Pipeline', icon: ArrowRight, show: !!jobId, onClick: () => navigate(`/jobs/${jobId}/pipeline`) },
     { label: 'Scorecard', icon: ClipboardList, show: !!candidateId, onClick: () => navigate(`/scorecard/${candidateId}${jobId ? `?jd_id=${jobId}` : ''}`) },
     { label: 'Feedback', icon: MessageSquare, show: !!(candidateId && jobId), onClick: () => navigate(`/jobs/${jobId}/candidates/${candidateId}/feedback`) },
-    { label: 'AI Ranking', icon: Trophy, show: !!jobId, onClick: () => navigate(`/ai-toolkit?tool=ranking&job=${jobId}`) },
-    { label: 'Skills Gap', icon: PuzzleIcon, show: !!(jobId && candidateId), onClick: () => navigate(`/ai-toolkit?tool=skills-gap&job=${jobId}&candidate=${candidateId}`) },
+    { label: 'AI Ranking', icon: Trophy, show: !!jobId, onClick: () => navigate(`/jobs/${jobId}/pipeline`) },
     { label: 'Analytics', icon: BarChart3, show: !!jobId, onClick: () => navigate(`/analytics?jd_id=${jobId}`) },
   ];
 
@@ -347,6 +348,14 @@ const CandidateDetail = () => {
               </div>
             </motion.div>
           </motion.div>
+
+          {/* ── AI Fit Summary + Skills Gap ──────────────────────────── */}
+          {jobId && candidateId && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <AIFitSummaryCard candidateId={Number(candidateId)} jdId={Number(jobId)} />
+              <SemanticSkillsGap candidateId={Number(candidateId)} jdId={Number(jobId)} />
+            </div>
+          )}
 
           {/* ── Main Content Grid ───────────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
