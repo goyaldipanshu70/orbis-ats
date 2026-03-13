@@ -28,6 +28,8 @@ import { InterviewEvaluationResponse } from '@/types/api';
 import { AnimatedProgress } from '@/components/ui/animated-progress';
 import AIFitSummaryCard from '@/components/ai/AIFitSummaryCard';
 import SemanticSkillsGap from '@/components/ai/SemanticSkillsGap';
+import AIScreeningScores from '@/components/ai/AIScreeningScores';
+import AISuggestedQuestions from '@/components/ai/AISuggestedQuestions';
 
 const container = {
   hidden: {},
@@ -354,6 +356,14 @@ const CandidateDetail = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               <AIFitSummaryCard candidateId={Number(candidateId)} jdId={Number(jobId)} />
               <SemanticSkillsGap candidateId={Number(candidateId)} jdId={Number(jobId)} />
+            </div>
+          )}
+
+          {/* ── AI Screening Scores + Suggested Questions ──────────── */}
+          {jobId && candidateId && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <AIScreeningScores candidateId={Number(candidateId)} jdId={Number(jobId)} />
+              <AISuggestedQuestions candidateId={Number(candidateId)} jdId={Number(jobId)} />
             </div>
           )}
 

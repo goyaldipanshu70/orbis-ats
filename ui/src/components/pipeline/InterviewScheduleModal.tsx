@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
+import AISuggestedQuestions from '@/components/ai/AISuggestedQuestions';
 
 interface InterviewScheduleModalProps {
   isOpen: boolean;
@@ -110,7 +111,7 @@ export default function InterviewScheduleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Schedule Interview</DialogTitle>
           <DialogDescription>
@@ -213,6 +214,14 @@ export default function InterviewScheduleModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add any additional notes or instructions..."
               rows={3}
+            />
+          </div>
+          {/* AI Suggested Questions */}
+          <div className="pt-2">
+            <AISuggestedQuestions
+              candidateId={candidateId}
+              jdId={Number(jdId)}
+              interviewType={interviewType}
             />
           </div>
         </div>
