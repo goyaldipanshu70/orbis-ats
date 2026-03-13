@@ -31,6 +31,9 @@ import { apiClient } from '@/utils/api';
 import { JobFormData, JDExtractionResult, JDTemplate } from '@/types/api';
 import { COUNTRIES, getCitiesForCountry } from '@/data/locations';
 import AppLayout from '@/components/layout/AppLayout';
+import JDGeneratorButton from '@/components/ai/JDGeneratorButton';
+import JDBiasChecker from '@/components/ai/JDBiasChecker';
+import SalaryInsightsCard from '@/components/ai/SalaryInsightsCard';
 
 /* ── Tag color map ─────────────────────────────────────── */
 const TAG_COLORS: Record<string, string> = {
@@ -635,6 +638,12 @@ const CreateJob = () => {
                             </SelectContent>
                           </Select>
                         </div>
+                        <SalaryInsightsCard
+                          jobTitle={formData.job_title}
+                          location={locationVacancies[0]?.city || undefined}
+                          country={locationVacancies[0]?.country || undefined}
+                          seniority={positionType || undefined}
+                        />
                       </div>
                       <div>
                         <Label className="text-sm font-semibold text-foreground">Salary Visibility</Label>
@@ -667,16 +676,32 @@ const CreateJob = () => {
                   <div>
                     <div className="flex items-center justify-between">
                       <Label htmlFor="summary" className="text-sm font-semibold text-foreground">Job Description <span className="text-red-400">*</span></Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs rounded-lg gap-1.5"
-                        onClick={openTemplatePicker}
-                      >
-                        <LayoutTemplate className="w-3.5 h-3.5" />
-                        Use Template
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs rounded-lg gap-1.5"
+                          onClick={openTemplatePicker}
+                        >
+                          <LayoutTemplate className="w-3.5 h-3.5" />
+                          Use Template
+                        </Button>
+                        <JDGeneratorButton
+                          jobTitle={formData.job_title}
+                          seniority={positionType}
+                          location={locationVacancies[0]?.city || undefined}
+                          onGenerated={(jd) => {
+                            const parts: string[] = [];
+                            if (jd.summary) parts.push(jd.summary);
+                            if (jd.responsibilities?.length) parts.push('\n\nResponsibilities:\n' + jd.responsibilities.map(r => `- ${r}`).join('\n'));
+                            if (jd.requirements?.length) parts.push('\n\nRequirements:\n' + jd.requirements.map(r => `- ${r}`).join('\n'));
+                            if (jd.qualifications?.length) parts.push('\n\nQualifications:\n' + jd.qualifications.map(q => `- ${q}`).join('\n'));
+                            if (jd.benefits?.length) parts.push('\n\nBenefits:\n' + jd.benefits.map(b => `- ${b}`).join('\n'));
+                            setFormData(prev => ({ ...prev, summary: parts.join('') }));
+                          }}
+                        />
+                      </div>
                     </div>
                     <Textarea
                       id="summary"
@@ -686,6 +711,17 @@ const CreateJob = () => {
                       className="mt-2 min-h-[140px] rounded-lg border-border bg-muted/30 focus:bg-card focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                       required
                     />
+                    <div className="mt-2">
+                      <JDBiasChecker
+                        text={formData.summary}
+                        onFixApplied={(oldPhrase, newPhrase) => {
+                          setFormData(prev => ({
+                            ...prev,
+                            summary: prev.summary.replace(oldPhrase, newPhrase),
+                          }));
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
