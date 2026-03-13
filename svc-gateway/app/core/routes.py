@@ -35,6 +35,7 @@ ROUTE_TABLE: list[tuple[str, str]] = [
     ("/api/leads", settings.RECRUITING_URL),
     ("/api/inbox-capture", settings.RECRUITING_URL),
     ("/api/notifications", settings.RECRUITING_URL),
+    ("/api/ai-cache", settings.RECRUITING_URL),
     ("/api/workflows", settings.WORKFLOWS_URL),
     ("/api/mqtt", settings.MQTT_URL),
     ("/api/admin", settings.ADMIN_URL),

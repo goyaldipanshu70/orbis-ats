@@ -13,6 +13,7 @@ from app.api.v1 import (
     routes_ai_interview, routes_linkedin, routes_documents,
     routes_cost, routes_job_request, routes_jd_template, routes_portal, routes_leads,
     routes_inbox_capture, routes_notifications,
+    routes_ai_cache,
 )
 from app.core.config import settings
 from app.core.logging_config import setup_logging
@@ -109,6 +110,7 @@ app.include_router(routes_portal.router, prefix="/api/portals", tags=["Portals"]
 app.include_router(routes_leads.router, prefix="/api/leads", tags=["Leads"])
 app.include_router(routes_inbox_capture.router, prefix="/api/inbox-capture", tags=["Inbox Capture"])
 app.include_router(routes_notifications.router, prefix="/api/notifications", tags=["Notifications"])
+app.include_router(routes_ai_cache.router, prefix="/api/ai-cache", tags=["AI Cache"])
 
 
 @app.get("/")
