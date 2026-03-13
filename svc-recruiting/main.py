@@ -8,7 +8,7 @@ from app.api.v1 import (
     routes_applications, routes_screening, routes_interview_schedule,
     routes_offer, routes_analytics, routes_ai_jobs, routes_profile,
     routes_interviewer, routes_referral, routes_job_board, routes_outreach,
-    routes_ai_tools, routes_scorecard, routes_export, routes_compliance,
+    routes_scorecard, routes_export, routes_compliance,
     routes_pipeline_config, routes_approval, routes_events,
     routes_ai_interview, routes_linkedin, routes_documents,
     routes_cost, routes_job_request, routes_jd_template, routes_portal, routes_leads,
@@ -93,7 +93,6 @@ app.include_router(routes_interviewer.router, prefix="/api/interviewers", tags=[
 app.include_router(routes_referral.router, prefix="/api/referrals", tags=["Referrals"])
 app.include_router(routes_job_board.router, prefix="/api/job-boards", tags=["Job Boards"])
 app.include_router(routes_outreach.router, prefix="/api/outreach", tags=["Outreach"])
-app.include_router(routes_ai_tools.router, prefix="/api/ai-tools", tags=["AI Tools"])
 app.include_router(routes_scorecard.router, prefix="/api/scorecard", tags=["Scorecard"])
 app.include_router(routes_export.router, prefix="/api/export", tags=["Export"])
 app.include_router(routes_compliance.router, prefix="/api/compliance", tags=["Compliance"])

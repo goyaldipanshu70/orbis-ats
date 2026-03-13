@@ -20,7 +20,6 @@ ROUTE_TABLE: list[tuple[str, str]] = [
     ("/api/referrals", settings.RECRUITING_URL),
     ("/api/job-boards", settings.RECRUITING_URL),
     ("/api/outreach", settings.RECRUITING_URL),
-    ("/api/ai-tools", settings.RECRUITING_URL),
     ("/api/scorecard", settings.RECRUITING_URL),
     ("/api/export", settings.RECRUITING_URL),
     ("/api/compliance", settings.RECRUITING_URL),
