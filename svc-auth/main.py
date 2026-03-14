@@ -5,12 +5,13 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from contextlib import asynccontextmanager
 import asyncio
-from app.api.v1 import routes_auth, routes_profile, routes_otp
+from app.api.v1 import routes_auth, routes_profile, routes_otp, routes_rbac
 from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.core.logging_config import setup_logging
 from app.db.postgres import init_db, AsyncSessionLocal
 from app.db.seeder import seed_admin_user
+from app.services.rbac_service import seed_system_roles
 import os
 
 logger = setup_logging("svc-auth")
@@ -41,6 +42,11 @@ async def lifespan(app: FastAPI):
             await seed_admin_user(db)
         except Exception as e:
             logger.warning("Failed to seed admin user: %s", e)
+    async with AsyncSessionLocal() as db:
+        try:
+            await seed_system_roles(db)
+        except Exception as e:
+            logger.warning("Failed to seed system roles: %s", e)
     _cleanup_task = asyncio.create_task(_otp_cleanup_loop())
     yield
     _cleanup_task.cancel()
@@ -76,6 +82,7 @@ app.add_middleware(
 app.include_router(routes_auth.router, prefix="/api/auth")
 app.include_router(routes_otp.router, prefix="/api/auth")
 app.include_router(routes_profile.router, prefix="/api/auth")
+app.include_router(routes_rbac.router, prefix="/api/auth", tags=["rbac"])
 
 
 @app.get("/")
