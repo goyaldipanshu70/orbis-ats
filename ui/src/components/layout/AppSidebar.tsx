@@ -8,7 +8,7 @@ import {
   LogOut, Zap, Plus, FileText, UserCheck, Workflow, Calendar, Users, Briefcase,
   Megaphone, ClipboardCheck, Share2, Mail, ShieldCheck,
   GitPullRequest, FileStack, Globe2, Target, Inbox, Activity,
-  Pin, PinOff, Blocks,
+  Pin, PinOff, Blocks, Lock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -61,6 +61,7 @@ const navItems: NavItem[] = [
   { icon: Shield, label: 'Admin Panel', path: '/admin', adminOnly: true, section: 'Settings' },
   { icon: Shield, label: 'Roles & Permissions', path: '/admin/roles', adminOnly: true, section: 'Settings' },
   { icon: Users, label: 'Org Hierarchy', path: '/admin/org-hierarchy', adminOnly: true, section: 'Settings' },
+  { icon: Lock, label: 'Job Delegation', path: '/admin/job-delegation', adminOnly: true, section: 'Settings' },
   { icon: Settings, label: 'Settings', path: '/account-settings', section: 'Settings' },
 ];
 

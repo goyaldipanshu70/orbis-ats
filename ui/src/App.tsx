@@ -73,6 +73,7 @@ const CandidateProfile = lazy(() => import("./pages/CandidateProfile"));
 const AIAssessment = lazy(() => import("./pages/AIAssessment"));
 const RolesPermissions = lazy(() => import("./pages/RolesPermissions"));
 const OrgHierarchy = lazy(() => import("./pages/OrgHierarchy"));
+const JobDelegation = lazy(() => import("./pages/JobDelegation"));
 const ManagerDashboard = lazy(() => import("./pages/ManagerDashboard"));
 const ManagerRequisitionForm = lazy(() => import("./pages/ManagerRequisitionForm"));
 
@@ -181,6 +182,7 @@ const App = () => (
             <Route path="/admin/orchestrator" element={<AdminRoute><OrchestratorDashboard /></AdminRoute>} />
             <Route path="/admin/roles" element={<AdminRoute><Suspense fallback={null}><RolesPermissions /></Suspense></AdminRoute>} />
             <Route path="/admin/org-hierarchy" element={<AdminRoute><Suspense fallback={null}><OrgHierarchy /></Suspense></AdminRoute>} />
+            <Route path="/admin/job-delegation" element={<AdminRoute><Suspense fallback={null}><JobDelegation /></Suspense></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
