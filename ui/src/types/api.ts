@@ -335,11 +335,13 @@ export interface ScreeningQuestion {
   id: number;
   jd_id: number;
   question: string;
-  question_type: 'text' | 'multiple_choice' | 'yes_no';
+  question_type: 'text' | 'multiple_choice' | 'yes_no' | 'numeric' | 'date';
   options: string[] | null;
   required: boolean;
   ai_generated: boolean;
   sort_order: number;
+  is_knockout: boolean;
+  knockout_condition: string | null;
 }
 
 export interface ScreeningResponse {
@@ -347,6 +349,31 @@ export interface ScreeningResponse {
   candidate_id: number;
   question_id: number;
   response: string;
+  created_at: string;
+}
+
+export interface ScreeningResponseDetailed {
+  id: number;
+  question_id: number;
+  question: string;
+  question_type: string;
+  options: string[] | null;
+  is_knockout: boolean;
+  knockout_condition: string | null;
+  response: string;
+  is_disqualified: boolean;
+  created_at: string;
+}
+
+export interface ScreeningTemplateQuestion {
+  id: number;
+  question: string;
+  question_type: 'text' | 'multiple_choice' | 'yes_no';
+  options: string[] | null;
+  category: string;
+  is_knockout: boolean;
+  knockout_condition: string | null;
+  created_by: string | null;
   created_at: string;
 }
 

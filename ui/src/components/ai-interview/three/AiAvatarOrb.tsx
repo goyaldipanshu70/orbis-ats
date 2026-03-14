@@ -105,7 +105,7 @@ function OrbitingRings({ isSpeaking }: { isSpeaking: boolean }) {
       </mesh>
       <mesh ref={ring3Ref}>
         <torusGeometry args={[2.0, 0.006, 8, 64]} />
-        <meshBasicMaterial color="#a78bfa" transparent opacity={0.15} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#4db5f0" transparent opacity={0.15} side={THREE.DoubleSide} />
       </mesh>
     </>
   );
@@ -141,7 +141,7 @@ function FloatingParticles() {
       {particles.map((p, i) => (
         <mesh key={i}>
           <sphereGeometry args={[p.size, 6, 6]} />
-          <meshBasicMaterial color={i % 2 === 0 ? '#60a5fa' : '#a78bfa'} />
+          <meshBasicMaterial color={i % 2 === 0 ? '#60a5fa' : '#4db5f0'} />
         </mesh>
       ))}
     </group>

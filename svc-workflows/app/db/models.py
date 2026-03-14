@@ -104,3 +104,19 @@ class ScrapedLead(Base):
     score_breakdown = Column(JSON)
     raw_data = Column(JSON)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class CustomNodeType(Base):
+    __tablename__ = "custom_node_types"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    node_type = Column(String(100), unique=True, nullable=False)
+    category = Column(String(50), nullable=False)
+    display_name = Column(String(200), nullable=False)
+    description = Column(Text, default="")
+    config_schema = Column(JSON, default={})
+    execution_code = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="draft")
+    created_by = Column(String(50), nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)

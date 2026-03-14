@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
@@ -28,6 +22,45 @@ import { fadeInUp, staggerContainer } from '@/lib/animations';
 import { useClientPagination } from '@/hooks/useClientPagination';
 import { DataPagination } from '@/components/DataPagination';
 import { ArrowUpDown } from 'lucide-react';
+
+// ---------------------------------------------------------------------------
+// Design system constants
+// ---------------------------------------------------------------------------
+
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const gradientBtn: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #1B8EE5, #1676c0)',
+  boxShadow: '0 8px 24px rgba(27,142,229,0.2)',
+};
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+const dialogBg: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border)',
+};
+const sItemCls = "text-slate-200 focus:bg-white/10 focus:text-white";
+
+const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
 
 // ---------------------------------------------------------------------------
 // Types
@@ -75,55 +108,55 @@ const EMPTY_FORM: TemplateFormState = {
 };
 
 // ---------------------------------------------------------------------------
-// Category styling
+// Category styling (dark glass)
 // ---------------------------------------------------------------------------
 
-const CATEGORY_COLORS: Record<string, { badge: string; border: string; icon: string }> = {
+const CATEGORY_COLORS: Record<string, { badge: string; gradient: string; icon: string }> = {
   Engineering: {
-    badge: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700',
-    border: 'border-l-indigo-500',
-    icon: 'text-indigo-500',
+    badge: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+    gradient: 'from-blue-500 to-blue-500',
+    icon: 'text-blue-400',
   },
   Sales: {
-    badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700',
-    border: 'border-l-amber-500',
-    icon: 'text-amber-500',
+    badge: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+    gradient: 'from-amber-500 to-orange-500',
+    icon: 'text-amber-400',
   },
   Marketing: {
-    badge: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700',
-    border: 'border-l-orange-500',
-    icon: 'text-orange-500',
+    badge: 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+    gradient: 'from-orange-500 to-red-500',
+    icon: 'text-orange-400',
   },
   Finance: {
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700',
-    border: 'border-l-emerald-500',
-    icon: 'text-emerald-500',
+    badge: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    gradient: 'from-emerald-500 to-teal-500',
+    icon: 'text-emerald-400',
   },
   HR: {
-    badge: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-700',
-    border: 'border-l-pink-500',
-    icon: 'text-pink-500',
+    badge: 'bg-pink-500/10 text-pink-400 border border-pink-500/20',
+    gradient: 'from-pink-500 to-rose-500',
+    icon: 'text-pink-400',
   },
   Design: {
-    badge: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-700',
-    border: 'border-l-rose-500',
-    icon: 'text-rose-500',
+    badge: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+    gradient: 'from-rose-500 to-pink-500',
+    icon: 'text-rose-400',
   },
   Product: {
-    badge: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700',
-    border: 'border-l-violet-500',
-    icon: 'text-violet-500',
+    badge: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+    gradient: 'from-blue-500 to-blue-500',
+    icon: 'text-blue-400',
   },
   IT: {
-    badge: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-900/30 dark:text-cyan-300 dark:border-cyan-700',
-    border: 'border-l-cyan-500',
-    icon: 'text-cyan-500',
+    badge: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20',
+    gradient: 'from-cyan-500 to-blue-500',
+    icon: 'text-cyan-400',
   },
 };
 
 const DEFAULT_CATEGORY_STYLE = {
-  badge: 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600',
-  border: 'border-l-slate-400',
+  badge: 'bg-white/5 text-slate-400 border border-white/10',
+  gradient: 'from-slate-400 to-slate-500',
   icon: 'text-slate-400',
 };
 
@@ -430,7 +463,7 @@ export default function JDTemplates() {
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* ── Page Header ──────────────────────────────────────── */}
+        {/* -- Page Header ------------------------------------------------ */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -438,24 +471,32 @@ export default function JDTemplates() {
           className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4"
         >
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">JD Templates</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="text-2xl font-bold tracking-tight text-white">JD Templates</h1>
+            <p className="text-sm text-slate-400 mt-1">
               Reusable job description templates for faster job creation
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setAiParseOpen(true)} className="gap-2 shadow-sm">
+            <button
+              onClick={() => setAiParseOpen(true)}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-slate-300 hover:text-white flex items-center gap-2 transition-all"
+              style={glassCard}
+            >
               <Sparkles className="h-4 w-4" />
               AI Parse
-            </Button>
-            <Button onClick={openCreate} className="gap-2 shadow-sm">
+            </button>
+            <button
+              onClick={openCreate}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-white flex items-center gap-2 transition-all hover:scale-[1.02]"
+              style={gradientBtn}
+            >
               <Plus className="h-4 w-4" />
               Create Template
-            </Button>
+            </button>
           </div>
         </motion.div>
 
-        {/* ── KPI Stats Strip ──────────────────────────────────── */}
+        {/* -- KPI Stats Strip -------------------------------------------- */}
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -463,27 +504,29 @@ export default function JDTemplates() {
           className="grid grid-cols-1 sm:grid-cols-3 gap-4"
         >
           {[
-            { label: 'Total Templates', value: totalTemplates, icon: LayoutTemplate, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-950/40' },
-            { label: 'Total Usage', value: totalUsage, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-950/40' },
-            { label: 'Categories', value: uniqueCategories, icon: Layers, color: 'text-violet-500', bg: 'bg-violet-50 dark:bg-violet-950/40' },
+            { label: 'Total Templates', value: totalTemplates, icon: LayoutTemplate, color: 'text-blue-400', gradient: 'from-blue-500 to-cyan-500' },
+            { label: 'Total Usage', value: totalUsage, icon: TrendingUp, color: 'text-emerald-400', gradient: 'from-emerald-500 to-teal-500' },
+            { label: 'Categories', value: uniqueCategories, icon: Layers, color: 'text-blue-400', gradient: 'from-blue-500 to-blue-500' },
           ].map((stat) => (
             <motion.div key={stat.label} variants={fadeInUp}>
-              <Card className="rounded-xl border border-border/60 shadow-sm">
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className={`flex-shrink-0 h-11 w-11 rounded-xl ${stat.bg} flex items-center justify-center`}>
+              <div className="relative rounded-2xl overflow-hidden" style={glassCard}>
+                {/* Gradient accent bar */}
+                <div className={`h-1 bg-gradient-to-r ${stat.gradient}`} />
+                <div className="flex items-center gap-4 p-5">
+                  <div className="flex-shrink-0 h-11 w-11 rounded-xl bg-white/5 flex items-center justify-center">
                     <stat.icon className={`h-5 w-5 ${stat.color}`} />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground leading-none">{stat.value}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+                    <p className="text-2xl font-bold text-white leading-none">{stat.value}</p>
+                    <p className="text-xs text-slate-500 mt-1">{stat.label}</p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           ))}
         </motion.div>
 
-        {/* ── Filters Bar ──────────────────────────────────────── */}
+        {/* -- Filters Bar ------------------------------------------------ */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -491,46 +534,49 @@ export default function JDTemplates() {
           className="flex flex-col gap-3 sm:flex-row sm:items-center"
         >
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <input
               placeholder="Search templates..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10 rounded-lg bg-background border-border/60"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="w-full pl-9 h-10 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+              style={glassInput}
             />
           </div>
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[200px] h-10 rounded-lg border-border/60">
-              <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+            <SelectTrigger className="w-[200px] h-10 rounded-xl text-white border-0" style={glassInput}>
+              <Tag className="h-3.5 w-3.5 mr-2 text-slate-500" />
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
+            <SelectContent className="rounded-xl border-0" style={selectDrop}>
+              <SelectItem className={sItemCls} value="all">All Categories</SelectItem>
               {categories.map((c) => (
-                <SelectItem key={c} value={c}>
+                <SelectItem key={c} className={sItemCls} value={c}>
                   {c}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px] h-10 rounded-lg border-border/60">
-              <ArrowUpDown className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+            <SelectTrigger className="w-[180px] h-10 rounded-xl text-white border-0" style={glassInput}>
+              <ArrowUpDown className="h-3.5 w-3.5 mr-2 text-slate-500" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="oldest">Oldest</SelectItem>
-              <SelectItem value="name_asc">Name A-Z</SelectItem>
-              <SelectItem value="name_desc">Name Z-A</SelectItem>
+            <SelectContent className="rounded-xl border-0" style={selectDrop}>
+              <SelectItem className={sItemCls} value="newest">Newest</SelectItem>
+              <SelectItem className={sItemCls} value="oldest">Oldest</SelectItem>
+              <SelectItem className={sItemCls} value="name_asc">Name A-Z</SelectItem>
+              <SelectItem className={sItemCls} value="name_desc">Name Z-A</SelectItem>
             </SelectContent>
           </Select>
         </motion.div>
 
-        {/* ── Template Grid ────────────────────────────────────── */}
+        {/* -- Template Grid ---------------------------------------------- */}
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
           </div>
         ) : filtered.length === 0 ? (
           <motion.div
@@ -539,17 +585,21 @@ export default function JDTemplates() {
             transition={{ duration: 0.4 }}
             className="flex flex-col items-center justify-center py-24 text-center"
           >
-            <div className="p-4 rounded-2xl bg-muted/60 mb-4">
-              <FileText className="h-10 w-10 text-muted-foreground" />
+            <div className="p-4 rounded-2xl bg-white/5 mb-4">
+              <FileText className="h-10 w-10 text-slate-500" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">No templates found</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
+            <h3 className="text-lg font-semibold text-white mb-1">No templates found</h3>
+            <p className="text-sm text-slate-400 max-w-sm">
               Create your first JD template to streamline job description creation across your team.
             </p>
-            <Button onClick={openCreate} variant="outline" className="gap-2 mt-5">
+            <button
+              onClick={openCreate}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-slate-300 hover:text-white flex items-center gap-2 mt-5 transition-all"
+              style={glassCard}
+            >
               <Plus className="h-4 w-4" />
               Create First Template
-            </Button>
+            </button>
           </motion.div>
         ) : (
           <>
@@ -563,33 +613,36 @@ export default function JDTemplates() {
               const style = getCategoryStyle(t.category);
               return (
                 <motion.div key={t.id} variants={fadeInUp}>
-                  <Card
-                    className={`group h-full rounded-xl border-l-4 ${style.border} border border-border/50 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5`}
+                  <div
+                    className="group h-full rounded-2xl overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
+                    style={glassCard}
                   >
-                    <CardContent className="flex flex-col h-full gap-3 p-5">
+                    {/* Gradient top accent bar */}
+                    <div className={`h-1 bg-gradient-to-r ${style.gradient}`} />
+
+                    <div className="flex flex-col h-full gap-3 p-5">
                       {/* Top: Icon + Name + Category */}
                       <div className="flex items-start gap-3">
-                        <div className={`flex-shrink-0 mt-0.5 h-9 w-9 rounded-lg bg-muted/60 flex items-center justify-center`}>
-                          <FileText className={`h-4.5 w-4.5 ${style.icon}`} />
+                        <div className="flex-shrink-0 mt-0.5 h-9 w-9 rounded-lg bg-white/5 flex items-center justify-center">
+                          <FileText className={`h-4 w-4 ${style.icon}`} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="font-semibold text-sm leading-tight text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                          <h3 className="font-semibold text-sm leading-tight text-white line-clamp-2 group-hover:text-blue-300 transition-colors">
                             {t.name}
                           </h3>
                           {t.category && (
-                            <Badge
-                              variant="outline"
-                              className={`mt-1.5 text-[10px] font-medium px-2 py-0 ${style.badge}`}
+                            <span
+                              className={`inline-block mt-1.5 text-[10px] font-medium px-2 py-0.5 rounded-full ${style.badge}`}
                             >
                               {t.category}
-                            </Badge>
+                            </span>
                           )}
                         </div>
                       </div>
 
                       {/* Description */}
                       {t.description && (
-                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                        <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">
                           {t.description}
                         </p>
                       )}
@@ -600,13 +653,13 @@ export default function JDTemplates() {
                           {t.skills.slice(0, 4).map((skill) => (
                             <span
                               key={skill}
-                              className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted/70 text-[10px] font-medium text-muted-foreground"
+                              className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-medium text-slate-400 border border-white/5"
                             >
                               {skill}
                             </span>
                           ))}
                           {t.skills.length > 4 && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted/70 text-[10px] font-medium text-muted-foreground">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-medium text-slate-500 border border-white/5">
                               +{t.skills.length - 4} more
                             </span>
                           )}
@@ -617,7 +670,7 @@ export default function JDTemplates() {
                       <div className="flex-1" />
 
                       {/* Meta row */}
-                      <div className="flex items-center gap-4 text-[11px] text-muted-foreground pt-1">
+                      <div className="flex items-center gap-4 text-[11px] text-slate-500 pt-1">
                         {t.experience_range && (
                           <span className="flex items-center gap-1">
                             <Briefcase className="h-3 w-3" />
@@ -637,34 +690,30 @@ export default function JDTemplates() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-2 pt-3 border-t border-border/40">
-                        <Button
-                          size="sm"
-                          className="flex-1 h-8 text-xs font-medium rounded-lg shadow-sm"
+                      <div className="flex items-center gap-2 pt-3" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+                        <button
+                          className="flex-1 h-8 text-xs font-medium rounded-lg text-white flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                          style={gradientBtn}
                           onClick={() => handleUse(t)}
                         >
-                          <Copy className="h-3.5 w-3.5 mr-1.5" />
+                          <Copy className="h-3.5 w-3.5" />
                           Use Template
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 rounded-lg hover:bg-muted"
+                        </button>
+                        <button
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                           onClick={() => openEdit(t)}
                         >
-                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0 rounded-lg hover:bg-destructive/10"
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          className="h-8 w-8 rounded-lg flex items-center justify-center text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all"
                           onClick={() => setDeleteTarget(t)}
                         >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </motion.div>
               );
             })}
@@ -684,10 +733,10 @@ export default function JDTemplates() {
       {/* Create / Edit Dialog                                               */}
       {/* ------------------------------------------------------------------ */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-0 rounded-2xl" style={dialogBg}>
           <DialogHeader>
-            <DialogTitle>{editingTemplate ? 'Edit Template' : 'Create Template'}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">{editingTemplate ? 'Edit Template' : 'Create Template'}</DialogTitle>
+            <DialogDescription className="text-slate-400">
               {editingTemplate
                 ? 'Update the JD template details below.'
                 : 'Fill in the details to create a reusable JD template.'}
@@ -697,137 +746,175 @@ export default function JDTemplates() {
           <div className="grid gap-4 py-2">
             {/* Name */}
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-name">
-                Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="tpl-name"
+              <label className="text-sm font-medium text-slate-300">
+                Name <span className="text-rose-400">*</span>
+              </label>
+              <input
                 placeholder="e.g. Senior Full-Stack Engineer"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="w-full h-10 px-3 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+                style={glassInput}
               />
             </div>
 
             {/* Category */}
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-category">Category</Label>
-              <Input
-                id="tpl-category"
+              <label className="text-sm font-medium text-slate-300">Category</label>
+              <input
                 placeholder="e.g. Engineering, Sales, Marketing"
                 value={form.category}
                 onChange={(e) => setForm({ ...form, category: e.target.value })}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="w-full h-10 px-3 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+                style={glassInput}
               />
             </div>
 
             {/* Description */}
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-desc">Description</Label>
-              <Textarea
-                id="tpl-desc"
+              <label className="text-sm font-medium text-slate-300">Description</label>
+              <textarea
                 placeholder="Brief summary of the template"
                 rows={2}
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="w-full px-3 py-2 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none resize-none transition-all"
+                style={glassInput}
               />
             </div>
 
             {/* JD Content */}
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-jd">JD Content (JSON or plain text)</Label>
-              <Textarea
-                id="tpl-jd"
+              <label className="text-sm font-medium text-slate-300">JD Content (JSON or plain text)</label>
+              <textarea
                 placeholder='{"responsibilities": [...], "requirements": [...]} or plain text'
                 rows={6}
-                className="font-mono text-sm"
                 value={form.jd_content}
                 onChange={(e) => setForm({ ...form, jd_content: e.target.value })}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="w-full px-3 py-2 rounded-xl text-sm font-mono text-white placeholder:text-slate-500 outline-none resize-none transition-all"
+                style={{ ...glassInput, background: 'var(--orbis-subtle)' }}
               />
             </div>
 
             {/* Skills */}
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-skills">Skills (comma-separated)</Label>
-              <Input
-                id="tpl-skills"
+              <label className="text-sm font-medium text-slate-300">Skills (comma-separated)</label>
+              <input
                 placeholder="React, TypeScript, Node.js, PostgreSQL"
                 value={form.skills}
                 onChange={(e) => setForm({ ...form, skills: e.target.value })}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="w-full h-10 px-3 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+                style={glassInput}
               />
             </div>
 
             {/* Experience Range */}
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-exp">Experience Range</Label>
-              <Input
-                id="tpl-exp"
+              <label className="text-sm font-medium text-slate-300">Experience Range</label>
+              <input
                 placeholder="e.g. 3-5 years"
                 value={form.experience_range}
                 onChange={(e) => setForm({ ...form, experience_range: e.target.value })}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="w-full h-10 px-3 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+                style={glassInput}
               />
             </div>
 
             {/* Salary Range */}
             <div className="grid gap-1.5">
-              <Label>Salary Range</Label>
+              <label className="text-sm font-medium text-slate-300">Salary Range</label>
               <div className="grid grid-cols-3 gap-3">
-                <Input
+                <input
                   placeholder="Min"
                   type="number"
                   value={form.salary_min}
                   onChange={(e) => setForm({ ...form, salary_min: e.target.value })}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  className="w-full h-10 px-3 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+                  style={glassInput}
                 />
-                <Input
+                <input
                   placeholder="Max"
                   type="number"
                   value={form.salary_max}
                   onChange={(e) => setForm({ ...form, salary_max: e.target.value })}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  className="w-full h-10 px-3 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+                  style={glassInput}
                 />
-                <Input
+                <input
                   placeholder="Currency"
                   value={form.salary_currency}
                   onChange={(e) => setForm({ ...form, salary_currency: e.target.value })}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  className="w-full h-10 px-3 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+                  style={glassInput}
                 />
               </div>
             </div>
 
             {/* Benefits */}
             <div className="grid gap-1.5">
-              <Label htmlFor="tpl-benefits">Benefits (comma-separated)</Label>
-              <Input
-                id="tpl-benefits"
+              <label className="text-sm font-medium text-slate-300">Benefits (comma-separated)</label>
+              <input
                 placeholder="Health insurance, 401k, Remote work"
                 value={form.benefits}
                 onChange={(e) => setForm({ ...form, benefits: e.target.value })}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="w-full h-10 px-3 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+                style={glassInput}
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <button
+              onClick={() => setDialogOpen(false)}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-all"
+              style={glassCard}
+            >
               Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-white disabled:opacity-50 flex items-center gap-2 transition-all hover:scale-[1.02]"
+              style={gradientBtn}
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               {editingTemplate ? 'Update' : 'Create'}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Delete Confirmation                                                */}
-      {/* ------------------------------------------------------------------ */}
-      {/* ------------------------------------------------------------------ */}
       {/* AI Parse Dialog                                                    */}
       {/* ------------------------------------------------------------------ */}
       <Dialog open={aiParseOpen} onOpenChange={(open) => { setAiParseOpen(open); if (!open) { setAiFile(null); setAiDragOver(false); } }}>
-        <DialogContent className="max-w-md rounded-xl">
+        <DialogContent className="max-w-md border-0 rounded-2xl" style={dialogBg}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-blue-500" />
+            <DialogTitle className="flex items-center gap-2 text-white">
+              <Sparkles className="h-5 w-5 text-blue-400" />
               AI Parse JD File
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-400">
               Upload a PDF, DOCX, or TXT file and AI will extract the job description fields automatically.
             </DialogDescription>
           </DialogHeader>
@@ -838,7 +925,7 @@ export default function JDTemplates() {
             onDrop={handleAiFileDrop}
             className={`
               flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-colors cursor-pointer
-              ${aiDragOver ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20' : 'border-border hover:border-muted-foreground/40'}
+              ${aiDragOver ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'}
             `}
             onClick={() => {
               const input = document.createElement('input');
@@ -853,50 +940,64 @@ export default function JDTemplates() {
           >
             {aiFile ? (
               <>
-                <CheckCircle className="h-8 w-8 text-emerald-500" />
+                <CheckCircle className="h-8 w-8 text-emerald-400" />
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">{aiFile.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{(aiFile.size / 1024).toFixed(1)} KB</p>
+                  <p className="text-sm font-medium text-white">{aiFile.name}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{(aiFile.size / 1024).toFixed(1)} KB</p>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); setAiFile(null); }}
-                  className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                  className="text-xs text-slate-500 hover:text-white flex items-center gap-1 transition-colors"
                 >
                   <X className="h-3 w-3" /> Remove
                 </button>
               </>
             ) : (
               <>
-                <FileUp className="h-8 w-8 text-muted-foreground" />
+                <FileUp className="h-8 w-8 text-slate-500" />
                 <div className="text-center">
-                  <p className="text-sm font-medium text-foreground">Drop a file here or click to browse</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">PDF, DOCX, or TXT</p>
+                  <p className="text-sm font-medium text-white">Drop a file here or click to browse</p>
+                  <p className="text-xs text-slate-500 mt-0.5">PDF, DOCX, or TXT</p>
                 </div>
               </>
             )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAiParseOpen(false)}>Cancel</Button>
-            <Button onClick={handleAiParse} disabled={!aiFile || aiParsing} className="gap-2">
+            <button
+              onClick={() => setAiParseOpen(false)}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-all"
+              style={glassCard}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAiParse}
+              disabled={!aiFile || aiParsing}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-white disabled:opacity-50 flex items-center gap-2 transition-all hover:scale-[1.02]"
+              style={gradientBtn}
+            >
               {aiParsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               {aiParsing ? 'Parsing...' : 'Parse with AI'}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* ------------------------------------------------------------------ */}
+      {/* Delete Confirmation                                                */}
+      {/* ------------------------------------------------------------------ */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="rounded-xl">
+        <AlertDialogContent className="border-0 rounded-2xl" style={dialogBg}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Template</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{deleteTarget?.name}"? This action cannot be undone.
+            <AlertDialogTitle className="text-white">Delete Template</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Are you sure you want to delete &ldquo;{deleteTarget?.name}&rdquo;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel className="text-slate-300 border-white/10 hover:bg-white/5 hover:text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-rose-600 text-white hover:bg-rose-700">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

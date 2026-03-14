@@ -177,12 +177,18 @@ async def apply_to_job(
         logger.error("AI screening failed for application %s: %s", application.id, e)
 
     # Save screening responses if provided
+    screening_saved = False
     if screening_responses and candidate_id:
         try:
-            responses = json.loads(screening_responses)
+            from app.schemas.screening_schema import ScreeningResponseCreate
+            raw_responses = json.loads(screening_responses)
+            responses = [ScreeningResponseCreate(**r) for r in raw_responses]
             await save_responses(db, candidate_id, responses)
+            screening_saved = True
         except Exception as e:
             logger.error("Failed to save screening responses: %s", e)
+    elif screening_responses and not candidate_id:
+        logger.warning("Screening responses provided but candidate_id unavailable (AI failed) for application %s", application.id)
 
     # Track resume version
     try:
@@ -190,13 +196,16 @@ async def apply_to_job(
     except Exception:
         pass
 
-    return {
+    response = {
         "application_id": application.id,
         "status": application.status,
         "ai_status": ai_status,
         "ai_job_id": ai_job_id,
         "message": "Application submitted successfully",
     }
+    if screening_responses and not screening_saved:
+        response["screening_warning"] = "Screening responses could not be saved. Please resubmit them."
+    return response
 
 
 @router.get("")

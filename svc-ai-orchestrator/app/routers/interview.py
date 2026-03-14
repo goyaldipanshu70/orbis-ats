@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.graphs.interview_eval import interview_eval_graph
 from app.graphs.interview_questions import interview_questions_graph
 from app.nodes.candidate.context_gatherer import gather_candidate_context
-from app.db.postgres import get_recruiting_db
+from app.db.postgres import recruiting_db_session
 from app.shared.graph_logging import create_execution_log, complete_execution_log
 
 logger = logging.getLogger(__name__)
@@ -132,7 +132,7 @@ async def generate_interview_questions_endpoint(
         input_summary=f"Candidate {req.candidate_id} for Job {req.jd_id}",
     )
 
-    async for db in get_recruiting_db():
+    async with recruiting_db_session() as db:
         context = await gather_candidate_context(db, req.candidate_id, req.jd_id)
 
     if context.get("error"):
@@ -149,7 +149,6 @@ async def generate_interview_questions_endpoint(
     required = job.get("core_skills", [])
     candidate_skills = resume.get("highlighted_skills", [])
     if required and candidate_skills:
-        req_lower = {s.lower() for s in required}
         cand_lower = {s.lower() for s in candidate_skills}
         skills_gap = [s for s in required if s.lower() not in cand_lower]
 

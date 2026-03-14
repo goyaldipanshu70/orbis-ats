@@ -21,7 +21,7 @@ const CandidateRoute = ({ children }: CandidateRouteProps) => {
   }
 
   if (!user) {
-    return <Navigate to="/careers/signup" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (user.role !== 'candidate') {

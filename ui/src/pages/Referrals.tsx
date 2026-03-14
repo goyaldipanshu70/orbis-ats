@@ -2,15 +2,10 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Table, TableHeader, TableRow, TableHead, TableBody, TableCell,
 } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/utils/api';
 import { useClientPagination } from '@/hooks/useClientPagination';
@@ -22,6 +17,12 @@ import {
   Link2, Users, Trophy, UserCheck, Copy, Check, DollarSign, Award,
   Clock, ShieldCheck, Gift, TrendingUp, Share2, MessageSquare, Search, ArrowUpDown,
 } from 'lucide-react';
+
+/* ── Design-system constants ─────────────────────────────────────────────── */
+
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -73,19 +74,19 @@ interface JobOption {
 /*  Constants                                                                 */
 /* -------------------------------------------------------------------------- */
 
-const STAGE_COLORS: Record<string, string> = {
-  Applied: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  Screening: 'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-  Interview: 'bg-purple-50 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800',
-  Offered: 'bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-  Hired: 'bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
+const STAGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  Applied:   { bg: 'rgba(100,116,139,0.10)', text: 'text-slate-300', border: 'border-slate-500/20' },
+  Screening: { bg: 'rgba(59,130,246,0.10)', text: 'text-blue-400', border: 'border-blue-500/20' },
+  Interview: { bg: 'rgba(168,85,247,0.10)', text: 'text-blue-400', border: 'border-blue-500/20' },
+  Offered:   { bg: 'rgba(245,158,11,0.10)', text: 'text-amber-400', border: 'border-amber-500/20' },
+  Hired:     { bg: 'rgba(34,197,94,0.10)', text: 'text-green-400', border: 'border-green-500/20' },
 };
 
-const REWARD_COLORS: Record<string, string> = {
-  Pending: 'bg-transparent text-muted-foreground border-border',
-  'Lock-in Period': 'bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700',
-  Eligible: 'bg-green-50 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700',
-  Paid: 'bg-blue-600 dark:bg-blue-500 text-white border-blue-600 dark:border-blue-500',
+const REWARD_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  Pending:         { bg: 'transparent', text: 'text-slate-400', border: 'border-white/10' },
+  'Lock-in Period': { bg: 'rgba(245,158,11,0.10)', text: 'text-amber-400', border: 'border-amber-500/20' },
+  Eligible:        { bg: 'rgba(34,197,94,0.10)', text: 'text-green-400', border: 'border-green-500/20' },
+  Paid:            { bg: 'rgba(59,130,246,0.15)', text: 'text-blue-300', border: 'border-blue-500/30' },
 };
 
 const PIPELINE_STAGES = ['Applied', 'Screening', 'Interview', 'Offered', 'Hired'];
@@ -120,12 +121,12 @@ function PipelineProgressBar({ stage }: { stage: string }) {
       : stage === 'Offered'
         ? 'from-amber-400 to-orange-500'
         : stage === 'Interview'
-          ? 'from-purple-400 to-purple-600'
+          ? 'from-blue-400 to-blue-600'
           : 'from-blue-400 to-blue-600';
 
   return (
     <div className="flex items-center gap-2.5 min-w-[140px]">
-      <div className="flex-1 h-2 bg-muted/60 rounded-full overflow-hidden">
+      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
@@ -133,7 +134,7 @@ function PipelineProgressBar({ stage }: { stage: string }) {
           className={`h-full rounded-full bg-gradient-to-r ${gradientClass}`}
         />
       </div>
-      <span className="text-[11px] text-muted-foreground font-semibold tabular-nums whitespace-nowrap">
+      <span className="text-[11px] text-slate-500 font-semibold tabular-nums whitespace-nowrap">
         {stageIndex + 1}/{PIPELINE_STAGES.length}
       </span>
     </div>
@@ -155,13 +156,13 @@ function RewardTimeline() {
           <div key={step} className="flex items-start gap-3 relative">
             {/* vertical connector line */}
             {!isLast && (
-              <div className="absolute left-[11px] top-[26px] w-0.5 h-[calc(100%-2px)] bg-border" />
+              <div className="absolute left-[11px] top-[26px] w-0.5 h-[calc(100%-2px)]" style={{ background: 'var(--orbis-hover)' }} />
             )}
             {/* numbered circle */}
-            <div className="relative z-10 h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-emerald-300 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 shrink-0">
+            <div className="relative z-10 h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-emerald-600 bg-emerald-950/50 text-emerald-300 shrink-0">
               {i + 1}
             </div>
-            <span className="text-[13px] pt-0.5 pb-3 text-foreground/80">{step}</span>
+            <span className="text-[13px] pt-0.5 pb-3 text-slate-300">{step}</span>
           </div>
         );
       })}
@@ -340,44 +341,44 @@ export default function Referrals() {
 
   return (
     <AppLayout>
-      {/* ── Page Header ─────────────────────────────────────────────────── */}
+      {/* Page Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
         className="mb-8"
       >
-        <h1 className="text-2xl font-bold tracking-tight">Referral Portal</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <h1 className="text-2xl font-bold tracking-tight text-white">Referral Portal</h1>
+        <p className="text-slate-400 text-sm mt-1">
           Refer candidates and earn rewards when they get hired
         </p>
       </motion.div>
 
-      {/* ── Create Referral Card ────────────────────────────────────────── */}
+      {/* Create Referral Card */}
       <motion.div variants={fadeInUp} initial="hidden" animate="visible">
-        <Card className="mb-8 overflow-hidden border-0 shadow-sm bg-gradient-to-br from-card to-card/80">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2.5 text-lg">
-              <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                <Link2 className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
+        <div className="mb-8 rounded-xl overflow-hidden" style={glassCard}>
+          <div className="px-6 pt-5 pb-3">
+            <h2 className="flex items-center gap-2.5 text-lg font-semibold text-white">
+              <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <Link2 className="h-4 w-4 text-blue-400" />
               </div>
               Create Referral
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
+          </div>
+          <div className="px-6 pb-6">
             <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
               <div className="flex-1 min-w-[240px]">
-                <label className="text-sm font-medium mb-1.5 block text-muted-foreground">
+                <label className="text-sm font-medium mb-1.5 block text-slate-400">
                   Select an open job
                 </label>
                 {loadingJobs ? (
-                  <Skeleton className="h-10 w-full rounded-lg" />
+                  <div className="h-10 w-full rounded-lg bg-white/[0.04] animate-pulse" />
                 ) : (
                   <Select value={selectedJobId} onValueChange={(v) => { setSelectedJobId(v); setGeneratedLink(null); setGeneratedCode(null); }}>
-                    <SelectTrigger className="h-10 rounded-lg bg-muted/30 border-border/60 hover:border-border transition-colors">
+                    <SelectTrigger className="h-10 rounded-lg" style={glassInput}>
                       <SelectValue placeholder="Choose a job position..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent style={selectDrop}>
                       {jobs.map(j => (
                         <SelectItem key={j.job_id} value={String(j.jd_id ?? j.job_id)}>
                           {j.job_title || `Job ${j.job_id}`}
@@ -387,10 +388,11 @@ export default function Referrals() {
                   </Select>
                 )}
               </div>
-              <Button
+              <button
                 onClick={handleGenerateLink}
                 disabled={!selectedJobId || creating}
-                className="shrink-0 h-10 px-5 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-sm shadow-blue-600/20 transition-all"
+                className="shrink-0 h-10 px-5 rounded-lg text-white text-sm font-medium shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
               >
                 {creating ? (
                   <span className="flex items-center gap-2">
@@ -402,7 +404,7 @@ export default function Referrals() {
                     <Link2 className="h-4 w-4" /> Generate Referral Link
                   </span>
                 )}
-              </Button>
+              </button>
             </div>
 
             {/* Generated Link Display */}
@@ -413,99 +415,98 @@ export default function Referrals() {
                 transition={{ duration: 0.35, ease: 'easeOut' }}
                 className="mt-5 space-y-3"
               >
-                <div className="flex items-center gap-2 p-3 bg-muted/40 rounded-lg border border-border/50">
-                  <code className="flex-1 text-sm font-mono truncate text-foreground select-all">{generatedLink}</code>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-hover)' }}>
+                  <code className="flex-1 text-sm font-mono truncate text-white select-all">{generatedLink}</code>
+                  <button
                     onClick={() => copyToClipboard(generatedLink, 'link')}
-                    className="shrink-0 rounded-md gap-1.5 h-8 text-xs"
+                    className="shrink-0 rounded-md gap-1.5 h-8 px-3 text-xs font-medium inline-flex items-center text-slate-300 hover:text-white transition-colors"
+                    style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
                   >
-                    {copiedLink ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-                    {copiedLink ? 'Copied!' : 'Copy'}
-                  </Button>
+                    {copiedLink ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    <span className="ml-1.5">{copiedLink ? 'Copied!' : 'Copy'}</span>
+                  </button>
                 </div>
-                <div className="p-3 bg-blue-50/80 dark:bg-blue-950/30 rounded-lg border border-blue-200/70 dark:border-blue-800/50">
+                <div className="p-3 rounded-lg" style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
-                      <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-1.5">
+                      <p className="text-xs font-semibold text-blue-400 mb-1 flex items-center gap-1.5">
                         <MessageSquare className="h-3.5 w-3.5" /> Shareable Message
                       </p>
-                      <p className="text-sm text-blue-800 dark:text-blue-200 leading-relaxed">{shareMessage}</p>
+                      <p className="text-sm text-blue-200 leading-relaxed">{shareMessage}</p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <button
                       onClick={() => copyToClipboard(shareMessage, 'message')}
-                      className="shrink-0 text-blue-600 hover:text-blue-700 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 h-8 w-8 p-0 rounded-md"
+                      className="shrink-0 text-blue-400 hover:text-blue-300 h-8 w-8 p-0 rounded-md inline-flex items-center justify-center transition-colors hover:bg-blue-500/10"
                     >
-                      {copiedMessage ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                    </Button>
+                      {copiedMessage ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
               </motion.div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </motion.div>
 
-      {/* ── KPI Cards ───────────────────────────────────────────────────── */}
+      {/* KPI Cards */}
       <StaggerGrid className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Referrals', value: kpis.totalReferrals, icon: Users, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/50', ring: '' },
-          { label: 'In Progress', value: kpis.inProgress, icon: TrendingUp, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/50', ring: '' },
-          { label: 'Hired', value: kpis.hired, icon: UserCheck, color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/50', ring: 'ring-1 ring-green-200/60 dark:ring-green-800/40' },
-          { label: 'Rewards Earned', value: kpis.rewardsEarned, icon: DollarSign, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/50', ring: '', prefix: '$' },
+          { label: 'Total Referrals', value: kpis.totalReferrals, icon: Users, color: 'text-blue-400', bg: 'bg-blue-500/10', gradient: 'linear-gradient(135deg, #3b82f6, #1676c0)' },
+          { label: 'In Progress', value: kpis.inProgress, icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-500/10', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
+          { label: 'Hired', value: kpis.hired, icon: UserCheck, color: 'text-green-400', bg: 'bg-green-500/10', gradient: 'linear-gradient(135deg, #22c55e, #059669)' },
+          { label: 'Rewards Earned', value: kpis.rewardsEarned, icon: DollarSign, color: 'text-emerald-400', bg: 'bg-emerald-500/10', gradient: 'linear-gradient(135deg, #10b981, #059669)', prefix: '$' },
         ].map((kpi) => (
           <motion.div key={kpi.label} variants={scaleIn}>
-            <Card className={`border-0 shadow-sm hover:shadow-md transition-shadow duration-200 ${kpi.ring}`}>
-              <CardContent className="p-5 flex items-center gap-4">
+            <div className="rounded-xl overflow-hidden hover:shadow-lg hover:shadow-blue-500/5 transition-shadow duration-200" style={glassCard}>
+              {/* Gradient accent bar */}
+              <div className="h-1 w-full" style={{ background: kpi.gradient }} />
+              <div className="p-5 flex items-center gap-4">
                 <div className={`h-11 w-11 rounded-xl ${kpi.bg} flex items-center justify-center shrink-0`}>
                   <kpi.icon className={`h-5 w-5 ${kpi.color}`} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold tracking-tight">
+                  <p className="text-2xl font-bold tracking-tight text-white">
                     {kpi.prefix || ''}<CountingNumber value={kpi.value} />
                   </p>
-                  <p className="text-xs text-muted-foreground font-medium mt-0.5">{kpi.label}</p>
+                  <p className="text-xs text-slate-400 font-medium mt-0.5">{kpi.label}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         ))}
       </StaggerGrid>
 
-      {/* ── Main content: My Referrals + Reward Policy sidebar ──────────── */}
+      {/* Main content: My Referrals + Reward Policy sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
 
         {/* My Referrals Table */}
         <div className="lg:col-span-3">
           <motion.div variants={fadeInUp} initial="hidden" animate="visible">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2.5 text-lg">
-                  <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
-                    <Users className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
+            <div className="rounded-xl overflow-hidden" style={glassCard}>
+              <div className="px-6 pt-5 pb-2">
+                <h2 className="flex items-center gap-2.5 text-lg font-semibold text-white">
+                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Users className="h-4 w-4 text-blue-400" />
                   </div>
                   My Referrals
                   {myReferrals.length > 0 && (
-                    <span className="text-xs font-normal text-muted-foreground ml-1">
+                    <span className="text-xs font-normal text-slate-500 ml-1">
                       ({myReferrals.length})
                     </span>
                   )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                </h2>
+              </div>
+              <div className="px-6 pb-6">
                 {loadingReferrals ? (
                   <div className="space-y-3 pt-2">
-                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+                    {[1, 2, 3, 4].map(i => <div key={i} className="h-14 w-full rounded-lg bg-white/[0.04] animate-pulse" />)}
                   </div>
                 ) : myReferrals.length === 0 ? (
                   <div className="text-center py-16">
-                    <div className="h-14 w-14 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto mb-4">
-                      <Users className="h-7 w-7 text-muted-foreground/60" />
+                    <div className="h-14 w-14 rounded-2xl bg-white/[0.04] flex items-center justify-center mx-auto mb-4">
+                      <Users className="h-7 w-7 text-slate-500" />
                     </div>
-                    <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                    <p className="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
                       No referrals yet. Generate a referral link above and share it with potential candidates.
                     </p>
                   </div>
@@ -514,20 +515,21 @@ export default function Referrals() {
                     {/* Search & Sort Controls */}
                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
                       <div className="relative flex-1">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-500" />
+                        <input
                           placeholder="Search by candidate or job..."
                           value={referralSearch}
                           onChange={(e) => setReferralSearch(e.target.value)}
-                          className="h-9 pl-8 rounded-lg text-xs"
+                          className="h-9 w-full pl-8 pr-3 rounded-lg text-xs placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                          style={glassInput}
                         />
                       </div>
                       <Select value={referralSort} onValueChange={setReferralSort}>
-                        <SelectTrigger className="h-9 w-[180px] rounded-lg text-xs">
-                          <ArrowUpDown className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                        <SelectTrigger className="h-9 w-[180px] rounded-lg text-xs" style={glassInput}>
+                          <ArrowUpDown className="h-3.5 w-3.5 mr-1.5 text-slate-500" />
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent style={selectDrop}>
                           <SelectItem value="newest">Newest First</SelectItem>
                           <SelectItem value="oldest">Oldest First</SelectItem>
                           <SelectItem value="stage">Stage</SelectItem>
@@ -538,64 +540,69 @@ export default function Referrals() {
 
                     {filteredSortedReferrals.length === 0 ? (
                       <div className="text-center py-10">
-                        <p className="text-sm text-muted-foreground">No referrals match your search.</p>
+                        <p className="text-sm text-slate-400">No referrals match your search.</p>
                       </div>
                     ) : (
                     <div className="overflow-x-auto -mx-6 px-6">
                       <Table>
                         <TableHeader>
-                          <TableRow className="border-border/40 hover:bg-transparent">
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Candidate</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Position</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Stage</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Referred</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Progress</TableHead>
-                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Reward</TableHead>
+                          <TableRow className="hover:bg-transparent" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Candidate</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Position</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Stage</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Referred</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Progress</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Reward</TableHead>
                           </TableRow>
                         </TableHeader>
                         <motion.tbody variants={staggerContainer} initial="hidden" animate="visible">
-                          {referralPagination.pageItems.map((referral) => (
+                          {referralPagination.pageItems.map((referral) => {
+                            const sc = STAGE_COLORS[referral.current_stage] || { bg: 'var(--orbis-input)', text: 'text-slate-400', border: 'border-white/10' };
+                            const rc = REWARD_COLORS[referral.reward_status] || { bg: 'var(--orbis-input)', text: 'text-slate-400', border: 'border-white/10' };
+                            return (
                             <motion.tr
                               key={referral.id}
                               variants={fadeInUp}
-                              className="border-b border-border/30 transition-colors hover:bg-muted/30"
+                              className="transition-colors hover:bg-white/[0.02]"
+                              style={{ borderBottom: '1px solid var(--orbis-grid)' }}
                             >
                               <TableCell>
                                 <div className="flex items-center gap-2.5">
-                                  <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                                  <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0">
                                     {(referral.candidate_name || '?').split(' ').map(n => n[0]).join('')}
                                   </div>
-                                  <span className="font-medium text-sm">{referral.candidate_name}</span>
+                                  <span className="font-medium text-sm text-white">{referral.candidate_name}</span>
                                 </div>
                               </TableCell>
-                              <TableCell className="text-muted-foreground text-sm">{referral.job_title}</TableCell>
+                              <TableCell className="text-slate-400 text-sm">{referral.job_title}</TableCell>
                               <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${STAGE_COLORS[referral.current_stage] || 'bg-muted text-muted-foreground'}`}
+                                <span
+                                  className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md border ${sc.text} ${sc.border}`}
+                                  style={{ background: sc.bg }}
                                 >
                                   {referral.current_stage}
-                                </Badge>
+                                </span>
                               </TableCell>
-                              <TableCell className="text-sm text-muted-foreground tabular-nums">
+                              <TableCell className="text-sm text-slate-400 tabular-nums">
                                 {new Date(referral.referred_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                               </TableCell>
                               <TableCell>
                                 <PipelineProgressBar stage={referral.current_stage} />
                               </TableCell>
                               <TableCell>
-                                <Badge
-                                  variant="outline"
-                                  className={`text-[11px] font-medium px-2 py-0.5 rounded-md ${REWARD_COLORS[referral.reward_status] || 'bg-muted text-muted-foreground'}`}
+                                <span
+                                  className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md border ${rc.text} ${rc.border}`}
+                                  style={{ background: rc.bg }}
                                 >
                                   {referral.reward_status}
                                   {referral.reward_status === 'Lock-in Period' && referral.lock_in_days_remaining != null && (
                                     <span className="ml-1 opacity-80">({referral.lock_in_days_remaining}d)</span>
                                   )}
-                                </Badge>
+                                </span>
                               </TableCell>
                             </motion.tr>
-                          ))}
+                            );
+                          })}
                         </motion.tbody>
                       </Table>
                     </div>
@@ -610,60 +617,60 @@ export default function Referrals() {
                     />
                   </>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         </div>
 
         {/* Reward Policy Sidebar */}
         <div className="lg:col-span-1">
           <motion.div variants={slideInRight} initial="hidden" animate="visible">
-            <Card className="sticky top-4 border-0 shadow-sm overflow-hidden">
+            <div className="sticky top-4 rounded-xl overflow-hidden" style={glassCard}>
               {/* emerald accent bar */}
               <div className="h-1 w-full bg-gradient-to-r from-emerald-400 to-green-500" />
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2.5 text-base">
-                  <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                    <Gift className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="px-6 pt-5 pb-3">
+                <h2 className="flex items-center gap-2.5 text-base font-semibold text-white">
+                  <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <Gift className="h-4 w-4 text-emerald-400" />
                   </div>
                   Reward Policy
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
+                </h2>
+              </div>
+              <div className="px-6 pb-6 space-y-5">
                 {/* Lock-in Period */}
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shrink-0">
+                  <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
                     <Clock className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">Lock-in Period</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{LOCK_IN_PERIOD_DAYS} days after hire date</p>
+                    <p className="text-sm font-semibold text-white">Lock-in Period</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{LOCK_IN_PERIOD_DAYS} days after hire date</p>
                   </div>
                 </div>
 
-                <div className="h-px bg-border/50" />
+                <div className="h-px" style={{ background: 'var(--orbis-border)' }} />
 
                 {/* Reward Amount */}
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 shrink-0">
+                  <div className="p-2 rounded-lg bg-green-500/10 text-green-400 shrink-0">
                     <DollarSign className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">Reward per Hire</p>
-                    <p className="text-xl font-bold text-green-600 dark:text-green-400 mt-0.5">${REWARD_PER_HIRE.toLocaleString()}</p>
+                    <p className="text-sm font-semibold text-white">Reward per Hire</p>
+                    <p className="text-xl font-bold text-green-400 mt-0.5">${REWARD_PER_HIRE.toLocaleString()}</p>
                   </div>
                 </div>
 
-                <div className="h-px bg-border/50" />
+                <div className="h-px" style={{ background: 'var(--orbis-border)' }} />
 
                 {/* Eligibility Rules */}
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 shrink-0">
+                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 shrink-0">
                     <ShieldCheck className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold mb-2">Eligibility</p>
-                    <ul className="text-xs text-muted-foreground space-y-1.5">
+                    <p className="text-sm font-semibold text-white mb-2">Eligibility</p>
+                    <ul className="text-xs text-slate-400 space-y-1.5">
                       {[
                         'Candidate must be hired',
                         `Complete ${LOCK_IN_PERIOD_DAYS}-day lock-in`,
@@ -679,43 +686,43 @@ export default function Referrals() {
                   </div>
                 </div>
 
-                <div className="h-px bg-border/50" />
+                <div className="h-px" style={{ background: 'var(--orbis-border)' }} />
 
                 {/* Reward Journey Timeline */}
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
                     Reward Journey
                   </p>
                   <RewardTimeline />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>
 
-      {/* ── Referral Leaderboard ────────────────────────────────────────── */}
+      {/* Referral Leaderboard */}
       <motion.div variants={fadeInUp} initial="hidden" animate="visible">
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2.5 text-lg">
-              <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                <Trophy className="h-4.5 w-4.5 text-amber-600 dark:text-amber-400" />
+        <div className="rounded-xl overflow-hidden" style={glassCard}>
+          <div className="px-6 pt-5 pb-2">
+            <h2 className="flex items-center gap-2.5 text-lg font-semibold text-white">
+              <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                <Trophy className="h-4 w-4 text-amber-400" />
               </div>
               Referral Leaderboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
+          </div>
+          <div className="px-6 pb-6">
             {loadingLeaderboard ? (
               <div className="space-y-3 pt-2">
-                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full rounded-lg" />)}
+                {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-12 w-full rounded-lg bg-white/[0.04] animate-pulse" />)}
               </div>
             ) : leaderboard.length === 0 ? (
               <div className="text-center py-16">
-                <div className="h-14 w-14 rounded-2xl bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center mx-auto mb-4">
+                <div className="h-14 w-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
                   <Trophy className="h-7 w-7 text-amber-400" />
                 </div>
-                <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                <p className="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
                   No referral data yet. Be the first to refer a candidate and top the leaderboard!
                 </p>
               </div>
@@ -724,12 +731,12 @@ export default function Referrals() {
               <div className="overflow-x-auto -mx-6 px-6">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-border/40 hover:bg-transparent">
-                      <TableHead className="w-16 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Rank</TableHead>
-                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Referrer</TableHead>
-                      <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Referrals</TableHead>
-                      <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Hires</TableHead>
-                      <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">Rewards</TableHead>
+                    <TableRow className="hover:bg-transparent" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                      <TableHead className="w-16 text-xs font-semibold uppercase tracking-wider text-slate-500">Rank</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider text-slate-500">Referrer</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Referrals</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Hires</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Rewards</TableHead>
                     </TableRow>
                   </TableHeader>
                   <motion.tbody variants={staggerContainer} initial="hidden" animate="visible">
@@ -741,41 +748,42 @@ export default function Referrals() {
                           <motion.tr
                             key={entry.user_id ?? idx}
                             variants={fadeInUp}
-                            className="border-b border-border/30 transition-colors hover:bg-muted/30"
+                            className="transition-colors hover:bg-white/[0.02]"
+                            style={{ borderBottom: '1px solid var(--orbis-grid)' }}
                           >
                             <TableCell>
                               {rank <= 3 ? (
-                                <span className={`inline-flex items-center justify-center h-8 w-8 rounded-full text-xs font-bold ${
+                                <span className={`inline-flex items-center justify-center h-8 w-8 rounded-full text-xs font-bold shadow-sm ${
                                   rank === 1
-                                    ? 'bg-gradient-to-br from-amber-200 to-amber-300 dark:from-amber-700 dark:to-amber-800 text-amber-800 dark:text-amber-100 shadow-sm'
+                                    ? 'bg-gradient-to-br from-amber-700 to-amber-800 text-amber-100'
                                     : rank === 2
-                                      ? 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-600 dark:to-slate-700 text-slate-700 dark:text-slate-200 shadow-sm'
-                                      : 'bg-gradient-to-br from-orange-200 to-orange-300 dark:from-orange-700 dark:to-orange-800 text-orange-800 dark:text-orange-100 shadow-sm'
+                                      ? 'bg-gradient-to-br from-slate-600 to-slate-700 text-slate-200'
+                                      : 'bg-gradient-to-br from-orange-700 to-orange-800 text-orange-100'
                                 }`}>
                                   {rank === 1 ? <Trophy className="h-4 w-4" /> : rank}
                                 </span>
                               ) : (
-                                <span className="text-muted-foreground text-sm pl-2.5 tabular-nums">{rank}</span>
+                                <span className="text-slate-500 text-sm pl-2.5 tabular-nums">{rank}</span>
                               )}
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-3">
-                                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
+                                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
                                   {(entry.referrer_name || 'U')[0].toUpperCase()}
                                 </div>
                                 <div>
-                                  <p className="text-sm font-medium">{entry.referrer_name || 'Unknown'}</p>
-                                  <p className="text-xs text-muted-foreground">{entry.referrer_email || entry.email || ''}</p>
+                                  <p className="text-sm font-medium text-white">{entry.referrer_name || 'Unknown'}</p>
+                                  <p className="text-xs text-slate-500">{entry.referrer_email || entry.email || ''}</p>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right font-semibold tabular-nums">{entry.total_referrals ?? 0}</TableCell>
+                            <TableCell className="text-right font-semibold tabular-nums text-white">{entry.total_referrals ?? 0}</TableCell>
                             <TableCell className="text-right">
-                              <Badge variant="secondary" className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 border-0 tabular-nums">
+                              <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-md bg-green-500/10 text-green-400 border border-green-500/20 tabular-nums">
                                 {entry.hired_count ?? 0}
-                              </Badge>
+                              </span>
                             </TableCell>
-                            <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                            <TableCell className="text-right font-semibold text-emerald-400 tabular-nums">
                               ${(entry.rewards_earned ?? rewardsEst).toLocaleString()}
                             </TableCell>
                           </motion.tr>
@@ -793,8 +801,8 @@ export default function Referrals() {
               />
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </motion.div>
     </AppLayout>
   );

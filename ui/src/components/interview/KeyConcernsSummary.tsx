@@ -1,6 +1,4 @@
-
 import { AlertTriangle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { InterviewEvaluation } from '@/types/api';
 
 interface KeyConcernsSummaryProps {
@@ -15,19 +13,29 @@ const KeyConcernsSummary = ({ evaluations }: KeyConcernsSummaryProps) => {
   }
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center text-lg">
-          <AlertTriangle className="w-5 h-5 mr-2 text-red-500" />
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{
+        background: 'var(--orbis-card)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid var(--orbis-border)',
+      }}
+    >
+      <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+        <h3 className="flex items-center text-lg font-semibold text-white">
+          <AlertTriangle className="w-5 h-5 mr-2 text-red-400" />
           Key Concerns & Red Flags
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </h3>
+      </div>
+      <div className="px-6 py-4">
         <ul className="space-y-3">
           {candidatesWithConcerns.map((evaluation) => (
-            <li key={evaluation.evaluation_id} className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <h4 className="font-semibold">{evaluation.candidate_name}</h4>
-              <ul className="list-disc list-inside mt-1 text-sm text-red-700">
+            <li
+              key={evaluation.evaluation_id}
+              className="p-3 rounded-lg border border-red-500/20 bg-red-500/10"
+            >
+              <h4 className="font-semibold text-white">{evaluation.candidate_name}</h4>
+              <ul className="list-disc list-inside mt-1 text-sm text-red-400">
                 {evaluation.red_flags.map((flag, index) => (
                   <li key={index}>{flag}</li>
                 ))}
@@ -35,8 +43,8 @@ const KeyConcernsSummary = ({ evaluations }: KeyConcernsSummaryProps) => {
             </li>
           ))}
         </ul>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

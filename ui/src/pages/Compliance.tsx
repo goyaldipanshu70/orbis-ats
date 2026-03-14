@@ -3,13 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import AppLayout from '@/components/layout/AppLayout';
 import { apiClient } from '@/utils/api';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -34,18 +29,41 @@ import {
 import type { Job } from '@/types/api';
 
 /* -------------------------------------------------------------------------- */
+/*  Dark-glass style constants                                                 */
+/* -------------------------------------------------------------------------- */
+
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+
+const sItemCls = 'text-slate-200 focus:bg-white/10 focus:text-white';
+
+/* -------------------------------------------------------------------------- */
 /*  Constants                                                                  */
 /* -------------------------------------------------------------------------- */
 
 const PIE_COLORS = [
-  '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444',
-  '#06b6d4', '#ec4899', '#6366f1', '#14b8a6', '#f97316',
+  '#3b82f6', '#1B8EE5', '#10b981', '#f59e0b', '#ef4444',
+  '#06b6d4', '#ec4899', '#1676c0', '#14b8a6', '#f97316',
 ];
 
 const SEVERITY_STYLES: Record<string, string> = {
-  low: 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800',
-  medium: 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-  high: 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
+  low: 'bg-green-500/10 text-green-400 border-green-500/20',
+  medium: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  high: 'bg-red-500/10 text-red-400 border-red-500/20',
 };
 
 function getSeverity(days: number): string {
@@ -306,12 +324,12 @@ export default function Compliance() {
       <Fade duration={0.4}>
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20">
               <ShieldCheck className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Compliance</h1>
-              <p className="text-muted-foreground text-sm">
+              <h1 className="text-2xl font-bold tracking-tight text-white">Compliance</h1>
+              <p className="text-slate-400 text-sm">
                 Data privacy, audit trails, and regulatory compliance
               </p>
             </div>
@@ -328,22 +346,22 @@ export default function Compliance() {
             label: 'Active Sources',
             value: totalSources,
             icon: Activity,
-            color: 'text-blue-600 dark:text-blue-400',
-            bg: 'bg-blue-100 dark:bg-blue-900/40',
+            color: 'text-blue-400',
+            bg: 'bg-blue-900/40',
           },
           {
             label: 'Total Candidates',
             value: totalCandidates,
             icon: Users,
-            color: 'text-emerald-600 dark:text-emerald-400',
-            bg: 'bg-emerald-100 dark:bg-emerald-900/40',
+            color: 'text-emerald-400',
+            bg: 'bg-emerald-900/40',
           },
           {
             label: 'Avg Conversion',
             value: avgConversion,
             icon: TrendingUp,
-            color: 'text-violet-600 dark:text-violet-400',
-            bg: 'bg-violet-100 dark:bg-violet-900/40',
+            color: 'text-blue-400',
+            bg: 'bg-blue-900/40',
             suffix: '%',
             decimals: 1,
           },
@@ -351,28 +369,26 @@ export default function Compliance() {
             label: 'Overdue SLA',
             value: slaData?.total_overdue ?? 0,
             icon: AlertTriangle,
-            color: slaData && slaData.total_overdue > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400',
-            bg: slaData && slaData.total_overdue > 0 ? 'bg-red-100 dark:bg-red-900/40' : 'bg-emerald-100 dark:bg-emerald-900/40',
+            color: slaData && slaData.total_overdue > 0 ? 'text-red-400' : 'text-emerald-400',
+            bg: slaData && slaData.total_overdue > 0 ? 'bg-red-900/40' : 'bg-emerald-900/40',
           },
         ].map(kpi => (
           <motion.div key={kpi.label} variants={scaleIn} whileHover={hoverLift}>
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${kpi.bg}`}>
-                  <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-2xl font-bold tracking-tight">
-                    <CountingNumber
-                      value={kpi.value}
-                      suffix={kpi.suffix}
-                      decimalPlaces={kpi.decimals}
-                    />
-                  </p>
-                  <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="rounded-xl p-5 flex items-center gap-4" style={glassCard}>
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${kpi.bg}`}>
+                <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-2xl font-bold tracking-tight text-white">
+                  <CountingNumber
+                    value={kpi.value}
+                    suffix={kpi.suffix}
+                    decimalPlaces={kpi.decimals}
+                  />
+                </p>
+                <p className="text-xs text-slate-500 font-medium">{kpi.label}</p>
+              </div>
+            </div>
           </motion.div>
         ))}
       </StaggerGrid>
@@ -381,14 +397,14 @@ export default function Compliance() {
       {/*  Tabs                                                               */}
       {/* ================================================================== */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 bg-muted/60 p-1 rounded-lg">
-          <TabsTrigger value="diversity" className="gap-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">
+        <TabsList className="mb-6 p-1 rounded-lg" style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-hover)' }}>
+          <TabsTrigger value="diversity" className="gap-1.5 rounded-md text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">
             <BarChart3 className="h-4 w-4" /> Diversity
           </TabsTrigger>
-          <TabsTrigger value="sla" className="gap-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger value="sla" className="gap-1.5 rounded-md text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">
             <Clock className="h-4 w-4" /> SLA Tracking
           </TabsTrigger>
-          <TabsTrigger value="export" className="gap-1.5 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger value="export" className="gap-1.5 rounded-md text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">
             <Download className="h-4 w-4" /> Data Export
           </TabsTrigger>
         </TabsList>
@@ -400,10 +416,10 @@ export default function Compliance() {
           {diversityLoading ? (
             <div className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Skeleton className="h-80 rounded-xl" />
-                <Skeleton className="h-80 rounded-xl" />
+                <div className="animate-pulse rounded-xl bg-white/10 h-80" />
+                <div className="animate-pulse rounded-xl bg-white/10 h-80" />
               </div>
-              <Skeleton className="h-64 rounded-xl" />
+              <div className="animate-pulse rounded-xl bg-white/10 h-64" />
             </div>
           ) : diversityData ? (
             <Fade duration={0.4}>
@@ -417,19 +433,19 @@ export default function Compliance() {
                   transition={{ duration: 0.5 }}
                 >
                   {/* Source Distribution Pie */}
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader className="pb-2">
+                  <div className="rounded-xl overflow-hidden" style={glassCard}>
+                    <div className="px-6 pt-5 pb-2">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40">
-                          <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-900/40">
+                          <BarChart3 className="h-4 w-4 text-blue-400" />
                         </div>
                         <div>
-                          <CardTitle className="text-base">Source Distribution</CardTitle>
-                          <CardDescription className="text-xs">Candidate origins breakdown</CardDescription>
+                          <h3 className="text-base font-semibold text-white">Source Distribution</h3>
+                          <p className="text-xs text-slate-500">Candidate origins breakdown</p>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="px-6 pb-6">
                       {diversityData.source_distribution.length > 0 ? (
                         <ResponsiveContainer width="100%" height={280}>
                           <PieChart>
@@ -447,107 +463,114 @@ export default function Compliance() {
                                 <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                               ))}
                             </Pie>
-                            <Tooltip />
+                            <Tooltip
+                              contentStyle={{
+                                borderRadius: '8px',
+                                border: '1px solid var(--orbis-border)',
+                                background: 'var(--orbis-card)',
+                                color: 'hsl(var(--foreground))',
+                              }}
+                            />
                           </PieChart>
                         </ResponsiveContainer>
                       ) : (
-                        <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
+                        <div className="h-[280px] flex items-center justify-center text-sm text-slate-500">
                           No source data available
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
 
                   {/* Conversion by Source Bar */}
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader className="pb-2">
+                  <div className="rounded-xl overflow-hidden" style={glassCard}>
+                    <div className="px-6 pt-5 pb-2">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/40">
-                          <TrendingUp className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-900/40">
+                          <TrendingUp className="h-4 w-4 text-blue-400" />
                         </div>
                         <div>
-                          <CardTitle className="text-base">Conversion Rate by Source</CardTitle>
-                          <CardDescription className="text-xs">Hire rate per channel</CardDescription>
+                          <h3 className="text-base font-semibold text-white">Conversion Rate by Source</h3>
+                          <p className="text-xs text-slate-500">Hire rate per channel</p>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="px-6 pb-6">
                       {diversityData.conversion_by_source.length > 0 ? (
                         <ResponsiveContainer width="100%" height={280}>
                           <BarChart data={diversityData.conversion_by_source}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                            <XAxis dataKey="source" tick={{ fontSize: 12 }} />
-                            <YAxis tick={{ fontSize: 12 }} unit="%" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--orbis-border)" />
+                            <XAxis dataKey="source" tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                            <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} unit="%" />
                             <Tooltip
                               formatter={(value: number) => [`${value.toFixed(1)}%`, 'Conversion']}
                               contentStyle={{
                                 borderRadius: '8px',
-                                border: '1px solid hsl(var(--border))',
-                                background: 'hsl(var(--card))',
+                                border: '1px solid var(--orbis-border)',
+                                background: 'var(--orbis-card)',
+                                color: 'hsl(var(--foreground))',
                               }}
                             />
-                            <Bar dataKey="conversion" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+                            <Bar dataKey="conversion" fill="#1B8EE5" radius={[6, 6, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
                       ) : (
-                        <div className="h-[280px] flex items-center justify-center text-sm text-muted-foreground">
+                        <div className="h-[280px] flex items-center justify-center text-sm text-slate-500">
                           No conversion data available
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </motion.div>
 
                 {/* Breakdown Table */}
-                <Card className="border-0 shadow-sm">
-                  <CardHeader className="pb-2">
+                <div className="rounded-xl overflow-hidden" style={glassCard}>
+                  <div className="px-6 pt-5 pb-2">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                        <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-900/40">
+                        <FileText className="h-4 w-4 text-emerald-400" />
                       </div>
                       <div>
-                        <CardTitle className="text-base">Source Breakdown</CardTitle>
-                        <CardDescription className="text-xs">Detailed funnel by source channel</CardDescription>
+                        <h3 className="text-base font-semibold text-white">Source Breakdown</h3>
+                        <p className="text-xs text-slate-500">Detailed funnel by source channel</p>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
+                  </div>
+                  <div className="px-6 pb-6">
                     {diversityData.breakdown.length > 0 ? (
-                      <div className="overflow-x-auto rounded-lg border">
+                      <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid var(--orbis-border)' }}>
                         <Table>
                           <TableHeader>
-                            <TableRow className="bg-muted/40 hover:bg-muted/40">
-                              <TableHead className="font-semibold">Source</TableHead>
-                              <TableHead className="text-right font-semibold">Total</TableHead>
-                              <TableHead className="text-right font-semibold">Screened</TableHead>
-                              <TableHead className="text-right font-semibold">Interviewed</TableHead>
-                              <TableHead className="text-right font-semibold">Offered</TableHead>
-                              <TableHead className="text-right font-semibold">Hired</TableHead>
-                              <TableHead className="text-right font-semibold">Conversion %</TableHead>
+                            <TableRow className="hover:bg-transparent" style={{ background: 'var(--orbis-subtle)' }}>
+                              <TableHead className="font-semibold text-slate-500">Source</TableHead>
+                              <TableHead className="text-right font-semibold text-slate-500">Total</TableHead>
+                              <TableHead className="text-right font-semibold text-slate-500">Screened</TableHead>
+                              <TableHead className="text-right font-semibold text-slate-500">Interviewed</TableHead>
+                              <TableHead className="text-right font-semibold text-slate-500">Offered</TableHead>
+                              <TableHead className="text-right font-semibold text-slate-500">Hired</TableHead>
+                              <TableHead className="text-right font-semibold text-slate-500">Conversion %</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {diversityData.breakdown.map(row => (
-                              <TableRow key={row.source} className="hover:bg-muted/30 transition-colors">
-                                <TableCell className="font-medium capitalize">{row.source.replace(/_/g, ' ')}</TableCell>
-                                <TableCell className="text-right tabular-nums">{row.total}</TableCell>
-                                <TableCell className="text-right tabular-nums">{row.screened}</TableCell>
-                                <TableCell className="text-right tabular-nums">{row.interviewed}</TableCell>
-                                <TableCell className="text-right tabular-nums">{row.offered}</TableCell>
-                                <TableCell className="text-right tabular-nums">{row.hired}</TableCell>
+                              <TableRow key={row.source} className="hover:bg-white/[0.02] transition-colors" style={{ borderColor: 'var(--orbis-grid)' }}>
+                                <TableCell className="font-medium capitalize text-white">{row.source.replace(/_/g, ' ')}</TableCell>
+                                <TableCell className="text-right tabular-nums text-slate-300">{row.total}</TableCell>
+                                <TableCell className="text-right tabular-nums text-slate-300">{row.screened}</TableCell>
+                                <TableCell className="text-right tabular-nums text-slate-300">{row.interviewed}</TableCell>
+                                <TableCell className="text-right tabular-nums text-slate-300">{row.offered}</TableCell>
+                                <TableCell className="text-right tabular-nums text-slate-300">{row.hired}</TableCell>
                                 <TableCell className="text-right">
-                                  <Badge
-                                    variant="secondary"
-                                    className={`text-xs tabular-nums ${
+                                  <span
+                                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium tabular-nums border ${
                                       row.conversion_pct >= 20
-                                        ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                                         : row.conversion_pct >= 10
-                                        ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300'
-                                        : ''
+                                        ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                        : 'bg-white/5 text-slate-400 border-white/10'
                                     }`}
                                   >
                                     {row.conversion_pct.toFixed(1)}%
-                                  </Badge>
+                                  </span>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -555,24 +578,22 @@ export default function Compliance() {
                         </Table>
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground text-center py-8">No breakdown data available</p>
+                      <p className="text-sm text-slate-500 text-center py-8">No breakdown data available</p>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </div>
             </Fade>
           ) : (
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-16 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mx-auto mb-4">
-                  <BarChart3 className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold">No diversity data</h3>
-                <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-                  Diversity stats will appear once candidates are added to your pipeline
-                </p>
-              </CardContent>
-            </Card>
+            <div className="rounded-xl p-16 text-center" style={glassCard}>
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 mx-auto mb-4">
+                <BarChart3 className="h-8 w-8 text-slate-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">No diversity data</h3>
+              <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+                Diversity stats will appear once candidates are added to your pipeline
+              </p>
+            </div>
           )}
         </TabsContent>
 
@@ -582,39 +603,42 @@ export default function Compliance() {
         <TabsContent value="sla">
           <div className="space-y-6">
             {/* Job Filter */}
-            <Card className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40">
-                    <Briefcase className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <Select value={slaJobId} onValueChange={v => setSlaJobId(v === 'all' ? '' : v)}>
-                    <SelectTrigger className="w-[280px]">
-                      <SelectValue placeholder="Filter by job..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Jobs</SelectItem>
-                      {jobs.map(j => (
-                        <SelectItem key={j.job_id} value={String(j.job_id)}>
-                          {j.job_title || `Job ${j.job_id}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="sm" onClick={fetchSLA} disabled={slaLoading} className="gap-1.5">
-                    {slaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
-                    Refresh
-                  </Button>
+            <div className="rounded-xl p-4" style={glassCard}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-900/40">
+                  <Briefcase className="h-4 w-4 text-amber-400" />
                 </div>
-              </CardContent>
-            </Card>
+                <Select value={slaJobId} onValueChange={v => setSlaJobId(v === 'all' ? '' : v)}>
+                  <SelectTrigger className="w-[280px] text-sm rounded-xl text-white border-0" style={glassInput}>
+                    <SelectValue placeholder="Filter by job..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                    <SelectItem className={sItemCls} value="all">All Jobs</SelectItem>
+                    {jobs.map(j => (
+                      <SelectItem className={sItemCls} key={j.job_id} value={String(j.job_id)}>
+                        {j.job_title || `Job ${j.job_id}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <button
+                  onClick={fetchSLA}
+                  disabled={slaLoading}
+                  className="inline-flex items-center gap-1.5 h-9 px-4 text-sm font-medium rounded-xl text-white transition-all disabled:opacity-50"
+                  style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
+                >
+                  {slaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4" />}
+                  Refresh
+                </button>
+              </div>
+            </div>
 
             {slaLoading ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+                  {[1, 2, 3].map(i => <div key={i} className="animate-pulse rounded-xl bg-white/10 h-28" />)}
                 </div>
-                <Skeleton className="h-64 rounded-xl" />
+                <div className="animate-pulse rounded-xl bg-white/10 h-64" />
               </div>
             ) : slaData ? (
               <Fade duration={0.4}>
@@ -626,72 +650,70 @@ export default function Compliance() {
                         label: 'Total Overdue',
                         value: slaData.total_overdue,
                         icon: AlertTriangle,
-                        color: 'text-red-600 dark:text-red-400',
-                        bg: 'bg-red-100 dark:bg-red-900/40',
-                        ring: slaData.total_overdue > 0 ? 'ring-2 ring-red-200 dark:ring-red-800' : '',
+                        color: 'text-red-400',
+                        bg: 'bg-red-900/40',
+                        ring: slaData.total_overdue > 0 ? 'ring-2 ring-red-800' : '',
                       },
                       {
                         label: 'Avg Days in Stage',
                         value: slaData.avg_days_in_stage,
                         icon: Clock,
-                        color: 'text-amber-600 dark:text-amber-400',
-                        bg: 'bg-amber-100 dark:bg-amber-900/40',
+                        color: 'text-amber-400',
+                        bg: 'bg-amber-900/40',
                         decimals: 1,
                       },
                       {
                         label: 'Active Candidates',
                         value: slaData.active_candidates,
                         icon: Users,
-                        color: 'text-blue-600 dark:text-blue-400',
-                        bg: 'bg-blue-100 dark:bg-blue-900/40',
+                        color: 'text-blue-400',
+                        bg: 'bg-blue-900/40',
                       },
                     ].map(kpi => (
                       <motion.div key={kpi.label} variants={scaleIn} whileHover={hoverLift}>
-                        <Card className={`border-0 shadow-sm hover:shadow-md transition-shadow ${'ring' in kpi ? kpi.ring : ''}`}>
-                          <CardContent className="p-5 flex items-center gap-4">
-                            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${kpi.bg}`}>
-                              <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
-                            </div>
-                            <div>
-                              <p className="text-2xl font-bold tracking-tight tabular-nums">
-                                <CountingNumber value={kpi.value} decimalPlaces={kpi.decimals} />
-                              </p>
-                              <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <div className={`rounded-xl p-5 flex items-center gap-4 ${'ring' in kpi ? kpi.ring : ''}`} style={glassCard}>
+                          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${kpi.bg}`}>
+                            <kpi.icon className={`h-6 w-6 ${kpi.color}`} />
+                          </div>
+                          <div>
+                            <p className="text-2xl font-bold tracking-tight tabular-nums text-white">
+                              <CountingNumber value={kpi.value} decimalPlaces={kpi.decimals} />
+                            </p>
+                            <p className="text-xs text-slate-500 font-medium">{kpi.label}</p>
+                          </div>
+                        </div>
                       </motion.div>
                     ))}
                   </StaggerGrid>
 
                   {/* Overdue Candidates Table */}
-                  <Card className="border-0 shadow-sm">
-                    <CardHeader className="pb-2">
+                  <div className="rounded-xl overflow-hidden" style={glassCard}>
+                    <div className="px-6 pt-5 pb-2">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/40">
-                          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-900/40">
+                          <AlertTriangle className="h-4 w-4 text-red-400" />
                         </div>
                         <div className="flex items-center gap-2">
-                          <CardTitle className="text-base">Overdue Candidates</CardTitle>
+                          <h3 className="text-base font-semibold text-white">Overdue Candidates</h3>
                           {slaData.candidates.length > 0 && (
-                            <Badge variant="secondary" className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/20">
                               {slaData.candidates.length}
-                            </Badge>
+                            </span>
                           )}
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
+                    </div>
+                    <div className="px-6 pb-6">
                       {slaData.candidates.length > 0 ? (
-                        <div className="overflow-x-auto rounded-lg border">
+                        <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid var(--orbis-border)' }}>
                           <Table>
                             <TableHeader>
-                              <TableRow className="bg-muted/40 hover:bg-muted/40">
-                                <TableHead className="font-semibold">Name</TableHead>
-                                <TableHead className="font-semibold">Email</TableHead>
-                                <TableHead className="font-semibold">Current Stage</TableHead>
-                                <TableHead className="text-right font-semibold">Days in Stage</TableHead>
-                                <TableHead className="font-semibold">Severity</TableHead>
+                              <TableRow className="hover:bg-transparent" style={{ background: 'var(--orbis-subtle)' }}>
+                                <TableHead className="font-semibold text-slate-500">Name</TableHead>
+                                <TableHead className="font-semibold text-slate-500">Email</TableHead>
+                                <TableHead className="font-semibold text-slate-500">Current Stage</TableHead>
+                                <TableHead className="text-right font-semibold text-slate-500">Days in Stage</TableHead>
+                                <TableHead className="font-semibold text-slate-500">Severity</TableHead>
                                 <TableHead></TableHead>
                               </TableRow>
                             </TableHeader>
@@ -702,43 +724,42 @@ export default function Compliance() {
                                 return (
                                   <TableRow
                                     key={c.id}
-                                    className={`transition-colors ${pipelineTarget ? 'cursor-pointer hover:bg-muted/50' : 'hover:bg-muted/30'}`}
+                                    className={`transition-colors ${pipelineTarget ? 'cursor-pointer hover:bg-white/[0.04]' : 'hover:bg-white/[0.02]'}`}
+                                    style={{ borderColor: 'var(--orbis-grid)' }}
                                     onClick={pipelineTarget ? () => navigate(pipelineTarget) : undefined}
                                   >
                                     <TableCell>
                                       <div className="flex items-center gap-2.5">
-                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-bold">
+                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs font-bold">
                                           {c.name[0]?.toUpperCase() ?? '?'}
                                         </div>
-                                        <span className="font-medium">{c.name}</span>
+                                        <span className="font-medium text-white">{c.name}</span>
                                       </div>
                                     </TableCell>
-                                    <TableCell className="text-muted-foreground text-sm">{c.email}</TableCell>
+                                    <TableCell className="text-slate-400 text-sm">{c.email}</TableCell>
                                     <TableCell>
-                                      <Badge variant="outline" className="capitalize text-xs">
+                                      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize bg-white/5 text-slate-300 border border-white/10">
                                         {c.current_stage}
-                                      </Badge>
+                                      </span>
                                     </TableCell>
-                                    <TableCell className="text-right font-semibold tabular-nums">{c.days_in_stage}</TableCell>
+                                    <TableCell className="text-right font-semibold tabular-nums text-white">{c.days_in_stage}</TableCell>
                                     <TableCell>
-                                      <Badge variant="outline" className={`text-xs capitalize border ${SEVERITY_STYLES[severity]}`}>
+                                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium capitalize border ${SEVERITY_STYLES[severity]}`}>
                                         {severity === 'high' && <XCircle className="h-3 w-3 mr-1" />}
                                         {severity === 'medium' && <AlertTriangle className="h-3 w-3 mr-1" />}
                                         {severity === 'low' && <CheckCircle2 className="h-3 w-3 mr-1" />}
                                         {severity}
-                                      </Badge>
+                                      </span>
                                     </TableCell>
                                     <TableCell>
                                       {pipelineTarget && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-7 text-xs gap-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                        <button
+                                          className="inline-flex items-center gap-1 h-7 px-2.5 text-xs font-medium rounded-lg text-blue-400 hover:text-blue-300 hover:bg-white/5 transition-colors"
                                           onClick={(e) => { e.stopPropagation(); navigate(pipelineTarget); }}
                                         >
                                           <Eye className="h-3.5 w-3.5" />
                                           Pipeline
-                                        </Button>
+                                        </button>
                                       )}
                                     </TableCell>
                                   </TableRow>
@@ -749,31 +770,29 @@ export default function Compliance() {
                         </div>
                       ) : (
                         <div className="text-center py-12">
-                          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 mx-auto mb-3">
-                            <CheckCircle2 className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
+                          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-900/40 mx-auto mb-3">
+                            <CheckCircle2 className="h-7 w-7 text-emerald-400" />
                           </div>
-                          <p className="text-sm font-medium">All clear</p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-sm font-medium text-white">All clear</p>
+                          <p className="text-xs text-slate-500 mt-1">
                             No overdue candidates. All candidates are within SLA thresholds.
                           </p>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </div>
               </Fade>
             ) : (
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-16 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted mx-auto mb-4">
-                    <Clock className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold">No SLA data</h3>
-                  <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
-                    SLA tracking data will appear once candidates are progressing through stages
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl p-16 text-center" style={glassCard}>
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 mx-auto mb-4">
+                  <Clock className="h-8 w-8 text-slate-500" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">No SLA data</h3>
+                <p className="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+                  SLA tracking data will appear once candidates are progressing through stages
+                </p>
+              </div>
             )}
           </div>
         </TabsContent>
@@ -784,34 +803,40 @@ export default function Compliance() {
         <TabsContent value="export">
           <div className="space-y-6">
             {/* Candidate Search */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-3">
+            <div className="rounded-xl overflow-hidden" style={glassCard}>
+              <div className="px-6 pt-5 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40">
-                    <Search className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-900/40">
+                    <Search className="h-4 w-4 text-blue-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">Candidate Data Lookup</CardTitle>
-                    <CardDescription className="text-xs">Search, export, or erase candidate records (GDPR)</CardDescription>
+                    <h3 className="text-base font-semibold text-white">Candidate Data Lookup</h3>
+                    <p className="text-xs text-slate-500">Search, export, or erase candidate records (GDPR)</p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              </div>
+              <div className="px-6 pb-6 space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <input
                       placeholder="Search by email or name..."
                       value={exportEmail}
                       onChange={e => setExportEmail(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                      className="pl-9 h-10"
+                      className="w-full h-10 pl-9 pr-4 text-sm rounded-xl outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+                      style={glassInput}
                     />
                   </div>
-                  <Button onClick={handleSearch} disabled={searchLoading || !exportEmail.trim()} className="h-10 gap-1.5">
+                  <button
+                    onClick={handleSearch}
+                    disabled={searchLoading || !exportEmail.trim()}
+                    className="inline-flex items-center gap-1.5 h-10 px-5 text-sm font-medium rounded-xl text-white transition-all disabled:opacity-50 hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+                  >
                     {searchLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     Search
-                  </Button>
+                  </button>
                 </div>
 
                 {/* Search Results */}
@@ -824,28 +849,31 @@ export default function Compliance() {
                       transition={{ duration: 0.3 }}
                       className="overflow-hidden"
                     >
-                      <div className="border rounded-xl divide-y max-h-64 overflow-y-auto">
+                      <div className="rounded-xl max-h-64 overflow-y-auto" style={{ border: '1px solid var(--orbis-border)' }}>
                         {searchResults.map((c, idx) => (
                           <motion.button
                             key={c.id}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: idx * 0.04 }}
-                            className={`w-full flex items-center gap-3 p-3.5 text-left hover:bg-muted/50 transition-all ${
+                            className={`w-full flex items-center gap-3 p-3.5 text-left hover:bg-white/[0.04] transition-all ${
                               selectedCandidate?.id === c.id
-                                ? 'bg-blue-50 dark:bg-blue-900/20 border-l-3 border-l-blue-500'
+                                ? 'bg-blue-500/10 border-l-3 border-l-blue-500'
                                 : ''
                             }`}
+                            style={{ borderBottom: '1px solid var(--orbis-grid)' }}
                             onClick={() => setSelectedCandidate(c)}
                           >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-bold shadow-sm">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs font-bold shadow-sm">
                               {(c.full_name || c.name || '?')[0].toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{c.full_name || c.name}</p>
-                              <p className="text-xs text-muted-foreground truncate">{c.email || 'No email'}</p>
+                              <p className="text-sm font-medium truncate text-white">{c.full_name || c.name}</p>
+                              <p className="text-xs text-slate-500 truncate">{c.email || 'No email'}</p>
                             </div>
-                            <Badge variant="secondary" className="text-xs shrink-0 tabular-nums">ID: {c.id}</Badge>
+                            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium shrink-0 tabular-nums bg-white/5 text-slate-400 border border-white/10">
+                              ID: {c.id}
+                            </span>
                           </motion.button>
                         ))}
                       </div>
@@ -862,111 +890,113 @@ export default function Compliance() {
                       exit={{ opacity: 0, y: 10 }}
                       transition={{ duration: 0.25 }}
                     >
-                      <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl border bg-muted/20">
+                      <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-hover)' }}>
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm font-bold">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold">
                             {(selectedCandidate.full_name || selectedCandidate.name || '?')[0].toUpperCase()}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold truncate">
+                            <p className="text-sm font-semibold truncate text-white">
                               {selectedCandidate.full_name || selectedCandidate.name}
                             </p>
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-xs text-slate-500 truncate">
                               {selectedCandidate.email || 'No email'}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          <button
                             onClick={() => handleExportCandidate('json')}
                             disabled={exportLoading}
-                            className="gap-1.5 h-9"
+                            className="inline-flex items-center gap-1.5 h-9 px-3.5 text-sm font-medium rounded-xl text-white transition-all disabled:opacity-50 hover:bg-white/10"
+                            style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
                           >
                             <FileJson className="h-4 w-4" /> JSON
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
+                          </button>
+                          <button
                             onClick={() => handleExportCandidate('csv')}
                             disabled={exportLoading}
-                            className="gap-1.5 h-9"
+                            className="inline-flex items-center gap-1.5 h-9 px-3.5 text-sm font-medium rounded-xl text-white transition-all disabled:opacity-50 hover:bg-white/10"
+                            style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
                           >
                             <FileSpreadsheet className="h-4 w-4" /> CSV
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
+                          </button>
+                          <button
                             onClick={() => setEraseDialogOpen(true)}
                             disabled={eraseLoading}
-                            className="gap-1.5 h-9"
+                            className="inline-flex items-center gap-1.5 h-9 px-3.5 text-sm font-medium rounded-xl text-[#f87171] transition-all disabled:opacity-50 hover:bg-red-500/20"
+                            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
                           >
                             <Trash2 className="h-4 w-4" /> GDPR Erasure
-                          </Button>
+                          </button>
                         </div>
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Bulk Job Export */}
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="pb-3">
+            <div className="rounded-xl overflow-hidden" style={glassCard}>
+              <div className="px-6 pt-5 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                    <Download className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-900/40">
+                    <Download className="h-4 w-4 text-emerald-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-base">Bulk Job Export</CardTitle>
-                    <CardDescription className="text-xs">Export all candidates for a specific job as CSV</CardDescription>
+                    <h3 className="text-base font-semibold text-white">Bulk Job Export</h3>
+                    <p className="text-xs text-slate-500">Export all candidates for a specific job as CSV</p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
+              </div>
+              <div className="px-6 pb-6">
                 <div className="flex items-center gap-3">
                   <Select value={bulkJobId} onValueChange={setBulkJobId}>
-                    <SelectTrigger className="w-[300px] h-10">
+                    <SelectTrigger className="w-[300px] h-10 text-sm rounded-xl text-white border-0" style={glassInput}>
                       <SelectValue placeholder="Select a job..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="rounded-xl border-0" style={selectDrop}>
                       {jobs.map(j => (
-                        <SelectItem key={j.job_id} value={String(j.job_id)}>
+                        <SelectItem className={sItemCls} key={j.job_id} value={String(j.job_id)}>
                           {j.job_title || `Job ${j.job_id}`}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button onClick={handleBulkExport} disabled={!bulkJobId || bulkExportLoading} className="h-10 gap-1.5">
+                  <button
+                    onClick={handleBulkExport}
+                    disabled={!bulkJobId || bulkExportLoading}
+                    className="inline-flex items-center gap-1.5 h-10 px-5 text-sm font-medium rounded-xl text-white transition-all disabled:opacity-50 hover:opacity-90"
+                    style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+                  >
                     {bulkExportLoading ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Download className="h-4 w-4" />
                     )}
                     Export All Candidates
-                  </Button>
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
 
       {/* GDPR Erasure Confirmation Dialog */}
       <AlertDialog open={eraseDialogOpen} onOpenChange={setEraseDialogOpen}>
-        <AlertDialogContent className="rounded-xl">
+        <AlertDialogContent className="border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/40">
+            <AlertDialogTitle className="flex items-center gap-2 text-red-400">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-900/40">
                 <AlertTriangle className="h-5 w-5" />
               </div>
               Confirm GDPR Erasure
             </AlertDialogTitle>
-            <AlertDialogDescription className="pt-2">
+            <AlertDialogDescription className="pt-2 text-slate-400">
               This will permanently anonymize all data for{' '}
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-white">
                 {selectedCandidate?.full_name || selectedCandidate?.name}
               </span>
               . This action cannot be undone. All personal information, resumes, evaluations,
@@ -974,11 +1004,11 @@ export default function Compliance() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={eraseLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={eraseLoading} className="rounded-xl border-white/10 text-slate-300 hover:bg-white/5 hover:text-white">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleEraseCandidate}
               disabled={eraseLoading}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="rounded-xl bg-red-600 hover:bg-red-700 text-white"
             >
               {eraseLoading ? (
                 <span className="flex items-center gap-2">

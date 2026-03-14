@@ -45,24 +45,52 @@ export default function StatusTimeline({ currentStatus, lastUpdated, rejectionRe
       <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex items-center gap-2">
         {steps.map((step, i) => (
           <motion.div key={i} variants={fadeInUp} className="flex items-center gap-1">
-            {step.status === 'completed' && <CheckCircle className="w-5 h-5 text-green-500" />}
-            {step.status === 'current' && <Clock className="w-5 h-5 text-blue-500 animate-pulse" />}
-            {step.status === 'upcoming' && <div className="w-5 h-5 rounded-full border-2 border-border" />}
-            {step.status === 'rejected' && <XCircle className="w-5 h-5 text-red-500" />}
-            <span className={`text-sm ${step.status === 'current' ? 'font-semibold text-blue-600' : step.status === 'completed' ? 'text-green-600' : 'text-muted-foreground'}`}>
+            {step.status === 'completed' && <CheckCircle className="w-5 h-5 text-emerald-400" />}
+            {step.status === 'current' && <Clock className="w-5 h-5 text-[#1B8EE5] animate-pulse" />}
+            {step.status === 'upcoming' && (
+              <div
+                className="w-5 h-5 rounded-full"
+                style={{ border: '2px solid var(--orbis-border-strong)' }}
+              />
+            )}
+            {step.status === 'rejected' && <XCircle className="w-5 h-5 text-red-400" />}
+            <span
+              className={`text-sm ${
+                step.status === 'current'
+                  ? 'font-semibold text-[#1B8EE5]'
+                  : step.status === 'completed'
+                    ? 'text-emerald-400'
+                    : 'text-slate-500'
+              }`}
+            >
               {step.label}
             </span>
             {i < steps.length - 1 && (
-              <div className={`w-8 h-0.5 ${step.status === 'completed' ? 'bg-green-400' : 'bg-muted'}`} />
+              <div
+                className="w-8 h-0.5"
+                style={{
+                  background: step.status === 'completed'
+                    ? 'rgba(52,211,153,0.5)'
+                    : 'var(--orbis-border)',
+                }}
+              />
             )}
           </motion.div>
         ))}
       </motion.div>
       {lastUpdated && (
-        <p className="text-xs text-muted-foreground">Last updated: {new Date(lastUpdated).toLocaleDateString()}</p>
+        <p className="text-xs text-slate-500">Last updated: {new Date(lastUpdated).toLocaleDateString()}</p>
       )}
       {currentStatus === 'rejected' && rejectionReason && (
-        <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{rejectionReason}</p>
+        <p
+          className="text-sm text-red-300 p-2 rounded"
+          style={{
+            background: 'rgba(239,68,68,0.1)',
+            border: '1px solid rgba(239,68,68,0.2)',
+          }}
+        >
+          {rejectionReason}
+        </p>
       )}
     </div>
   );

@@ -14,7 +14,7 @@ import {
   Briefcase, Zap, Users, ThumbsUp, XCircle, Calendar,
   Plus, TrendingUp, ArrowRight, ArrowUpRight, ArrowDownRight,
   CheckCircle, ShieldCheck, Megaphone, Pin, AlertTriangle, Bell, Info,
-  Clock, UserCheck,
+  Clock, UserCheck, Sparkles, Rocket,
 } from 'lucide-react';
 import { CountingNumber } from '@/components/ui/counting-number';
 import { Fade } from '@/components/ui/fade';
@@ -54,10 +54,7 @@ interface StatCardConfig {
   key: string;
   label: string;
   icon: React.ElementType;
-  gradientFrom: string;
-  gradientTo: string;
-  iconBg: string;
-  iconClass: string;
+  iconColor: string;
   trendUp: boolean;
   trendPercent: number;
   getValue: (s: DashboardStats) => number;
@@ -69,10 +66,7 @@ const STAT_CARDS: StatCardConfig[] = [
     key: 'total_jobs',
     label: 'Total Jobs',
     icon: Briefcase,
-    gradientFrom: 'from-blue-50',
-    gradientTo: 'to-blue-100/50',
-    iconBg: 'bg-blue-500',
-    iconClass: 'text-white',
+    iconColor: 'text-[#1B8EE5]',
     trendUp: true,
     trendPercent: 12,
     getValue: (s) => s.total_jobs,
@@ -81,11 +75,8 @@ const STAT_CARDS: StatCardConfig[] = [
   {
     key: 'active_jobs',
     label: 'Active Roles',
-    icon: Zap,
-    gradientFrom: 'from-green-50',
-    gradientTo: 'to-emerald-100/50',
-    iconBg: 'bg-emerald-500',
-    iconClass: 'text-white',
+    icon: Rocket,
+    iconColor: 'text-blue-400',
     trendUp: true,
     trendPercent: 8,
     getValue: (s) => s.active_jobs,
@@ -94,10 +85,7 @@ const STAT_CARDS: StatCardConfig[] = [
     key: 'total_candidates',
     label: 'Total Candidates',
     icon: Users,
-    gradientFrom: 'from-purple-50',
-    gradientTo: 'to-violet-100/50',
-    iconBg: 'bg-purple-500',
-    iconClass: 'text-white',
+    iconColor: 'text-blue-400',
     trendUp: true,
     trendPercent: 24,
     getValue: (s) => s.total_candidates,
@@ -106,11 +94,8 @@ const STAT_CARDS: StatCardConfig[] = [
   {
     key: 'recommended_candidates',
     label: 'Recommended',
-    icon: ThumbsUp,
-    gradientFrom: 'from-emerald-50',
-    gradientTo: 'to-teal-100/50',
-    iconBg: 'bg-teal-500',
-    iconClass: 'text-white',
+    icon: Sparkles,
+    iconColor: 'text-amber-400',
     trendUp: true,
     trendPercent: 15,
     getValue: (s) => s.recommended_candidates,
@@ -118,23 +103,17 @@ const STAT_CARDS: StatCardConfig[] = [
   {
     key: 'closed_jobs',
     label: 'Closed Jobs',
-    icon: XCircle,
-    gradientFrom: 'from-orange-50',
-    gradientTo: 'to-amber-100/50',
-    iconBg: 'bg-orange-500',
-    iconClass: 'text-white',
+    icon: CheckCircle,
+    iconColor: 'text-rose-400',
     trendUp: false,
     trendPercent: 3,
     getValue: (s) => s.closed_jobs,
   },
   {
     key: 'pending_interviews',
-    label: 'Pending Interviews',
+    label: 'Pending',
     icon: Calendar,
-    gradientFrom: 'from-amber-50',
-    gradientTo: 'to-yellow-100/50',
-    iconBg: 'bg-amber-500',
-    iconClass: 'text-white',
+    iconColor: 'text-cyan-400',
     trendUp: false,
     trendPercent: 5,
     getValue: (s) => s.pending_interviews,
@@ -151,44 +130,57 @@ interface QuickLinkConfig {
   description: string;
   href: string;
   icon: React.ElementType;
-  iconGradient: string;
-  hoverBorder: string;
+  iconColor: string;
+  iconBg: string;
 }
 
 const QUICK_LINKS: QuickLinkConfig[] = [
   {
     title: 'View All Jobs',
-    description: 'Browse and manage open positions',
+    description: 'Manage your current job listings.',
     href: '/jobs',
     icon: Briefcase,
-    iconGradient: 'from-blue-500 to-blue-600',
-    hoverBorder: 'hover:border-blue-300',
+    iconColor: 'text-[#1B8EE5]',
+    iconBg: 'bg-[#1B8EE5]/20',
   },
   {
     title: 'Talent Pool',
-    description: 'Explore your candidate database',
+    description: 'Search through global talent database.',
     href: '/talent-pool',
     icon: Users,
-    iconGradient: 'from-purple-500 to-violet-600',
-    hoverBorder: 'hover:border-purple-300',
+    iconColor: 'text-blue-400',
+    iconBg: 'bg-blue-500/20',
   },
   {
     title: 'Analytics',
-    description: 'Track hiring performance metrics',
+    description: 'Detailed hiring performance reports.',
     href: '/analytics',
     icon: TrendingUp,
-    iconGradient: 'from-emerald-500 to-teal-600',
-    hoverBorder: 'hover:border-emerald-300',
+    iconColor: 'text-blue-400',
+    iconBg: 'bg-blue-500/20',
   },
   {
     title: 'Hiring Assistant',
-    description: 'Get AI-powered recruiting help',
+    description: 'AI-powered recruitment support.',
     href: '/hiring-assistant',
     icon: Zap,
-    iconGradient: 'from-amber-500 to-orange-600',
-    hoverBorder: 'hover:border-amber-300',
+    iconColor: 'text-emerald-400',
+    iconBg: 'bg-emerald-500/20',
   },
 ];
+
+/* -------------------------------------------------------------------------- */
+/*  Glassmorphism style helper                                                */
+/* -------------------------------------------------------------------------- */
+
+const glassStyle: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+  boxShadow: 'var(--orbis-card-shadow)',
+};
+
+const glassHoverStyle = 'hover:bg-accent hover:border-border';
 
 /* -------------------------------------------------------------------------- */
 /*  Dashboard Component                                                       */
@@ -310,19 +302,16 @@ const Dashboard = () => {
     const now = new Date();
     const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    // Jobs with close_date within 7 days
     const nearingDeadline = jobs.filter((j) => {
       if (j.status !== 'Open' || !j.hiring_close_date) return false;
       const closeDate = new Date(j.hiring_close_date);
       return closeDate >= now && closeDate <= sevenDaysFromNow;
     });
 
-    // Open jobs with fewer than 5 candidates
     const lowApplicants = jobs.filter(
       (j) => j.status === 'Open' && (j.statistics?.total_candidates ?? 0) < 5,
     );
 
-    // Recent hires: sum hired_count across all job location vacancies
     const recentHires = jobs.reduce((sum, j) => {
       const hiredInJob = (j.location_vacancies || []).reduce(
         (locSum, loc) => locSum + (loc.hired_count || 0),
@@ -342,344 +331,323 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      {/* ------------------------------------------------------------------ */}
-      {/*  Header Section                                                     */}
-      {/* ------------------------------------------------------------------ */}
-      <Fade direction="down" distance={12} duration={0.4} inView={false}>
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Hiring overview and key metrics
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-foreground">
-                Welcome back, <span className="text-foreground">{firstName}</span>
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {formatDate()}
+      <div className="max-w-[1400px] mx-auto w-full space-y-8">
+        {/* ── Header Section ─────────────────────────────────────────── */}
+        <Fade direction="down" distance={12} duration={0.4} inView={false}>
+          <div className="flex flex-wrap justify-between items-end gap-4">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-4xl font-bold text-foreground tracking-tight">
+                Dashboard
+              </h1>
+              <p className="text-base font-medium text-muted-foreground">
+                Hiring overview and key metrics
               </p>
             </div>
-            <Shine>
-              <Button
-                onClick={() => navigate('/jobs/create')}
-                className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-5 h-10 rounded-lg shadow-md shadow-blue-500/20 text-sm font-semibold transition-all hover:shadow-lg hover:shadow-blue-500/30"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Job
-              </Button>
-            </Shine>
-          </div>
-        </div>
-      </Fade>
-
-      {/* ------------------------------------------------------------------ */}
-      {/*  Stats Row                                                          */}
-      {/* ------------------------------------------------------------------ */}
-      <StaggerGrid inView={false} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        {STAT_CARDS.map((card) => {
-          const Icon = card.icon;
-
-          if (isStatsLoading) {
-            return (
+            <div className="flex items-center gap-4">
               <div
-                key={card.key}
-                className="relative rounded-xl border border-border bg-card shadow-sm overflow-hidden"
+                className="hidden sm:block px-4 py-2 rounded-lg text-sm font-medium text-slate-300"
+                style={glassStyle}
               >
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                  </div>
-                  <Skeleton className="h-9 w-16" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
+                Welcome back, {firstName} &bull; {formatDate()}
               </div>
-            );
-          }
-
-          const value = stats ? card.getValue(stats) : 0;
-
-          return (
-            <motion.div
-              key={card.key}
-              variants={slideInLeft}
-              onClick={card.href ? () => navigate(card.href!) : undefined}
-              className={`group relative rounded-xl border border-border/60 bg-gradient-to-br ${card.gradientFrom} ${card.gradientTo} dark:from-card dark:to-card shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-border hover:-translate-y-1 ${card.href ? 'cursor-pointer' : ''}`}
-            >
-              <div className="p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    {card.label}
-                  </span>
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-full ${card.iconBg} shadow-sm transition-transform duration-200 group-hover:scale-110`}
-                  >
-                    <Icon className={`w-[18px] h-[18px] ${card.iconClass}`} />
-                  </div>
-                </div>
-                <div className="flex items-end justify-between">
-                  <CountingNumber value={value} className="text-3xl font-bold text-foreground" />
-                  <div className={`flex items-center gap-0.5 text-[11px] font-medium ${card.trendUp ? 'text-emerald-600' : 'text-red-500'}`}>
-                    {card.trendUp ? (
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    ) : (
-                      <ArrowDownRight className="w-3.5 h-3.5" />
-                    )}
-                    <span>{card.trendPercent}%</span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </StaggerGrid>
-
-      {/* ------------------------------------------------------------------ */}
-      {/*  Alert Metrics (Nearing Deadline / Low Applicants / Recent Hires)  */}
-      {/* ------------------------------------------------------------------ */}
-      {!isLoading && jobs.length > 0 && (alertMetrics.nearingDeadline.length > 0 || alertMetrics.lowApplicants.length > 0 || alertMetrics.recentHires > 0) && (
-        <Fade duration={0.4}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            {/* Nearing Deadline */}
-            {alertMetrics.nearingDeadline.length > 0 && (
-              <div className="flex items-start gap-3 rounded-xl border-l-4 border-l-amber-400 border border-border bg-card shadow-sm p-4 transition-all hover:shadow-md">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 shrink-0">
-                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">
-                    {alertMetrics.nearingDeadline.length} {alertMetrics.nearingDeadline.length === 1 ? 'job' : 'jobs'} nearing deadline
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Closing within the next 7 days
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {alertMetrics.nearingDeadline.slice(0, 3).map((j) => (
-                      <span
-                        key={j.job_id}
-                        onClick={(e) => { e.stopPropagation(); navigate(`/jobs/${j.job_id}`); }}
-                        className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-800/40 text-amber-700 dark:text-amber-300 cursor-pointer hover:bg-amber-200 transition-colors truncate max-w-[160px]"
-                      >
-                        {j.job_title}
-                      </span>
-                    ))}
-                    {alertMetrics.nearingDeadline.length > 3 && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-800/40 text-amber-700 dark:text-amber-300">
-                        +{alertMetrics.nearingDeadline.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Low Applicants */}
-            {alertMetrics.lowApplicants.length > 0 && (
-              <div className="flex items-start gap-3 rounded-xl border-l-4 border-l-red-400 border border-border bg-card shadow-sm p-4 transition-all hover:shadow-md">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/40 shrink-0">
-                  <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">
-                    {alertMetrics.lowApplicants.length} {alertMetrics.lowApplicants.length === 1 ? 'job needs' : 'jobs need'} more applicants
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Fewer than 5 candidates applied
-                  </p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {alertMetrics.lowApplicants.slice(0, 3).map((j) => (
-                      <span
-                        key={j.job_id}
-                        onClick={(e) => { e.stopPropagation(); navigate(`/jobs/${j.job_id}`); }}
-                        className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-300 cursor-pointer hover:bg-red-200 transition-colors truncate max-w-[160px]"
-                      >
-                        {j.job_title} ({j.statistics?.total_candidates ?? 0})
-                      </span>
-                    ))}
-                    {alertMetrics.lowApplicants.length > 3 && (
-                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-800/40 text-red-700 dark:text-red-300">
-                        +{alertMetrics.lowApplicants.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Recent Hires */}
-            {alertMetrics.recentHires > 0 && (
-              <div className="flex items-start gap-3 rounded-xl border-l-4 border-l-emerald-400 border border-border bg-card shadow-sm p-4 transition-all hover:shadow-md">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 shrink-0">
-                  <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">
-                    {alertMetrics.recentHires} {alertMetrics.recentHires === 1 ? 'candidate' : 'candidates'} hired
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Moved to Hired stage across all jobs
-                  </p>
-                </div>
-              </div>
-            )}
+              <button
+                onClick={() => navigate('/jobs/create')}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-bold transition-opacity hover:opacity-90"
+                style={{
+                  background: 'linear-gradient(to right, #1B8EE5, #1676c0)',
+                  boxShadow: '0 8px 24px rgba(27,142,229,0.2)',
+                }}
+              >
+                <Plus className="w-4 h-4" />
+                Create Job
+              </button>
+            </div>
           </div>
         </Fade>
-      )}
 
-      {/* ------------------------------------------------------------------ */}
-      {/*  Quick Links                                                        */}
-      {/* ------------------------------------------------------------------ */}
-      <Fade duration={0.4} delay={0.15}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {QUICK_LINKS.map((link) => {
-            const LinkIcon = link.icon;
+        {/* ── Stats Row ──────────────────────────────────────────────── */}
+        <StaggerGrid inView={false} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {STAT_CARDS.map((card) => {
+            const Icon = card.icon;
+
+            if (isStatsLoading) {
+              return (
+                <div
+                  key={card.key}
+                  className="rounded-xl overflow-hidden h-32"
+                  style={glassStyle}
+                >
+                  <div className="p-5 space-y-3">
+                    <Skeleton className="h-4 w-20 bg-muted" />
+                    <Skeleton className="h-9 w-16 bg-muted" />
+                    <Skeleton className="h-3 w-20 bg-muted" />
+                  </div>
+                </div>
+              );
+            }
+
+            const value = stats ? card.getValue(stats) : 0;
+
             return (
-              <div
-                key={link.href}
-                onClick={() => navigate(link.href)}
-                className={`group flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${link.hoverBorder}`}
+              <motion.div
+                key={card.key}
+                variants={slideInLeft}
+                onClick={card.href ? () => navigate(card.href!) : undefined}
+                className={`group rounded-xl p-5 flex flex-col justify-between h-32 transition-all duration-300 hover:-translate-y-1 ${card.href ? 'cursor-pointer' : ''}`}
+                style={glassStyle}
               >
-                <div className={`flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br ${link.iconGradient} shadow-sm shrink-0 transition-transform duration-200 group-hover:scale-105`}>
-                  <LinkIcon className="w-5 h-5 text-white" />
+                <div className="flex justify-between items-start">
+                  <Icon className={`w-5 h-5 ${card.iconColor}`} />
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${card.trendUp ? 'text-emerald-400 bg-emerald-400/10' : 'text-rose-400 bg-rose-400/10'}`}>
+                    {card.trendUp ? '+' : '-'}{card.trendPercent}%
+                  </span>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-foreground">{link.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{link.description}</p>
+                <div>
+                  <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">{card.label}</p>
+                  <CountingNumber value={value} className="text-2xl font-bold text-foreground" />
                 </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0" />
-              </div>
+              </motion.div>
             );
           })}
-        </div>
-      </Fade>
+        </StaggerGrid>
 
-      {/* ------------------------------------------------------------------ */}
-      {/*  Announcements Card                                                 */}
-      {/* ------------------------------------------------------------------ */}
-      {latestAnnouncements.length > 0 && (
-        <Fade duration={0.4} delay={0.2}>
-          <div className="mb-8 rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30">
-                  <Megaphone className="w-3.5 h-3.5 text-orange-500" />
-                </div>
-                <h2 className="text-sm font-semibold text-foreground">Recent Announcements</h2>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => navigate('/announcements')}
-              >
-                View all
-                <ArrowRight className="w-3 h-3 ml-1" />
-              </Button>
-            </div>
-            <div className="divide-y divide-border">
-              {latestAnnouncements.map((a: any) => {
-                const priorityDot: Record<string, string> = {
-                  urgent: 'bg-red-500',
-                  high: 'bg-amber-500',
-                  normal: 'bg-blue-500',
-                  low: 'bg-slate-300',
-                };
-                return (
-                  <div
-                    key={a.id}
-                    className="flex items-center gap-3.5 px-5 py-3.5 hover:bg-muted/40 transition-colors cursor-pointer"
-                    onClick={() => navigate('/announcements')}
-                  >
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${priorityDot[a.priority] || priorityDot.low}`} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        {a.pinned && <Pin className="w-3 h-3 text-blue-500 shrink-0" />}
-                        <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{a.content}</p>
-                    </div>
-                    <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0 tabular-nums">
-                      {new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
+        {/* ── Alert Metrics ──────────────────────────────────────────── */}
+        {!isLoading && jobs.length > 0 && (alertMetrics.nearingDeadline.length > 0 || alertMetrics.lowApplicants.length > 0 || alertMetrics.recentHires > 0) && (
+          <Fade duration={0.4}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {alertMetrics.nearingDeadline.length > 0 && (
+                <div
+                  className="flex items-center gap-4 p-5 rounded-xl border-l-4 border-l-amber-500"
+                  style={glassStyle}
+                >
+                  <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <Clock className="w-5 h-5 text-amber-500" />
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </Fade>
-      )}
-
-      {/* ------------------------------------------------------------------ */}
-      {/*  Pending Approvals (admin / HR only)                                */}
-      {/* ------------------------------------------------------------------ */}
-      {(isAdmin() || isHR()) && pendingApprovals.length > 0 && (
-        <Fade duration={0.4}>
-          <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50/60 dark:bg-amber-950/10 dark:border-amber-800 shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-amber-200 dark:border-amber-800 bg-amber-100/60 dark:bg-amber-900/20">
-              <ShieldCheck className="w-4 h-4 text-amber-600" />
-              <h2 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                Pending Approvals ({pendingApprovals.length})
-              </h2>
-            </div>
-            <StaggerGrid className="divide-y divide-amber-100 dark:divide-amber-800/50" inView={false}>
-              {pendingApprovals.map((approval: any) => {
-                const isProcessing = approvingIds.has(approval.job_id);
-                return (
-                  <motion.div
-                    key={approval.job_id}
-                    variants={fadeInUp}
-                    className="flex items-center justify-between gap-4 px-5 py-3 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-amber-200/60 dark:bg-amber-800/40 flex items-center justify-center shrink-0">
-                        <Briefcase className="w-4 h-4 text-amber-700 dark:text-amber-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <p
-                          className="text-sm font-medium text-foreground truncate cursor-pointer hover:text-blue-600 transition-colors"
-                          onClick={() => navigate(`/jobs/${approval.job_id}`)}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-foreground font-bold text-sm">
+                      {alertMetrics.nearingDeadline.length} {alertMetrics.nearingDeadline.length === 1 ? 'job' : 'jobs'} nearing deadline
+                    </p>
+                    <p className="text-muted-foreground text-xs mt-0.5">Action required within 48h</p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {alertMetrics.nearingDeadline.slice(0, 3).map((j) => (
+                        <span
+                          key={j.job_id}
+                          onClick={(e) => { e.stopPropagation(); navigate(`/jobs/${j.job_id}`); }}
+                          className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 cursor-pointer hover:bg-amber-500/25 transition-colors truncate max-w-[160px]"
                         >
-                          {approval.job_title || 'Untitled Job'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Requested by {approval.requested_by_name || 'Unknown'}
-                        </p>
+                          {j.job_title}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="shrink-0 bg-amber-500/20 text-amber-300 text-xs font-bold px-2 py-1 rounded">Urgent</span>
+                </div>
+              )}
+
+              {alertMetrics.lowApplicants.length > 0 && (
+                <div
+                  className="flex items-center gap-4 p-5 rounded-xl border-l-4 border-l-rose-500"
+                  style={glassStyle}
+                >
+                  <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-5 h-5 text-rose-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-foreground font-bold text-sm">
+                      {alertMetrics.lowApplicants.length} {alertMetrics.lowApplicants.length === 1 ? 'job needs' : 'jobs need'} applicants
+                    </p>
+                    <p className="text-muted-foreground text-xs mt-0.5">Low volume detected</p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {alertMetrics.lowApplicants.slice(0, 3).map((j) => (
+                        <span
+                          key={j.job_id}
+                          onClick={(e) => { e.stopPropagation(); navigate(`/jobs/${j.job_id}`); }}
+                          className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 cursor-pointer hover:bg-rose-500/25 transition-colors truncate max-w-[160px]"
+                        >
+                          {j.job_title} ({j.statistics?.total_candidates ?? 0})
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="shrink-0 bg-rose-500/20 text-rose-300 text-xs font-bold px-2 py-1 rounded">Boost</span>
+                </div>
+              )}
+
+              {alertMetrics.recentHires > 0 && (
+                <div
+                  className="flex items-center gap-4 p-5 rounded-xl border-l-4 border-l-emerald-500"
+                  style={glassStyle}
+                >
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                    <UserCheck className="w-5 h-5 text-emerald-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-foreground font-bold text-sm">
+                      {alertMetrics.recentHires} {alertMetrics.recentHires === 1 ? 'candidate' : 'candidates'} hired
+                    </p>
+                    <p className="text-muted-foreground text-xs mt-0.5">Target reached across all jobs</p>
+                  </div>
+                  <span className="shrink-0 bg-emerald-500/20 text-emerald-300 text-xs font-bold px-2 py-1 rounded">Growth</span>
+                </div>
+              )}
+            </div>
+          </Fade>
+        )}
+
+        {/* ── Main Content Grid (Quick Links + Approvals | Announcements) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Quick Links */}
+            <Fade duration={0.4} delay={0.15}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {QUICK_LINKS.map((link) => {
+                  const LinkIcon = link.icon;
+                  return (
+                    <div
+                      key={link.href}
+                      onClick={() => navigate(link.href)}
+                      className={`group p-4 rounded-xl cursor-pointer transition-all duration-200 ${glassHoverStyle}`}
+                      style={glassStyle}
+                    >
+                      <div className={`w-10 h-10 rounded-full ${link.iconBg} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                        <LinkIcon className={`w-[18px] h-[18px] ${link.iconColor}`} />
                       </div>
-                      <ApprovalBadge status="pending" />
+                      <h3 className="text-foreground font-semibold text-sm">{link.title}</h3>
+                      <p className="text-muted-foreground text-xs mt-1 leading-relaxed">{link.description}</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        size="sm"
-                        disabled={isProcessing}
-                        onClick={() => handleApproveJob(approval.job_id)}
-                        className="h-7 px-3 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white"
-                      >
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={isProcessing}
-                        onClick={() => handleRejectJob(approval.job_id)}
-                        className="h-7 px-3 text-xs font-medium border-red-200 text-red-600 hover:bg-red-50"
-                      >
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Reject
-                      </Button>
+                  );
+                })}
+              </div>
+            </Fade>
+
+            {/* Pending Approvals */}
+            {(isAdmin() || isHR()) && pendingApprovals.length > 0 && (
+              <Fade duration={0.4}>
+                <div className="rounded-xl overflow-hidden" style={glassStyle}>
+                  <div className="px-6 py-4 border-b border-border flex justify-between items-center" style={{ background: 'rgba(245,158,11,0.05)' }}>
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-5 h-5 text-amber-500" />
+                      <h2 className="text-foreground font-bold">Pending Approvals ({pendingApprovals.length})</h2>
                     </div>
-                  </motion.div>
-                );
-              })}
-            </StaggerGrid>
+                    <button
+                      onClick={() => navigate('/job-requests')}
+                      className="text-[#1B8EE5] text-xs font-bold hover:underline"
+                    >
+                      View All
+                    </button>
+                  </div>
+                  <StaggerGrid className="divide-y divide-border" inView={false}>
+                    {pendingApprovals.map((approval: any) => {
+                      const isProcessing = approvingIds.has(approval.job_id);
+                      return (
+                        <motion.div
+                          key={approval.job_id}
+                          variants={fadeInUp}
+                          className="p-4 flex items-center justify-between hover:bg-accent transition-colors"
+                        >
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                              <Briefcase className="w-4 h-4 text-slate-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <p
+                                className="text-foreground font-semibold text-sm truncate cursor-pointer hover:text-[#1B8EE5] transition-colors"
+                                onClick={() => navigate(`/jobs/${approval.job_id}`)}
+                              >
+                                {approval.job_title || 'Untitled Job'}
+                              </p>
+                              <p className="text-muted-foreground text-xs">
+                                Requested by {approval.requested_by_name || 'Unknown'}
+                              </p>
+                            </div>
+                            <ApprovalBadge status="pending" />
+                          </div>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              disabled={isProcessing}
+                              onClick={() => handleApproveJob(approval.job_id)}
+                              className="px-3 py-1.5 rounded-lg border border-emerald-500/50 text-emerald-500 text-xs font-bold hover:bg-emerald-500/10 transition-colors disabled:opacity-50"
+                            >
+                              <CheckCircle className="w-3 h-3 mr-1 inline" />
+                              Approve
+                            </button>
+                            <button
+                              disabled={isProcessing}
+                              onClick={() => handleRejectJob(approval.job_id)}
+                              className="px-3 py-1.5 rounded-lg border border-rose-500/50 text-rose-500 text-xs font-bold hover:bg-rose-500/10 transition-colors disabled:opacity-50"
+                            >
+                              <XCircle className="w-3 h-3 mr-1 inline" />
+                              Reject
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </StaggerGrid>
+                </div>
+              </Fade>
+            )}
           </div>
-        </Fade>
-      )}
+
+          {/* Right Column — Announcements */}
+          {latestAnnouncements.length > 0 && (
+            <div className="lg:col-span-4">
+              <Fade duration={0.4} delay={0.2}>
+                <div className="rounded-xl h-full" style={glassStyle}>
+                  <div className="p-5 border-b border-border flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-[#1B8EE5]/10 flex items-center justify-center">
+                      <Megaphone className="w-4 h-4 text-[#1B8EE5]" />
+                    </div>
+                    <h2 className="text-foreground font-bold">Recent Announcements</h2>
+                  </div>
+                  <div className="p-5 space-y-6">
+                    {latestAnnouncements.map((a: any, idx: number) => {
+                      const priorityColors: Record<string, string> = {
+                        urgent: 'border-rose-500/30',
+                        high: 'border-amber-500/30',
+                        normal: 'border-[#1B8EE5]/30',
+                        low: 'border-slate-700',
+                      };
+                      const dotColors: Record<string, string> = {
+                        urgent: 'bg-rose-500',
+                        high: 'bg-amber-500',
+                        normal: 'bg-[#1B8EE5]',
+                        low: 'bg-slate-500',
+                      };
+                      return (
+                        <div
+                          key={a.id}
+                          className={`relative pl-6 border-l-2 ${priorityColors[a.priority] || priorityColors.low} cursor-pointer`}
+                          onClick={() => navigate('/announcements')}
+                        >
+                          <div className={`absolute -left-[5px] top-0 w-2 h-2 rounded-full ${dotColors[a.priority] || dotColors.low}`} />
+                          <div className="flex items-center gap-2">
+                            {a.pinned && <Pin className="w-3 h-3 text-blue-400 shrink-0" />}
+                            <p className="text-foreground text-sm font-semibold truncate">{a.title}</p>
+                          </div>
+                          <p className="text-muted-foreground text-xs mt-1 line-clamp-2">{a.content}</p>
+                          <span className="text-[10px] text-muted-foreground uppercase mt-2 block font-bold">
+                            {new Date(a.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="p-5">
+                    <button
+                      onClick={() => navigate('/announcements')}
+                      className="w-full py-2.5 rounded-lg border border-border text-muted-foreground text-xs font-bold hover:bg-accent transition-colors"
+                    >
+                      View Full Archive
+                    </button>
+                  </div>
+                </div>
+              </Fade>
+            </div>
+          )}
+        </div>
+      </div>
     </AppLayout>
   );
 };

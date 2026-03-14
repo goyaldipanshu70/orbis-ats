@@ -4,10 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AppLayout from '@/components/layout/AppLayout';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -43,6 +39,41 @@ import {
   Star,
 } from 'lucide-react';
 import type { Job } from '@/types/api';
+
+/* -------------------------------------------------------------------------- */
+/*  Design system constants                                                    */
+/* -------------------------------------------------------------------------- */
+
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const gradientBtn: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #1B8EE5, #1676c0)',
+  boxShadow: '0 8px 24px rgba(27,142,229,0.2)',
+};
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+const sItemCls = 'text-slate-200 focus:bg-white/10 focus:text-white';
+
+const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -120,18 +151,18 @@ function getScoreColor(pct: number): string {
   return '#ef4444';
 }
 
-function getScoreBg(pct: number): string {
-  if (pct >= 80) return 'bg-green-50 dark:bg-green-950/30';
-  if (pct >= 60) return 'bg-emerald-50 dark:bg-emerald-950/30';
-  if (pct >= 40) return 'bg-amber-50 dark:bg-amber-950/30';
-  return 'bg-red-50 dark:bg-red-950/30';
+function getScoreBgStyle(pct: number): React.CSSProperties {
+  if (pct >= 80) return { background: 'rgba(34,197,94,0.10)' };
+  if (pct >= 60) return { background: 'rgba(16,185,129,0.10)' };
+  if (pct >= 40) return { background: 'rgba(245,158,11,0.10)' };
+  return { background: 'rgba(239,68,68,0.10)' };
 }
 
 function getScoreTextClass(pct: number): string {
-  if (pct >= 80) return 'text-green-600 dark:text-green-400';
-  if (pct >= 60) return 'text-emerald-600 dark:text-emerald-400';
-  if (pct >= 40) return 'text-amber-600 dark:text-amber-400';
-  return 'text-red-600 dark:text-red-400';
+  if (pct >= 80) return 'text-green-400';
+  if (pct >= 60) return 'text-emerald-400';
+  if (pct >= 40) return 'text-amber-400';
+  return 'text-red-400';
 }
 
 function ScoreRing({ score, maxScore, size = 90 }: { score: number; maxScore: number; size?: number }) {
@@ -149,8 +180,7 @@ function ScoreRing({ score, maxScore, size = 90 }: { score: number; maxScore: nu
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="currentColor"
-          className="text-muted/30"
+          stroke="var(--orbis-hover)"
           strokeWidth={7}
         />
         <motion.circle
@@ -177,35 +207,38 @@ function ScoreRing({ score, maxScore, size = 90 }: { score: number; maxScore: nu
         >
           {pct}
         </motion.span>
-        <span className="text-[10px] text-muted-foreground font-medium">/ 100</span>
+        <span className="text-[10px] text-slate-500 font-medium">/ 100</span>
       </div>
     </div>
   );
 }
 
 function scoreColor(score: number, maxScore: number): string {
-  if (maxScore <= 0) return 'text-muted-foreground';
+  if (maxScore <= 0) return 'text-slate-500';
   const pct = (score / maxScore) * 100;
-  if (pct >= 80) return 'text-green-600 dark:text-green-400 font-semibold';
-  if (pct >= 60) return 'text-emerald-600 dark:text-emerald-400 font-medium';
-  if (pct >= 40) return 'text-amber-600 dark:text-amber-400 font-medium';
-  return 'text-red-600 dark:text-red-400 font-medium';
+  if (pct >= 80) return 'text-green-400 font-semibold';
+  if (pct >= 60) return 'text-emerald-400 font-medium';
+  if (pct >= 40) return 'text-amber-400 font-medium';
+  return 'text-red-400 font-medium';
 }
 
 function ScorePill({ score, max, label }: { score: number; max: number; label?: string }) {
   const pct = max > 0 ? (score / max) * 100 : 0;
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${getScoreBg(pct)} ${getScoreTextClass(pct)}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${getScoreTextClass(pct)}`}
+      style={getScoreBgStyle(pct)}
+    >
       {label && <span>{label}:</span>}
       <span>{typeof score === 'number' ? (Number.isInteger(score) ? score : score.toFixed(1)) : score}</span>
       {max > 0 && <span className="opacity-60">/ {max}</span>}
-    </div>
+    </span>
   );
 }
 
 const avatarGradients = [
-  'from-blue-500 to-indigo-600',
-  'from-violet-500 to-purple-600',
+  'from-blue-500 to-blue-600',
+  'from-blue-500 to-blue-600',
   'from-emerald-500 to-teal-600',
   'from-rose-500 to-pink-600',
 ];
@@ -260,12 +293,12 @@ export default function CandidateCompare() {
     setResult(null);
 
     apiClient
-      .rankCandidates(Number(selectedJobId))
+      .rankCandidates({ jd_id: Number(selectedJobId) })
       .then((res: any) => {
         const rankings = res.rankings ?? res ?? [];
         const mapped: CandidateOption[] = rankings.map((c: any) => ({
           id: c.candidate_id ?? c.id,
-          name: c.name ?? c.full_name ?? `Candidate ${c.candidate_id ?? c.id}`,
+          name: c.candidate_name ?? c.name ?? c.full_name ?? `Candidate ${c.candidate_id ?? c.id}`,
           email: c.email ?? '',
         }));
         setCandidates(mapped);
@@ -337,49 +370,55 @@ export default function CandidateCompare() {
         animate="visible"
         variants={staggerContainer}
       >
-        {/* ── Header ──────────────────────────────────────────────── */}
+        {/* -- Header -------------------------------------------------- */}
         <motion.div variants={fadeIn} custom={0} className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20">
                 <GitCompareArrows className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight">Compare Candidates</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-2xl font-bold tracking-tight text-white">Compare Candidates</h1>
+                <p className="text-sm text-slate-400">
                   Side-by-side analysis of up to 4 candidates
                 </p>
               </div>
             </div>
           </div>
           {result && (
-            <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs font-medium">
+            <span
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-300 rounded-full"
+              style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-hover)' }}
+            >
               <BarChart3 className="h-3.5 w-3.5" />
               {result.scorecards.length} candidates compared
-            </Badge>
+            </span>
           )}
         </motion.div>
 
-        {/* ── Controls Card ────────────────────────────────────────── */}
+        {/* -- Controls Card ------------------------------------------- */}
         <motion.div variants={fadeIn} custom={1}>
-          <Card className="rounded-xl border-border/50 shadow-sm overflow-hidden">
-            <CardContent className="p-6 space-y-5">
+          <div className="rounded-2xl overflow-hidden" style={glassCard}>
+            <div className="p-6 space-y-5">
               {/* Job selector */}
               <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2 text-foreground">
-                  <Briefcase className="h-4 w-4 text-muted-foreground" />
+                <label className="text-sm font-medium flex items-center gap-2 text-white">
+                  <Briefcase className="h-4 w-4 text-slate-400" />
                   Select Job Position
                 </label>
                 {jobsLoading ? (
-                  <Skeleton className="h-11 w-full max-w-lg rounded-xl" />
+                  <div className="h-11 w-full max-w-lg rounded-xl animate-pulse" style={{ background: 'var(--orbis-input)' }} />
                 ) : (
                   <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-                    <SelectTrigger className="w-full max-w-lg h-11 rounded-xl border-border/60 focus:ring-2 focus:ring-blue-500/20">
+                    <SelectTrigger
+                      className="w-full max-w-lg h-11 rounded-xl text-white focus:ring-2 focus:ring-blue-500/30"
+                      style={glassInput}
+                    >
                       <SelectValue placeholder="Choose a job to compare candidates..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent style={selectDrop}>
                       {jobs.map((j) => (
-                        <SelectItem key={j.job_id} value={j.job_id}>
+                        <SelectItem key={j.job_id} value={j.job_id} className={sItemCls}>
                           {j.job_title || `Job ${j.job_id}`}
                         </SelectItem>
                       ))}
@@ -399,48 +438,55 @@ export default function CandidateCompare() {
                     transition={{ duration: 0.3 }}
                   >
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium flex items-center gap-2 text-foreground">
-                        <Users className="h-4 w-4 text-muted-foreground" />
+                      <label className="text-sm font-medium flex items-center gap-2 text-white">
+                        <Users className="h-4 w-4 text-slate-400" />
                         Select Candidates
-                        <Badge variant="outline" className="ml-1 text-xs font-normal rounded-full px-2">
+                        <span
+                          className="ml-1 text-xs font-normal rounded-full px-2 py-0.5 text-slate-400"
+                          style={{ border: '1px solid var(--orbis-border)' }}
+                        >
                           {selectedIds.size} / 4
-                        </Badge>
+                        </span>
                       </label>
                       {selectedIds.size > 0 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-muted-foreground hover:text-foreground gap-1 h-7"
+                        <button
+                          className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors h-7 px-2 rounded-lg"
                           onClick={() => setSelectedIds(new Set())}
                         >
                           <X className="h-3 w-3" />
                           Clear all
-                        </Button>
+                        </button>
                       )}
                     </div>
 
                     {candidatesLoading ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {[1, 2, 3, 4].map((i) => (
-                          <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                          <div key={i} className="h-14 w-full rounded-xl animate-pulse" style={{ background: 'var(--orbis-input)' }} />
                         ))}
                       </div>
                     ) : candidates.length === 0 ? (
-                      <div className="text-center py-10 rounded-xl border border-dashed border-border/60 bg-muted/20">
-                        <Users className="h-9 w-9 mx-auto mb-3 text-muted-foreground/40" />
-                        <p className="text-sm font-medium text-muted-foreground">No candidates found</p>
-                        <p className="text-xs text-muted-foreground/70 mt-1">This job has no candidates yet</p>
+                      <div
+                        className="text-center py-10 rounded-xl"
+                        style={{ border: '1px dashed var(--orbis-border)', background: 'var(--orbis-subtle)' }}
+                      >
+                        <Users className="h-9 w-9 mx-auto mb-3 text-slate-400" />
+                        <p className="text-sm font-medium text-slate-400">No candidates found</p>
+                        <p className="text-xs text-slate-500 mt-1">This job has no candidates yet</p>
                       </div>
                     ) : (
                       <>
                       <div className="relative mb-2">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                         <input
                             type="text"
                             placeholder="Search candidates..."
                             value={candidateSearch}
                             onChange={(e) => setCandidateSearch(e.target.value)}
-                            className="w-full h-9 rounded-xl border border-border/50 bg-muted/30 pl-9 pr-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/40"
+                            className="w-full h-9 rounded-xl pl-9 pr-3 text-sm placeholder:text-slate-500 focus:outline-none transition-all"
+                            style={glassInput}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
@@ -455,28 +501,41 @@ export default function CandidateCompare() {
                               key={c.id}
                               whileHover={{ scale: 1.01 }}
                               whileTap={{ scale: 0.99 }}
-                              className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all duration-200 ${
+                              className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all duration-200"
+                              style={
                                 isSelected
-                                  ? 'border-blue-400/60 bg-blue-50/70 dark:bg-blue-950/20 shadow-sm shadow-blue-500/10'
-                                  : 'border-border/50 hover:border-border hover:bg-muted/40'
-                              }`}
+                                  ? { background: 'rgba(27,142,229,0.12)', border: '1px solid rgba(27,142,229,0.4)' }
+                                  : { background: 'var(--orbis-subtle)', border: '1px solid var(--orbis-border)' }
+                              }
+                              onMouseEnter={(e) => {
+                                if (!isSelected) {
+                                  e.currentTarget.style.background = 'var(--orbis-input)';
+                                  e.currentTarget.style.borderColor = 'var(--orbis-border)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isSelected) {
+                                  e.currentTarget.style.background = 'var(--orbis-subtle)';
+                                  e.currentTarget.style.borderColor = 'var(--orbis-border)';
+                                }
+                              }}
                             >
                               <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={() => toggleCandidate(c.id)}
-                                className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                                className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 border-slate-600"
                               />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{c.name}</p>
+                                <p className="text-sm font-medium truncate text-white">{c.name}</p>
                                 {c.email && (
-                                  <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                                  <p className="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
                                     <Mail className="h-3 w-3 shrink-0" />
                                     {c.email}
                                   </p>
                                 )}
                               </div>
                               {isSelected && (
-                                <CheckCircle2 className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <CheckCircle2 className="h-4 w-4 text-blue-400 shrink-0" />
                               )}
                             </motion.label>
                           );
@@ -487,10 +546,11 @@ export default function CandidateCompare() {
 
                     {/* Compare button */}
                     <div className="flex justify-end pt-1">
-                      <Button
+                      <button
                         onClick={handleCompare}
                         disabled={comparing || selectedIds.size < 2}
-                        className="min-w-[160px] h-10 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/20 transition-all duration-200 disabled:opacity-50 disabled:shadow-none"
+                        className="min-w-[160px] h-10 rounded-xl text-sm font-bold text-white transition-all duration-200 disabled:opacity-50 disabled:shadow-none hover:scale-[1.03] active:scale-[0.98] inline-flex items-center justify-center"
+                        style={gradientBtn}
                       >
                         {comparing ? (
                           <span className="flex items-center gap-2">
@@ -504,16 +564,16 @@ export default function CandidateCompare() {
                             <ChevronRight className="h-3.5 w-3.5" />
                           </span>
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </motion.div>
 
-        {/* ── Error ───────────────────────────────────────────────── */}
+        {/* -- Error --------------------------------------------------- */}
         <AnimatePresence>
           {error && !comparing && (
             <motion.div
@@ -521,28 +581,35 @@ export default function CandidateCompare() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
             >
-              <Card className="rounded-xl border-amber-200/60 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-950/20">
-                <CardContent className="py-10 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30 mx-auto mb-3">
-                    <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              <div
+                className="rounded-2xl"
+                style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}
+              >
+                <div className="py-10 text-center">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded-full mx-auto mb-3"
+                    style={{ background: 'rgba(245,158,11,0.12)' }}
+                  >
+                    <AlertTriangle className="h-6 w-6 text-amber-400" />
                   </div>
-                  <p className="text-sm font-medium text-amber-800 dark:text-amber-300">Something went wrong</p>
-                  <p className="text-xs text-amber-600/80 dark:text-amber-400/60 mt-1">{error}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 rounded-xl"
+                  <p className="text-sm font-medium text-amber-300">Something went wrong</p>
+                  <p className="text-xs text-amber-400/60 mt-1">{error}</p>
+                  <button
+                    className="mt-4 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+                    style={glassCard}
                     onClick={handleCompare}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
                   >
                     Try Again
-                  </Button>
-                </CardContent>
-              </Card>
+                  </button>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── Comparison Result ───────────────────────────────────── */}
+        {/* -- Comparison Result --------------------------------------- */}
         <AnimatePresence>
           {result && (
             <motion.div
@@ -570,33 +637,49 @@ export default function CandidateCompare() {
                       variants={fadeIn}
                       custom={idx}
                     >
-                      <Card
-                        className={`relative rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg group ${
+                      <div
+                        className="relative rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg group"
+                        style={
                           isTopScorer
-                            ? 'ring-2 ring-amber-400/70 shadow-md shadow-amber-500/10'
-                            : 'border-border/50 hover:border-border shadow-sm'
-                        }`}
+                            ? {
+                                background: 'var(--orbis-card)',
+                                backdropFilter: 'blur(12px)',
+                                border: '1px solid rgba(245,158,11,0.35)',
+                                boxShadow: '0 0 30px rgba(245,158,11,0.08)',
+                              }
+                            : glassCard
+                        }
                       >
                         {/* Top accent bar */}
-                        <div className={`h-1 w-full ${isTopScorer ? 'bg-gradient-to-r from-amber-400 to-orange-400' : 'bg-gradient-to-r from-blue-400/40 to-indigo-400/40'}`} />
+                        <div
+                          className="h-1 w-full"
+                          style={{
+                            background: isTopScorer
+                              ? 'linear-gradient(to right, #f59e0b, #f97316)'
+                              : 'linear-gradient(to right, rgba(22,118,192,0.3), rgba(129,140,248,0.3))',
+                          }}
+                        />
 
                         {isTopScorer && (
                           <div className="absolute top-3 right-3">
-                            <div className="flex items-center gap-1 bg-gradient-to-r from-amber-400 to-orange-400 text-amber-950 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm">
+                            <span
+                              className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm"
+                              style={{ background: 'linear-gradient(to right, #f59e0b, #f97316)', color: '#451a03' }}
+                            >
                               <Trophy className="h-3 w-3" /> Best Match
-                            </div>
+                            </span>
                           </div>
                         )}
 
-                        <CardContent className="p-6 pt-5">
+                        <div className="p-6 pt-5">
                           {/* Avatar + Name */}
                           <div className="flex flex-col items-center text-center gap-4 mb-6">
                             <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${avatarGradients[idx % avatarGradients.length]} text-white text-xl font-bold shadow-lg`}>
                               {(sc.candidate_name || '?')[0].toUpperCase()}
                             </div>
                             <div className="space-y-1">
-                              <p className="font-semibold text-sm leading-tight">{sc.candidate_name}</p>
-                              <p className="text-xs text-muted-foreground flex items-center gap-1 justify-center">
+                              <p className="font-semibold text-sm leading-tight text-white">{sc.candidate_name}</p>
+                              <p className="text-xs text-slate-500 flex items-center gap-1 justify-center">
                                 <Mail className="h-3 w-3 shrink-0" />
                                 {sc.candidate_email || 'N/A'}
                               </p>
@@ -609,64 +692,50 @@ export default function CandidateCompare() {
 
                           {/* Score breakdown */}
                           <div className="space-y-3">
-                            <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 transition-colors hover:bg-muted/60">
-                              <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Brain className="h-4 w-4" />
-                                Resume
-                              </span>
-                              <span className={`text-sm ${scoreColor(sc.resume_score, sc.resume_max)}`}>
-                                {sc.resume_score}/{sc.resume_max}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 transition-colors hover:bg-muted/60">
-                              <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <TrendingUp className="h-4 w-4" />
-                                Interview
-                              </span>
-                              <span className={`text-sm ${scoreColor(sc.interview_score, sc.interview_max)}`}>
-                                {sc.interview_score}/{sc.interview_max}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 transition-colors hover:bg-muted/60">
-                              <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <MessageSquare className="h-4 w-4" />
-                                Feedback
-                              </span>
-                              <span className={`text-sm ${scoreColor(sc.feedback_avg, 5)}`}>
-                                {sc.feedback_avg > 0 ? sc.feedback_avg.toFixed(1) : 'N/A'}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/40 transition-colors hover:bg-muted/60">
-                              <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Star className="h-4 w-4" />
-                                Skills Match
-                              </span>
-                              <span className={`text-sm ${scoreColor(sc.skills_match, 100)}`}>
-                                {sc.skills_match}%
-                              </span>
-                            </div>
+                            {[
+                              { icon: Brain, label: 'Resume', value: `${sc.resume_score}/${sc.resume_max}`, sc_score: sc.resume_score, sc_max: sc.resume_max },
+                              { icon: TrendingUp, label: 'Interview', value: `${sc.interview_score}/${sc.interview_max}`, sc_score: sc.interview_score, sc_max: sc.interview_max },
+                              { icon: MessageSquare, label: 'Feedback', value: sc.feedback_avg > 0 ? sc.feedback_avg.toFixed(1) : 'N/A', sc_score: sc.feedback_avg, sc_max: 5 },
+                              { icon: Star, label: 'Skills Match', value: `${sc.skills_match}%`, sc_score: sc.skills_match, sc_max: 100 },
+                            ].map((row) => (
+                              <div
+                                key={row.label}
+                                className="flex items-center justify-between p-2.5 rounded-lg transition-colors"
+                                style={{ background: 'var(--orbis-card)' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--orbis-border)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
+                              >
+                                <span className="flex items-center gap-2 text-sm text-slate-400">
+                                  <row.icon className="h-4 w-4" />
+                                  {row.label}
+                                </span>
+                                <span className={`text-sm ${scoreColor(row.sc_score, row.sc_max)}`}>
+                                  {row.value}
+                                </span>
+                              </div>
+                            ))}
                           </div>
 
                           {/* Recommendation */}
                           {sc.recommendation && (
-                            <div className="mt-4 pt-4 border-t border-border/40">
-                              <p className="text-xs text-muted-foreground font-medium mb-1">Recommendation</p>
-                              <Badge
-                                variant="secondary"
-                                className={`text-xs font-medium ${
+                            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+                              <p className="text-xs text-slate-500 font-medium mb-1">Recommendation</p>
+                              <span
+                                className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full"
+                                style={
                                   sc.recommendation.toLowerCase().includes('strong')
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                    ? { background: 'rgba(34,197,94,0.10)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.2)' }
                                     : sc.recommendation.toLowerCase().includes('not')
-                                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                                }`}
+                                      ? { background: 'rgba(239,68,68,0.10)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }
+                                      : { background: 'rgba(22,118,192,0.10)', color: '#818cf8', border: '1px solid rgba(22,118,192,0.2)' }
+                                }
                               >
                                 {sc.recommendation}
-                              </Badge>
+                              </span>
                             </div>
                           )}
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     </motion.div>
                   );
                 })}
@@ -675,99 +744,103 @@ export default function CandidateCompare() {
               {/* Comparison Matrix */}
               {result.comparison_matrix && result.comparison_matrix.length > 0 && (
                 <motion.div variants={fadeIn} custom={result.scorecards.length}>
-                  <Card className="rounded-xl border-border/50 shadow-sm overflow-hidden">
-                    <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
-                      <CardTitle className="text-base flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-sm">
-                          <BarChart3 className="h-4 w-4 text-white" />
-                        </div>
-                        Detailed Comparison Matrix
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-muted/30 hover:bg-muted/30">
-                              <TableHead className="w-52 font-semibold text-xs uppercase tracking-wider text-muted-foreground py-3.5">
-                                Metric
-                              </TableHead>
-                              {result.scorecards.map((sc, idx) => (
-                                <TableHead
-                                  key={sc.candidate_id}
-                                  className="text-center font-semibold min-w-[140px] py-3.5"
-                                >
-                                  <div className="flex items-center justify-center gap-2">
-                                    <div className={`h-6 w-6 rounded-md bg-gradient-to-br ${avatarGradients[idx % avatarGradients.length]} flex items-center justify-center text-white text-[10px] font-bold`}>
-                                      {(sc.candidate_name || '?')[0].toUpperCase()}
-                                    </div>
-                                    <span className="text-sm truncate max-w-[100px]">{sc.candidate_name}</span>
-                                  </div>
-                                </TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {result.comparison_matrix.map((row, idx) => (
-                              <TableRow
-                                key={idx}
-                                className="hover:bg-muted/20 transition-colors"
-                              >
-                                <TableCell className="font-medium text-sm py-3.5">
-                                  {formatLabel(row.metric)}
-                                </TableCell>
-                                {result.scorecards.map((sc) => {
-                                  const val = row.scores[String(sc.candidate_id)] ?? 0;
-                                  const isWinner =
-                                    row.winner_id !== null &&
-                                    row.winner_id === sc.candidate_id;
-
-                                  return (
-                                    <TableCell
-                                      key={sc.candidate_id}
-                                      className={`text-center text-sm py-3.5 transition-colors ${
-                                        isWinner
-                                          ? 'bg-green-50/70 dark:bg-green-950/20'
-                                          : ''
-                                      }`}
-                                    >
-                                      <div className="flex items-center justify-center gap-1.5">
-                                        {isWinner ? (
-                                          <ScorePill
-                                            score={typeof val === 'number' ? val : 0}
-                                            max={row.max_score}
-                                          />
-                                        ) : (
-                                          <>
-                                            <span className="text-muted-foreground">
-                                              {typeof val === 'number' ? (Number.isInteger(val) ? val : val.toFixed(1)) : val}
-                                            </span>
-                                            {row.max_score > 0 && (
-                                              <span className="text-xs text-muted-foreground/60">/ {row.max_score}</span>
-                                            )}
-                                          </>
-                                        )}
-                                        {isWinner && (
-                                          <Trophy className="h-3.5 w-3.5 text-amber-500 ml-0.5" />
-                                        )}
-                                      </div>
-                                    </TableCell>
-                                  );
-                                })}
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                  <div className="rounded-2xl overflow-hidden" style={glassCard}>
+                    <div
+                      className="px-6 py-4 flex items-center gap-2.5"
+                      style={{ borderBottom: '1px solid var(--orbis-border)' }}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+                        <BarChart3 className="h-4 w-4 text-white" />
                       </div>
-                    </CardContent>
-                  </Card>
+                      <h3 className="text-base font-semibold text-white">Detailed Comparison Matrix</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow
+                            className="hover:bg-transparent"
+                            style={{ background: 'var(--orbis-subtle)', borderBottom: '1px solid var(--orbis-border)' }}
+                          >
+                            <TableHead className="w-52 font-semibold text-xs uppercase tracking-wider text-slate-500 py-3.5">
+                              Metric
+                            </TableHead>
+                            {result.scorecards.map((sc, idx) => (
+                              <TableHead
+                                key={sc.candidate_id}
+                                className="text-center font-semibold min-w-[140px] py-3.5"
+                              >
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className={`h-6 w-6 rounded-md bg-gradient-to-br ${avatarGradients[idx % avatarGradients.length]} flex items-center justify-center text-white text-[10px] font-bold`}>
+                                    {(sc.candidate_name || '?')[0].toUpperCase()}
+                                  </div>
+                                  <span className="text-sm truncate max-w-[100px] text-white">{sc.candidate_name}</span>
+                                </div>
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {result.comparison_matrix.map((row, idx) => (
+                            <TableRow
+                              key={idx}
+                              className="transition-colors hover:bg-white/[0.02]"
+                              style={{ borderBottom: '1px solid var(--orbis-grid)' }}
+                            >
+                              <TableCell className="font-medium text-sm py-3.5 text-slate-300">
+                                {formatLabel(row.metric)}
+                              </TableCell>
+                              {result.scorecards.map((sc) => {
+                                const val = row.scores[String(sc.candidate_id)] ?? 0;
+                                const isWinner =
+                                  row.winner_id !== null &&
+                                  row.winner_id === sc.candidate_id;
+
+                                return (
+                                  <TableCell
+                                    key={sc.candidate_id}
+                                    className="text-center text-sm py-3.5 transition-colors"
+                                    style={
+                                      isWinner
+                                        ? { background: 'rgba(27,142,229,0.06)' }
+                                        : undefined
+                                    }
+                                  >
+                                    <div className="flex items-center justify-center gap-1.5">
+                                      {isWinner ? (
+                                        <ScorePill
+                                          score={typeof val === 'number' ? val : 0}
+                                          max={row.max_score}
+                                        />
+                                      ) : (
+                                        <>
+                                          <span className="text-slate-400">
+                                            {typeof val === 'number' ? (Number.isInteger(val) ? val : val.toFixed(1)) : val}
+                                          </span>
+                                          {row.max_score > 0 && (
+                                            <span className="text-xs text-slate-400">/ {row.max_score}</span>
+                                          )}
+                                        </>
+                                      )}
+                                      {isWinner && (
+                                        <Trophy className="h-3.5 w-3.5 text-amber-500 ml-0.5" />
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                );
+                              })}
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── Empty state (no comparison run yet) ─────────────────── */}
+        {/* -- Empty state (no comparison run yet) --------------------- */}
         <AnimatePresence>
           {!result && !comparing && !error && selectedJobId && candidates.length > 0 && selectedIds.size === 0 && (
             <motion.div
@@ -776,17 +849,23 @@ export default function CandidateCompare() {
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.4 }}
             >
-              <Card className="rounded-xl border-dashed border-border/60 bg-muted/10">
-                <CardContent className="py-16 text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 mx-auto mb-5">
-                    <GitCompareArrows className="h-8 w-8 text-blue-500" />
+              <div
+                className="rounded-2xl"
+                style={{ background: 'var(--orbis-subtle)', border: '1px dashed var(--orbis-hover)' }}
+              >
+                <div className="py-16 text-center">
+                  <div
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl mx-auto mb-5"
+                    style={{ background: 'rgba(22,118,192,0.1)', border: '1px solid rgba(22,118,192,0.2)' }}
+                  >
+                    <GitCompareArrows className="h-8 w-8 text-blue-400" />
                   </div>
-                  <h3 className="text-lg font-semibold">Select candidates to compare</h3>
-                  <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto leading-relaxed">
+                  <h3 className="text-lg font-semibold text-white">Select candidates to compare</h3>
+                  <p className="text-sm text-slate-400 mt-2 max-w-sm mx-auto leading-relaxed">
                     Choose 2 to 4 candidates from the list above, then click Compare for a detailed side-by-side analysis
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

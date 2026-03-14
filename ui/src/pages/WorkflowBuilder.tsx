@@ -39,10 +39,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AppLayout from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Sheet,
   SheetContent,
@@ -69,10 +65,41 @@ import {
 import { apiClient } from '@/utils/api';
 import type { Workflow, NodeTypeInfo, WorkflowNode } from '@/types/workflow';
 
+// ── Style constants ──────────────────────────────────────────────────
+
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+
+const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+
+const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
+
 // ── Category configuration ───────────────────────────────────────────
 
 const CATEGORY_COLORS: Record<string, string> = {
-  trigger: '#8b5cf6',
+  trigger: '#1B8EE5',
   search: '#3b82f6',
   ai: '#f59e0b',
   processing: '#10b981',
@@ -111,18 +138,23 @@ function WorkflowNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={`bg-card border rounded-lg shadow-sm min-w-[180px] transition-shadow ${
-        selected ? 'ring-2 ring-primary shadow-md' : ''
-      }`}
+      className="min-w-[180px] transition-shadow rounded-2xl"
+      style={{
+        ...glassCard,
+        boxShadow: selected
+          ? `0 0 0 2px ${color}, 0 0 24px ${color}40`
+          : '0 4px 20px rgba(0,0,0,0.3)',
+      }}
     >
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !border-2 !border-white !bg-muted-foreground"
+        className="!w-3 !h-3 !border-2 !border-white"
+        style={{ background: color }}
       />
       <div
-        className="px-3 py-2 rounded-t-lg flex items-center gap-2"
-        style={{ backgroundColor: color }}
+        className="px-3 py-2 rounded-t-2xl flex items-center gap-2"
+        style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}
       >
         <span className="text-white">
           {isConditional ? <GitBranch className="h-4 w-4" /> : (CATEGORY_ICONS[nodeData.category] || <Circle className="h-4 w-4" />)}
@@ -131,12 +163,12 @@ function WorkflowNodeComponent({ data, selected }: NodeProps) {
           {nodeData.label}
         </span>
       </div>
-      <div className="px-3 py-2 flex items-center gap-1.5">
+      <div className="px-3 py-2 flex items-center gap-1.5" style={{ background: 'var(--orbis-subtle)' }}>
         <div
           className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: color }}
+          style={{ backgroundColor: color, boxShadow: `0 0 6px ${color}80` }}
         />
-        <span className="text-xs text-muted-foreground capitalize">
+        <span className="text-xs text-slate-400 capitalize">
           {isConditional ? 'conditional' : nodeData.category}
         </span>
       </div>
@@ -146,28 +178,29 @@ function WorkflowNodeComponent({ data, selected }: NodeProps) {
             type="source"
             position={Position.Right}
             id="true"
-            className="!w-3 !h-3 !border-2 !border-white !bg-green-500"
+            className="!w-3 !h-3 !border-2 !border-white !bg-emerald-400"
             style={{ top: '35%' }}
           />
           <Handle
             type="source"
             position={Position.Right}
             id="false"
-            className="!w-3 !h-3 !border-2 !border-white !bg-red-500"
+            className="!w-3 !h-3 !border-2 !border-white !bg-rose-400"
             style={{ top: '65%' }}
           />
           <div className="absolute right-[-28px] text-[9px] font-medium" style={{ top: '28%' }}>
-            <span className="text-green-600">T</span>
+            <span className="text-emerald-400">T</span>
           </div>
           <div className="absolute right-[-28px] text-[9px] font-medium" style={{ top: '58%' }}>
-            <span className="text-red-600">F</span>
+            <span className="text-rose-400">F</span>
           </div>
         </>
       ) : (
         <Handle
           type="source"
           position={Position.Right}
-          className="!w-3 !h-3 !border-2 !border-white !bg-muted-foreground"
+          className="!w-3 !h-3 !border-2 !border-white"
+          style={{ background: color }}
         />
       )}
     </div>
@@ -212,10 +245,11 @@ function workflowEdgesToFlow(edges: (string[])[]): Edge[] {
       animated: true,
       style: {
         strokeWidth: 2,
-        stroke: label === 'true' ? '#22c55e' : label === 'false' ? '#ef4444' : undefined,
+        stroke: label === 'true' ? '#34d399' : label === 'false' ? '#fb7185' : '#1B8EE5',
       },
       label: label === 'true' ? 'Yes' : label === 'false' ? 'No' : undefined,
-      labelStyle: { fontSize: 10, fontWeight: 600 },
+      labelStyle: { fontSize: 10, fontWeight: 600, fill: '#cbd5e1' },
+      labelBgStyle: { fill: 'var(--orbis-card)', fillOpacity: 0.8 },
       data: { branchLabel: label },
     };
   });
@@ -373,7 +407,7 @@ function WorkflowBuilderInner() {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      const label = connection.sourceHandle; // 'true' or 'false' for conditional
+      const label = connection.sourceHandle;
       setEdges((eds) =>
         addEdge(
           {
@@ -381,10 +415,11 @@ function WorkflowBuilderInner() {
             animated: true,
             style: {
               strokeWidth: 2,
-              stroke: label === 'true' ? '#22c55e' : label === 'false' ? '#ef4444' : undefined,
+              stroke: label === 'true' ? '#34d399' : label === 'false' ? '#fb7185' : '#1B8EE5',
             },
             label: label === 'true' ? 'Yes' : label === 'false' ? 'No' : undefined,
-            labelStyle: { fontSize: 10, fontWeight: 600 },
+            labelStyle: { fontSize: 10, fontWeight: 600, fill: '#cbd5e1' },
+            labelBgStyle: { fill: 'var(--orbis-card)', fillOpacity: 0.8 },
             data: { branchLabel: label },
           },
           eds,
@@ -445,7 +480,6 @@ function WorkflowBuilderInner() {
     });
   }, [nodes, edges, workflowName, saveMutation]);
 
-  // Keep a ref so the keyboard shortcut always calls the latest version
   const handleSaveRef = useRef(handleSave);
   handleSaveRef.current = handleSave;
 
@@ -561,7 +595,7 @@ function WorkflowBuilderInner() {
   const updateNodeLabel = useCallback(
     (value: string) => {
       if (!selectedNode) return;
-      if (value.length > 100) return; // cap label length
+      if (value.length > 100) return;
       setNodes((nds) =>
         nds.map((n) =>
           n.id === selectedNode.id
@@ -597,19 +631,22 @@ function WorkflowBuilderInner() {
   if (workflowLoading) {
     return (
       <AppLayout noPadding fullWidth>
-        <div className="flex items-center justify-center h-[calc(100vh-48px)]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div
+          className="flex items-center justify-center h-[calc(100vh-48px)]"
+          style={{ background: 'var(--orbis-page)' }}
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
         </div>
       </AppLayout>
     );
   }
 
-  const statusColor =
+  const statusBadgeStyle: React.CSSProperties =
     workflow?.status === 'active'
-      ? 'bg-green-100 text-green-700'
+      ? { background: 'rgba(52,211,153,0.1)', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }
       : workflow?.status === 'archived'
-        ? 'bg-gray-100 text-gray-500'
-        : 'bg-yellow-100 text-yellow-700';
+        ? { background: 'rgba(148,163,184,0.1)', color: '#94a3b8', border: '1px solid rgba(148,163,184,0.2)' }
+        : { background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' };
 
   const selectedNodeData = selectedNode?.data as any;
   const configSchema: Record<string, any> =
@@ -618,20 +655,26 @@ function WorkflowBuilderInner() {
 
   return (
     <AppLayout noPadding fullWidth>
-      <div className="flex flex-col h-[calc(100vh-48px)]">
+      <div className="flex flex-col h-[calc(100vh-48px)]" style={{ background: 'var(--orbis-page)' }}>
         {/* ── Top toolbar ─────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b bg-card shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
+        <div
+          className="flex items-center gap-3 px-4 py-2 shrink-0"
+          style={{
+            background: 'var(--orbis-card)',
+            borderBottom: '1px solid var(--orbis-border)',
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          <button
             onClick={handleBack}
-            className="shrink-0"
+            className="h-8 w-8 shrink-0 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+            style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
           >
             <ArrowLeft className="h-4 w-4" />
-          </Button>
+          </button>
 
           {editingName ? (
-            <Input
+            <input
               value={workflowName}
               onChange={(e) => {
                 if (e.target.value.length <= 200) {
@@ -641,57 +684,61 @@ function WorkflowBuilderInner() {
               }}
               onBlur={() => setEditingName(false)}
               onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
-              className="max-w-[260px] h-8 text-sm font-semibold"
+              onFocus={handleFocus}
+              className="max-w-[260px] h-8 px-3 rounded-xl text-sm font-semibold outline-none transition-all"
+              style={glassInput}
               autoFocus
               maxLength={200}
             />
           ) : (
             <button
               onClick={() => setEditingName(true)}
-              className="text-sm font-semibold hover:underline underline-offset-2 truncate max-w-[260px]"
+              className="text-sm font-semibold hover:underline underline-offset-2 truncate max-w-[260px] text-white"
             >
               {workflowName || 'Untitled Workflow'}
             </button>
           )}
 
-          <Badge variant="secondary" className={statusColor}>
+          <span
+            className="text-xs font-medium px-2.5 py-1 rounded-full capitalize"
+            style={statusBadgeStyle}
+          >
             {workflow?.status || 'draft'}
-          </Badge>
+          </span>
 
           {hasUnsavedChanges && (
-            <span className="text-xs text-muted-foreground italic">
+            <span className="text-xs text-slate-500 italic">
               Unsaved changes
             </span>
           )}
 
           <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
               onClick={handleStatusToggle}
               disabled={saveMutation.isPending}
+              className="px-3 py-1.5 text-sm font-medium rounded-xl text-slate-300 hover:text-white transition-colors disabled:opacity-50"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
             >
               {workflow?.status === 'active' ? 'Set Draft' : 'Activate'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
+            </button>
+            <button
               onClick={handleSave}
               disabled={saveMutation.isPending}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-xl text-slate-300 hover:text-white transition-colors disabled:opacity-50"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
             >
-              <Save className="h-4 w-4 mr-1" />
+              <Save className="h-4 w-4" />
               {saveMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
-            <Button
-              size="sm"
+            </button>
+            <button
               onClick={handleRun}
-              disabled={
-                runMutation.isPending || workflow?.status !== 'active'
-              }
+              disabled={runMutation.isPending || workflow?.status !== 'active'}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-xl text-white transition-opacity disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }}
             >
-              <Play className="h-4 w-4 mr-1" />
+              <Play className="h-4 w-4" />
               {runMutation.isPending ? 'Running...' : 'Run'}
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -699,31 +746,31 @@ function WorkflowBuilderInner() {
         <div className="flex flex-1 overflow-hidden relative">
           {/* ── Left sidebar: Node palette ─────────────────────── */}
           <div
-            className={`border-r bg-card shrink-0 transition-all duration-200 overflow-hidden ${
-              sidebarOpen ? 'w-[250px]' : 'w-0'
-            }`}
+            className={`shrink-0 transition-all duration-200 overflow-hidden ${sidebarOpen ? 'w-[250px]' : 'w-0'}`}
+            style={{
+              background: 'var(--orbis-subtle)',
+              borderRight: sidebarOpen ? '1px solid var(--orbis-hover)' : 'none',
+            }}
           >
             <div className="h-full overflow-y-auto p-3 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">Node Palette</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6"
+                <span className="text-sm font-semibold text-white">Node Palette</span>
+                <button
+                  className="h-6 w-6 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                   onClick={() => setSidebarOpen(false)}
                 >
                   <ChevronLeft className="h-4 w-4" />
-                </Button>
+                </button>
               </div>
 
               {nodeTypesLoading && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground py-4">
+                <div className="flex items-center gap-2 text-xs text-slate-500 py-4">
                   <Loader2 className="h-4 w-4 animate-spin" /> Loading nodes...
                 </div>
               )}
 
               {nodeTypesError && (
-                <div className="flex items-center gap-2 text-xs text-destructive py-4">
+                <div className="flex items-center gap-2 text-xs text-rose-400 py-4">
                   <AlertTriangle className="h-4 w-4" /> Failed to load node types
                 </div>
               )}
@@ -742,20 +789,30 @@ function WorkflowBuilderInner() {
                         {CATEGORY_LABELS[cat]}
                       </span>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {items.map((nt) => (
                         <div
                           key={nt.type}
                           draggable
                           onDragStart={(e) => onDragStart(e, nt.type)}
-                          className="flex items-start gap-2 p-2 rounded-md border bg-background hover:bg-muted cursor-grab active:cursor-grabbing transition-colors"
+                          className="flex items-start gap-2 p-2 rounded-xl cursor-grab active:cursor-grabbing transition-all hover:scale-[1.01]"
+                          style={{
+                            ...glassCard,
+                            borderLeft: `3px solid ${CATEGORY_COLORS[nt.category] || '#6b7280'}`,
+                          }}
+                          onMouseEnter={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.background = 'var(--orbis-border)';
+                          }}
+                          onMouseLeave={(e) => {
+                            (e.currentTarget as HTMLDivElement).style.background = 'var(--orbis-card)';
+                          }}
                         >
-                          <GripVertical className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <GripVertical className="h-4 w-4 text-slate-500 mt-0.5 shrink-0" />
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
+                            <p className="text-sm font-medium truncate text-slate-200">
                               {nt.display_name}
                             </p>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
+                            <p className="text-xs text-slate-500 line-clamp-2">
                               {nt.description}
                             </p>
                           </div>
@@ -767,21 +824,25 @@ function WorkflowBuilderInner() {
               })}
 
               {!nodeTypesLoading && !nodeTypesError && !nodeTypesData?.length && (
-                <p className="text-xs text-muted-foreground py-4">No node types available.</p>
+                <p className="text-xs text-slate-500 py-4">No node types available.</p>
               )}
             </div>
           </div>
 
           {/* Sidebar expand toggle */}
           {!sidebarOpen && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-6 rounded-l-none border border-l-0 bg-card"
+            <button
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-6 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+              style={{
+                background: 'var(--orbis-input)',
+                border: '1px solid var(--orbis-border)',
+                borderLeft: 0,
+                borderRadius: '0 8px 8px 0',
+              }}
               onClick={() => setSidebarOpen(true)}
             >
               <ChevronRight className="h-4 w-4" />
-            </Button>
+            </button>
           )}
 
           {/* ── Center canvas ─────────────────────────────────── */}
@@ -801,16 +862,24 @@ function WorkflowBuilderInner() {
               fitView
               deleteKeyCode={['Backspace', 'Delete']}
               proOptions={{ hideAttribution: true }}
+              style={{ background: 'var(--orbis-page)' }}
             >
-              <Background gap={16} size={1} />
-              <Controls />
+              <Background gap={16} size={1} color="rgba(27,142,229,0.08)" />
+              <Controls
+                className="!rounded-xl !shadow-lg [&>button]:!bg-[var(--orbis-card)] [&>button]:!border-white/10 [&>button]:!text-slate-300 [&>button:hover]:!bg-white/10 [&>button_svg]:!fill-slate-300"
+                style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)', borderRadius: '12px' }}
+              />
               <MiniMap
                 nodeColor={(n) => {
                   const d = n.data as any;
                   return CATEGORY_COLORS[d?.category] || '#6b7280';
                 }}
-                maskColor="rgba(0,0,0,0.08)"
-                className="!bg-card !border"
+                maskColor="var(--orbis-overlay)"
+                style={{
+                  background: 'var(--orbis-card)',
+                  border: '1px solid var(--orbis-border)',
+                  borderRadius: '12px',
+                }}
               />
             </ReactFlow>
           </div>
@@ -819,15 +888,19 @@ function WorkflowBuilderInner() {
 
       {/* ── Right panel: Node configuration sheet ─────────────────── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="w-[360px] sm:w-[400px]">
+        <SheetContent
+          className="w-[360px] sm:w-[400px] border-0"
+          style={{ background: 'var(--orbis-card)', borderLeft: '1px solid var(--orbis-border)' }}
+        >
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
+            <SheetTitle className="flex items-center gap-2 text-white">
               {selectedNodeData && (
                 <div
                   className="h-3 w-3 rounded-full shrink-0"
                   style={{
                     backgroundColor:
                       CATEGORY_COLORS[selectedNodeData.category] || '#6b7280',
+                    boxShadow: `0 0 8px ${CATEGORY_COLORS[selectedNodeData.category] || '#6b7280'}60`,
                   }}
                 />
               )}
@@ -839,30 +912,35 @@ function WorkflowBuilderInner() {
             <div className="mt-6 space-y-5">
               {/* Label field */}
               <div className="space-y-1.5">
-                <Label>Label</Label>
-                <Input
+                <label className="text-xs font-medium text-slate-400">Label</label>
+                <input
                   value={selectedNodeData?.label || ''}
                   onChange={(e) => updateNodeLabel(e.target.value)}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                   maxLength={100}
+                  className="w-full h-9 rounded-xl px-3 text-sm outline-none transition-all"
+                  style={glassInput}
                 />
               </div>
 
               {/* Type info */}
               <div className="space-y-1.5">
-                <Label>Type</Label>
+                <label className="text-xs font-medium text-slate-400">Type</label>
                 <div className="flex items-center gap-2">
-                  <Badge
-                    variant="secondary"
+                  <span
+                    className="text-xs font-medium px-2 py-0.5 rounded-full capitalize"
                     style={{
                       backgroundColor:
-                        CATEGORY_COLORS[selectedNodeData?.category] + '20',
+                        CATEGORY_COLORS[selectedNodeData?.category] + '18',
                       color:
                         CATEGORY_COLORS[selectedNodeData?.category],
+                      border: `1px solid ${CATEGORY_COLORS[selectedNodeData?.category]}30`,
                     }}
                   >
                     {selectedNodeData?.category}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
+                  </span>
+                  <span className="text-sm text-slate-400">
                     {selectedNodeData?.nodeType}
                   </span>
                 </div>
@@ -871,7 +949,7 @@ function WorkflowBuilderInner() {
               {/* Cron trigger schedule presets */}
               {selectedNodeData?.nodeType === 'cron_trigger' && (
                 <div className="space-y-3">
-                  <Label className="text-sm font-semibold">Schedule</Label>
+                  <label className="text-sm font-semibold text-white">Schedule</label>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
                       { label: 'Every Hour', cron: '0 * * * *' },
@@ -881,26 +959,32 @@ function WorkflowBuilderInner() {
                       { label: 'Bi-Weekly', cron: '0 9 1,15 * *' },
                       { label: 'Monthly', cron: '0 9 1 * *' },
                     ].map((preset) => (
-                      <Button
+                      <button
                         key={preset.cron}
-                        variant={selectedNodeData?.config?.cron_expression === preset.cron ? 'default' : 'outline'}
-                        size="sm"
-                        className="text-xs h-7"
+                        className="text-xs h-7 rounded-lg font-medium transition-all"
+                        style={
+                          selectedNodeData?.config?.cron_expression === preset.cron
+                            ? { background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', color: 'hsl(var(--foreground))', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }
+                            : { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: '#94a3b8' }
+                        }
                         onClick={() => updateNodeConfig('cron_expression', preset.cron)}
                       >
                         {preset.label}
-                      </Button>
+                      </button>
                     ))}
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Custom Cron Expression</Label>
-                    <Input
+                    <label className="text-xs text-slate-400">Custom Cron Expression</label>
+                    <input
                       value={selectedNodeData?.config?.cron_expression || '0 9 * * 1'}
                       onChange={(e) => updateNodeConfig('cron_expression', e.target.value)}
+                      onFocus={handleFocus}
+                      onBlur={handleBlur}
                       placeholder="0 9 * * 1"
-                      className="h-8 font-mono text-xs"
+                      className="w-full h-8 font-mono text-xs rounded-xl px-3 outline-none transition-all"
+                      style={glassInput}
                     />
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-[10px] text-slate-500">
                       Format: minute hour day month weekday
                     </p>
                   </div>
@@ -910,9 +994,9 @@ function WorkflowBuilderInner() {
               {/* Dynamic config fields from config_schema */}
               {configKeys.length > 0 && (
                 <div className="space-y-4">
-                  <Label className="text-sm font-semibold">
+                  <label className="text-sm font-semibold text-white">
                     Configuration
-                  </Label>
+                  </label>
                   {configKeys.map((key) => {
                     const schema = configSchema[key];
                     const value = selectedNodeData?.config?.[key] ?? '';
@@ -928,24 +1012,24 @@ function WorkflowBuilderInner() {
                     if (fieldType === 'select' && schema?.options) {
                       return (
                         <div key={key} className="space-y-1.5">
-                          <Label className="text-xs capitalize">
+                          <label className="text-xs capitalize text-slate-400">
                             {schema?.label || key.replace(/_/g, ' ')}
-                          </Label>
+                          </label>
                           <Select
                             value={String(value)}
                             onValueChange={(v) =>
                               updateNodeConfig(key, v)
                             }
                           >
-                            <SelectTrigger className="h-8">
+                            <SelectTrigger className="h-11 rounded-xl text-white border-0" style={glassInput}>
                               <SelectValue
                                 placeholder={`Select ${key}`}
                               />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="rounded-xl border-0" style={selectDrop}>
                               {(schema.options as string[]).map(
-                                (opt) => (
-                                  <SelectItem key={opt} value={opt}>
+                                (opt: string) => (
+                                  <SelectItem key={opt} value={opt} className="text-slate-200 focus:bg-white/10 focus:text-white">
                                     {opt}
                                   </SelectItem>
                                 ),
@@ -953,7 +1037,7 @@ function WorkflowBuilderInner() {
                             </SelectContent>
                           </Select>
                           {schema?.description && (
-                            <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+                            <p className="text-[10px] text-slate-500">{schema.description}</p>
                           )}
                         </div>
                       );
@@ -962,10 +1046,10 @@ function WorkflowBuilderInner() {
                     if (fieldType === 'number' || fieldType === 'integer') {
                       return (
                         <div key={key} className="space-y-1.5">
-                          <Label className="text-xs capitalize">
+                          <label className="text-xs capitalize text-slate-400">
                             {schema?.label || key.replace(/_/g, ' ')}
-                          </Label>
-                          <Input
+                          </label>
+                          <input
                             type="number"
                             value={value}
                             onChange={(e) =>
@@ -974,12 +1058,15 @@ function WorkflowBuilderInner() {
                                 Number(e.target.value),
                               )
                             }
-                            className="h-8"
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            className="w-full h-8 rounded-xl px-3 text-sm outline-none transition-all"
+                            style={glassInput}
                             min={schema?.min}
                             max={schema?.max}
                           />
                           {schema?.description && (
-                            <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+                            <p className="text-[10px] text-slate-500">{schema.description}</p>
                           )}
                         </div>
                       );
@@ -1001,15 +1088,47 @@ function WorkflowBuilderInner() {
                                   e.target.checked,
                                 )
                               }
-                              className="rounded"
+                              className="rounded accent-[#1B8EE5]"
                             />
-                            <Label className="text-xs capitalize">
+                            <label className="text-xs capitalize text-slate-300">
                               {schema?.label || key.replace(/_/g, ' ')}
-                            </Label>
+                            </label>
                           </div>
                           {schema?.description && (
-                            <p className="text-[10px] text-muted-foreground ml-5">{schema.description}</p>
+                            <p className="text-[10px] text-slate-500 ml-5">{schema.description}</p>
                           )}
+                        </div>
+                      );
+                    }
+
+                    // Array fields — comma-separated input, stored as string[]
+                    if (fieldType === 'array') {
+                      const arrDisplay = Array.isArray(value)
+                        ? value.join(', ')
+                        : String(value || '');
+                      return (
+                        <div key={key} className="space-y-1.5">
+                          <label className="text-xs capitalize text-slate-400">
+                            {schema?.label || key.replace(/_/g, ' ')}
+                          </label>
+                          <input
+                            value={arrDisplay}
+                            onChange={(e) => {
+                              const arr = e.target.value
+                                .split(',')
+                                .map((s: string) => s.trim())
+                                .filter(Boolean);
+                              updateNodeConfig(key, arr);
+                            }}
+                            onFocus={handleFocus}
+                            onBlur={handleBlur}
+                            placeholder="e.g. Python, React, AWS"
+                            className="w-full h-8 rounded-xl px-3 text-sm outline-none transition-all"
+                            style={glassInput}
+                          />
+                          <p className="text-[10px] text-slate-500">
+                            {schema?.description || 'Comma-separated list'}
+                          </p>
                         </div>
                       );
                     }
@@ -1018,20 +1137,23 @@ function WorkflowBuilderInner() {
                     if (key.includes('body') || key.includes('template')) {
                       return (
                         <div key={key} className="space-y-1.5">
-                          <Label className="text-xs capitalize">
+                          <label className="text-xs capitalize text-slate-400">
                             {schema?.label || key.replace(/_/g, ' ')}
-                          </Label>
+                          </label>
                           <textarea
                             value={String(value)}
                             onChange={(e) =>
                               updateNodeConfig(key, e.target.value)
                             }
+                            onFocus={(e) => handleFocus(e)}
+                            onBlur={(e) => handleBlur(e)}
                             placeholder={schema?.placeholder || ''}
-                            className="w-full rounded-md border bg-background px-3 py-2 text-sm min-h-[80px] resize-y"
+                            className="w-full rounded-xl px-3 py-2 text-sm min-h-[80px] resize-y outline-none transition-all"
+                            style={glassInput}
                             rows={3}
                           />
                           {key.includes('email') && (
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="text-[10px] text-slate-500">
                               Supports: {'{name}'}, {'{role}'}, {'{company}'} placeholders
                             </p>
                           )}
@@ -1042,19 +1164,22 @@ function WorkflowBuilderInner() {
                     // Default: text input
                     return (
                       <div key={key} className="space-y-1.5">
-                        <Label className="text-xs capitalize">
+                        <label className="text-xs capitalize text-slate-400">
                           {schema?.label || key.replace(/_/g, ' ')}
-                        </Label>
-                        <Input
+                        </label>
+                        <input
                           value={String(value)}
                           onChange={(e) =>
                             updateNodeConfig(key, e.target.value)
                           }
+                          onFocus={handleFocus}
+                          onBlur={handleBlur}
                           placeholder={schema?.description || ''}
-                          className="h-8"
+                          className="w-full h-8 rounded-xl px-3 text-sm outline-none transition-all"
+                          style={glassInput}
                         />
                         {schema?.description && (
-                          <p className="text-[10px] text-muted-foreground">{schema.description}</p>
+                          <p className="text-[10px] text-slate-500">{schema.description}</p>
                         )}
                       </div>
                     );
@@ -1063,16 +1188,15 @@ function WorkflowBuilderInner() {
               )}
 
               {/* Delete node */}
-              <div className="pt-4 border-t">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="w-full"
+              <div className="pt-4" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+                <button
+                  className="w-full px-3 py-2 text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-1 text-rose-400 hover:text-white"
+                  style={{ background: 'rgba(251,113,133,0.1)', border: '1px solid rgba(251,113,133,0.2)' }}
                   onClick={() => setDeleteConfirmOpen(true)}
                 >
-                  <X className="h-4 w-4 mr-1" />
+                  <X className="h-4 w-4" />
                   Delete Node
-                </Button>
+                </button>
               </div>
             </div>
           )}
@@ -1081,16 +1205,28 @@ function WorkflowBuilderInner() {
 
       {/* ── Delete confirmation dialog ────────────────────────────── */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent
+          className="border-0 rounded-2xl"
+          style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
+        >
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Node</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{selectedNodeData?.label}"? This will also remove all connections to and from this node. This action cannot be undone.
+            <AlertDialogTitle className="text-white">Delete Node</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
+              Are you sure you want to delete &ldquo;{selectedNodeData?.label}&rdquo;? This will also remove all connections to and from this node. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={deleteSelectedNode} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel
+              className="border-0 text-slate-300 hover:text-white hover:bg-white/10"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteSelectedNode}
+              className="border-0 text-white hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #e11d48, #f43f5e)', boxShadow: '0 4px 20px rgba(225,29,72,0.25)' }}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

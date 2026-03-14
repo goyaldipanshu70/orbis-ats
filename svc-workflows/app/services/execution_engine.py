@@ -4,7 +4,8 @@ from datetime import datetime
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from app.db.models import Workflow, WorkflowRun, WorkflowNodeRun, ScrapedLead
+from app.db.models import Workflow, WorkflowRun, WorkflowNodeRun, ScrapedLead, CustomNodeType
+from app.nodes.custom_executor import create_custom_node_class
 from app.core.config import settings
 
 logger = logging.getLogger("svc-workflows")
@@ -28,6 +29,24 @@ class ExecutionEngine:
     def _register_nodes(self):
         from app.nodes import NODE_REGISTRY
         self._node_registry = NODE_REGISTRY
+
+    async def _load_custom_nodes(self):
+        stmt = select(CustomNodeType).where(CustomNodeType.status == "published")
+        result = await self.db.execute(stmt)
+        for row in result.scalars():
+            if row.node_type not in self._node_registry:
+                try:
+                    cls = create_custom_node_class(
+                        node_type=row.node_type,
+                        category=row.category,
+                        display_name=row.display_name,
+                        description=row.description,
+                        config_schema=row.config_schema or {},
+                        execution_code=row.execution_code,
+                    )
+                    self._node_registry[row.node_type] = cls
+                except Exception as e:
+                    logging.getLogger(__name__).error(f"Failed to load custom node '{row.node_type}': {e}")
 
     @staticmethod
     def validate_definition(definition: dict) -> List[str]:
@@ -110,6 +129,7 @@ class ExecutionEngine:
 
     async def execute(self, workflow: Workflow, run: WorkflowRun, input_data: dict = None):
         """Execute all nodes in topological order."""
+        await self._load_custom_nodes()
         try:
             definition = workflow.definition_json or {}
             nodes = definition.get("nodes", [])

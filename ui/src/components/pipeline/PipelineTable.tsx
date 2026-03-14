@@ -1,16 +1,27 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { fadeInUp } from '@/lib/animations';
 import { PipelineCandidate, PipelineStage, PipelineSummary } from '@/types/api';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, ArrowRightLeft, TableIcon } from 'lucide-react';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { DataPagination } from '@/components/DataPagination';
+
+const TABLE_PAGE_SIZE = 25;
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+const sItemCls = 'text-slate-200 focus:bg-white/10 focus:text-white';
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
   applied: 'Applied', screening: 'Screening', ai_interview: 'AI Interview',
@@ -18,18 +29,18 @@ const STAGE_LABELS: Record<PipelineStage, string> = {
 };
 
 const STAGE_COLORS: Record<PipelineStage, string> = {
-  applied: 'bg-blue-50 text-blue-700 ring-1 ring-blue-200/60 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-800/40',
-  screening: 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800/40',
-  ai_interview: 'bg-violet-50 text-violet-700 ring-1 ring-violet-200/60 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800/40',
-  interview: 'bg-purple-50 text-purple-700 ring-1 ring-purple-200/60 dark:bg-purple-950/40 dark:text-purple-300 dark:ring-purple-800/40',
-  offer: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-800/40',
-  hired: 'bg-green-50 text-green-700 ring-1 ring-green-200/60 dark:bg-green-950/40 dark:text-green-300 dark:ring-green-800/40',
-  rejected: 'bg-red-50 text-red-700 ring-1 ring-red-200/60 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-800/40',
+  applied: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  screening: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+  ai_interview: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  interview: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  offer: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  hired: 'bg-green-500/10 text-green-400 border border-green-500/20',
+  rejected: 'bg-red-500/10 text-red-400 border border-red-500/20',
 };
 
 const AVATAR_COLORS = [
-  'bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-rose-500',
-  'bg-amber-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-pink-500',
+  'bg-blue-500', 'bg-blue-500', 'bg-emerald-500', 'bg-rose-500',
+  'bg-amber-500', 'bg-cyan-500', 'bg-blue-500', 'bg-pink-500',
 ];
 
 function getAvatarColor(name: string) {
@@ -46,20 +57,25 @@ function getInitials(name: string) {
 }
 
 function getScoreBadge(score: number) {
-  if (score >= 80) return 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300';
-  if (score >= 60) return 'bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300';
-  if (score >= 40) return 'bg-orange-50 text-orange-700 ring-1 ring-orange-200/60 dark:bg-orange-950/40 dark:text-orange-300';
-  return 'bg-red-50 text-red-700 ring-1 ring-red-200/60 dark:bg-red-950/40 dark:text-red-300';
+  if (score >= 80) return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+  if (score >= 60) return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+  if (score >= 40) return 'bg-orange-500/10 text-orange-400 border border-orange-500/20';
+  return 'bg-red-500/10 text-red-400 border border-red-500/20';
 }
 
 function getRecommendationStyle(rec: string) {
   switch (rec?.toLowerCase()) {
-    case 'interview': return 'text-emerald-700 dark:text-emerald-400';
-    case 'consider': return 'text-amber-700 dark:text-amber-400';
-    case 'reject': return 'text-red-700 dark:text-red-400';
-    default: return 'text-muted-foreground';
+    case 'interview': return 'text-emerald-400';
+    case 'consider': return 'text-amber-400';
+    case 'reject': return 'text-red-400';
+    default: return 'text-slate-500';
   }
 }
+
+const fadeInUp = {
+  hidden: { opacity: 0, y: 8 },
+  visible: { opacity: 1, y: 0 },
+};
 
 interface PipelineTableProps {
   data: PipelineSummary;
@@ -72,10 +88,16 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkStage, setBulkStage] = useState<PipelineStage>('screening');
   const [isBulkMoving, setIsBulkMoving] = useState(false);
+  const [page, setPage] = useState(1);
 
-  const allCandidates = Object.entries(data).flatMap(([stage, candidates]) =>
+  const allCandidates = useMemo(() => Object.entries(data).flatMap(([stage, candidates]) =>
     candidates.map(c => ({ ...c, pipeline_stage: stage as PipelineStage }))
-  );
+  ), [data]);
+
+  const totalPages = Math.max(1, Math.ceil(allCandidates.length / TABLE_PAGE_SIZE));
+  const paginatedCandidates = useMemo(() =>
+    allCandidates.slice((page - 1) * TABLE_PAGE_SIZE, page * TABLE_PAGE_SIZE)
+  , [allCandidates, page]);
 
   const toggleSelect = (id: number) => {
     const next = new Set(selected);
@@ -84,10 +106,14 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
   };
 
   const toggleAll = () => {
-    if (selected.size === allCandidates.length) {
-      setSelected(new Set());
+    const pageIds = new Set(paginatedCandidates.map(c => c.id));
+    const allPageSelected = paginatedCandidates.every(c => selected.has(c.id));
+    if (allPageSelected) {
+      const next = new Set(selected);
+      pageIds.forEach(id => next.delete(id));
+      setSelected(next);
     } else {
-      setSelected(new Set(allCandidates.map(c => c.id)));
+      setSelected(new Set([...selected, ...pageIds]));
     }
   };
 
@@ -106,75 +132,87 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
   };
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
+    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
       <button
         onClick={() => setCollapsed(c => !c)}
-        className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted/30 transition-colors"
+        className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-white transition-colors"
+        style={{ background: 'transparent' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
       >
         <div className="flex items-center gap-2">
-          <TableIcon className="h-4 w-4 text-muted-foreground" />
+          <TableIcon className="h-4 w-4 text-slate-400" />
           <span>Table View</span>
-          <span className="text-xs font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md tabular-nums">
+          <span className="text-xs font-medium text-slate-400 px-2 py-0.5 rounded-md tabular-nums" style={{ background: 'var(--orbis-input)' }}>
             {allCandidates.length} candidates
           </span>
         </div>
-        {collapsed ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronUp className="h-4 w-4 text-muted-foreground" />}
+        {collapsed ? <ChevronDown className="h-4 w-4 text-slate-400" /> : <ChevronUp className="h-4 w-4 text-slate-400" />}
       </button>
 
       {!collapsed && (
-        <div className="border-t border-border/50">
+        <div style={{ borderTop: '1px solid var(--orbis-border)' }}>
           {/* Bulk actions */}
           {selected.size > 0 && (
-            <div className="flex items-center gap-3 bg-blue-50/80 dark:bg-blue-950/30 border-b border-blue-200/50 dark:border-blue-800/40 px-4 py-2.5">
-              <span className="text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-md">
+            <div
+              className="flex items-center gap-3 px-4 py-2.5"
+              style={{ background: 'rgba(27,142,229,0.06)', borderBottom: '1px solid rgba(27,142,229,0.15)' }}
+            >
+              <span className="text-xs font-bold px-2 py-0.5 rounded-md" style={{ background: 'rgba(27,142,229,0.12)', color: '#4db5f0' }}>
                 {selected.size} selected
               </span>
               <ArrowRightLeft className="h-3.5 w-3.5 text-blue-400" />
               <Select value={bulkStage} onValueChange={(v) => setBulkStage(v as PipelineStage)}>
-                <SelectTrigger className="w-36 h-8 text-xs">
+                <SelectTrigger className="w-36 h-8 text-xs rounded-lg text-white border-0" style={glassInput}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
                   {Object.entries(STAGE_LABELS).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                    <SelectItem key={k} value={k} className={sItemCls}>{v}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button size="sm" onClick={handleBulkMove} disabled={isBulkMoving} className="h-8 text-xs font-semibold">
+              <button
+                onClick={handleBulkMove}
+                disabled={isBulkMoving}
+                className="h-8 px-4 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+              >
                 {isBulkMoving ? 'Moving...' : 'Move'}
-              </Button>
+              </button>
             </div>
           )}
 
           <div className="max-h-[400px] overflow-y-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-border/50 hover:bg-transparent">
+                <TableRow className="hover:bg-transparent" style={{ borderColor: 'var(--orbis-border)' }}>
                   <TableHead className="w-10">
                     <Checkbox
-                      checked={selected.size === allCandidates.length && allCandidates.length > 0}
+                      checked={paginatedCandidates.length > 0 && paginatedCandidates.every(c => selected.has(c.id))}
                       onCheckedChange={toggleAll}
                     />
                   </TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Name</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Email</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Stage</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Score</TableHead>
-                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Recommendation</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Name</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Email</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stage</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Score</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Recommendation</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {allCandidates.map((candidate, index) => (
+                {paginatedCandidates.map((candidate, index) => (
                   <motion.tr
                     key={candidate.id}
                     variants={fadeInUp}
                     initial="hidden"
                     animate="visible"
-                    transition={{ delay: index * 0.03 }}
+                    transition={{ delay: Math.min(index * 0.03, 0.6) }}
                     className={cn(
-                      'group border-border/30 transition-colors hover:bg-muted/30',
-                      selected.has(candidate.id) && 'bg-blue-50/40 dark:bg-blue-950/20'
+                      'group transition-colors hover:bg-white/[0.02]',
+                      selected.has(candidate.id) && 'bg-blue-500/5'
                     )}
+                    style={{ borderColor: 'var(--orbis-grid)' }}
                   >
                     <TableCell>
                       <Checkbox
@@ -190,10 +228,10 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
                         )}>
                           {getInitials(candidate.full_name || '')}
                         </div>
-                        <span className="font-semibold text-sm text-foreground">{candidate.full_name || 'Unknown'}</span>
+                        <span className="font-semibold text-sm text-white">{candidate.full_name || 'Unknown'}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{candidate.email}</TableCell>
+                    <TableCell className="text-sm text-slate-400">{candidate.email}</TableCell>
                     <TableCell>
                       <span className={cn('inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold', STAGE_COLORS[candidate.pipeline_stage])}>
                         {STAGE_LABELS[candidate.pipeline_stage]}
@@ -213,9 +251,9 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
                 ))}
                 {allCandidates.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-12 text-slate-500">
                       <div className="flex flex-col items-center gap-1">
-                        <TableIcon className="h-5 w-5 text-muted-foreground/40 mb-1" />
+                        <TableIcon className="h-5 w-5 text-slate-400 mb-1" />
                         <span className="text-sm font-medium">No candidates in pipeline</span>
                       </div>
                     </TableCell>
@@ -224,6 +262,17 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
               </TableBody>
             </Table>
           </div>
+          {allCandidates.length > TABLE_PAGE_SIZE && (
+            <div className="px-4 pb-3">
+              <DataPagination
+                page={page}
+                totalPages={totalPages}
+                total={allCandidates.length}
+                pageSize={TABLE_PAGE_SIZE}
+                onPageChange={setPage}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

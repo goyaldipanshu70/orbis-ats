@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -15,13 +14,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
 
 interface AIInterviewModalProps {
   isOpen: boolean;
@@ -139,17 +146,20 @@ export default function AIInterviewModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="sm:max-w-[500px] rounded-xl border-0 shadow-2xl bg-background p-0">
+      <DialogContent
+        className="sm:max-w-[500px] border-0 rounded-2xl shadow-2xl p-0"
+        style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
+      >
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-cyan-50 to-blue-50 dark:from-cyan-950/30 dark:to-blue-950/30 rounded-t-xl">
+        <div className="px-6 pt-6 pb-4 rounded-t-2xl" style={{ borderBottom: '1px solid var(--orbis-border)', background: 'rgba(27,142,229,0.08)' }}>
           <DialogHeader className="space-y-1.5">
-            <DialogTitle className="flex items-center gap-2.5 text-lg font-semibold">
+            <DialogTitle className="flex items-center gap-2.5 text-lg font-semibold text-white">
               <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20">
                 <Bot className="h-4.5 w-4.5" />
               </div>
               AI Interview Invite
             </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
+            <DialogDescription className="text-sm text-slate-400">
               {hasPreselected
                 ? `Configure and send an AI-powered interview invite to ${candidateName}.`
                 : 'Select a candidate and configure the AI interview.'}
@@ -161,53 +171,54 @@ export default function AIInterviewModal({
           {/* Candidate selection */}
           {hasPreselected ? (
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Candidate</Label>
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Candidate</span>
+              <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold">
                   {candidateName?.charAt(0)?.toUpperCase() || '?'}
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{candidateName}</p>
-                  <p className="text-xs text-muted-foreground">{candidateEmail}</p>
+                  <p className="text-sm font-medium text-white">{candidateName}</p>
+                  <p className="text-xs text-slate-400">{candidateEmail}</p>
                 </div>
               </div>
             </div>
           ) : (
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Select Candidate</Label>
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Select Candidate</span>
               {candidatesLoading ? (
-                <div className="flex items-center gap-2.5 py-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2.5 py-3 text-sm text-slate-400">
                   <Loader2 className="h-4 w-4 animate-spin text-cyan-500" /> Loading candidates...
                 </div>
               ) : candidates.length === 0 ? (
-                <div className="py-4 px-3 text-sm text-muted-foreground rounded-xl border border-dashed border-border/50 bg-muted/10 text-center">
+                <div className="py-4 px-3 text-sm text-slate-500 rounded-xl text-center" style={{ border: '1px dashed var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
                   No candidates found for this job.
                 </div>
               ) : (
                 <>
                   {candidates.length > 5 && (
                     <div className="relative mb-2">
-                      <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                      <Input
+                      <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-500" />
+                      <input
                         placeholder="Search candidates..."
                         value={candidateSearch}
                         onChange={(e) => setCandidateSearch(e.target.value)}
-                        className="pl-8 h-9 text-sm rounded-lg"
+                        className="w-full pl-8 h-9 text-sm rounded-lg outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+                        style={glassInput}
                       />
                     </div>
                   )}
                   <Select value={selectedCandidateId} onValueChange={setSelectedCandidateId}>
-                    <SelectTrigger className="rounded-lg">
+                    <SelectTrigger className="rounded-lg border-white/10 bg-white/5 text-white">
                       <SelectValue placeholder="Choose a candidate..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent style={selectDrop}>
                       {filteredCandidates.map((c) => (
                         <SelectItem key={c.id} value={String(c.id)}>
                           {c.full_name} -- {c.email}
                         </SelectItem>
                       ))}
                       {filteredCandidates.length === 0 && (
-                        <div className="px-2 py-1.5 text-sm text-muted-foreground">No matches</div>
+                        <div className="px-2 py-1.5 text-sm text-slate-500">No matches</div>
                       )}
                     </SelectContent>
                   </Select>
@@ -217,19 +228,19 @@ export default function AIInterviewModal({
           )}
 
           {/* Interview config section */}
-          <div className="space-y-4 p-4 rounded-xl bg-muted/20 border border-border/40">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <div className="space-y-4 p-4 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <MessageSquare className="h-3.5 w-3.5" /> Interview Settings
             </p>
 
             {/* Interview type */}
             <div className="space-y-1.5">
-              <Label htmlFor="interview-type" className="text-sm">Interview Type</Label>
+              <label htmlFor="interview-type" className="text-sm text-slate-300 font-medium">Interview Type</label>
               <Select value={interviewType} onValueChange={setInterviewType}>
-                <SelectTrigger id="interview-type" className="rounded-lg">
+                <SelectTrigger id="interview-type" className="rounded-lg border-white/10 bg-white/5 text-white">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={selectDrop}>
                   <SelectItem value="behavioral">Behavioral</SelectItem>
                   <SelectItem value="technical">Technical</SelectItem>
                   <SelectItem value="mixed">Mixed</SelectItem>
@@ -240,8 +251,8 @@ export default function AIInterviewModal({
             {/* Max questions slider */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
-                <Label className="text-sm">Max Questions</Label>
-                <Badge variant="secondary" className="text-xs font-mono bg-background border border-border/50">{maxQuestions}</Badge>
+                <span className="text-sm text-slate-300 font-medium">Max Questions</span>
+                <span className="text-xs font-mono px-2 py-0.5 rounded-md text-slate-300" style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-hover)' }}>{maxQuestions}</span>
               </div>
               <Slider
                 min={5}
@@ -251,7 +262,7 @@ export default function AIInterviewModal({
                 onValueChange={(val) => setMaxQuestions(val[0])}
                 className="w-full"
               />
-              <div className="flex justify-between text-[10px] text-muted-foreground/60">
+              <div className="flex justify-between text-[10px] text-slate-400">
                 <span>5 questions</span>
                 <span>15 questions</span>
               </div>
@@ -259,14 +270,14 @@ export default function AIInterviewModal({
 
             {/* Time limit */}
             <div className="space-y-1.5">
-              <Label htmlFor="time-limit" className="text-sm flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" /> Time Limit
-              </Label>
+              <label htmlFor="time-limit" className="text-sm text-slate-300 font-medium flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-slate-500" /> Time Limit
+              </label>
               <Select value={timeLimit} onValueChange={setTimeLimit}>
-                <SelectTrigger id="time-limit" className="rounded-lg">
+                <SelectTrigger id="time-limit" className="rounded-lg border-white/10 bg-white/5 text-white">
                   <SelectValue placeholder="Select time limit" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={selectDrop}>
                   <SelectItem value="15">15 minutes</SelectItem>
                   <SelectItem value="30">30 minutes</SelectItem>
                   <SelectItem value="45">45 minutes</SelectItem>
@@ -277,11 +288,11 @@ export default function AIInterviewModal({
           </div>
 
           {/* Coding challenge section */}
-          <div className="space-y-3 p-4 rounded-xl bg-muted/20 border border-border/40">
+          <div className="space-y-3 p-4 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
             <div className="flex items-center justify-between">
-              <Label htmlFor="include-coding" className="text-sm flex items-center gap-1.5">
-                <Code2 className="h-3.5 w-3.5 text-muted-foreground" /> Include Coding Challenge
-              </Label>
+              <label htmlFor="include-coding" className="text-sm text-slate-300 font-medium flex items-center gap-1.5">
+                <Code2 className="h-3.5 w-3.5 text-slate-500" /> Include Coding Challenge
+              </label>
               <Switch
                 id="include-coding"
                 checked={includeCoding}
@@ -292,12 +303,12 @@ export default function AIInterviewModal({
             {/* Coding language (conditional) */}
             {includeCoding && (
               <div className="space-y-1.5 pt-1">
-                <Label htmlFor="coding-language" className="text-sm">Coding Language</Label>
+                <label htmlFor="coding-language" className="text-sm text-slate-300 font-medium">Coding Language</label>
                 <Select value={codingLanguage} onValueChange={setCodingLanguage}>
-                  <SelectTrigger id="coding-language" className="rounded-lg">
+                  <SelectTrigger id="coding-language" className="rounded-lg border-white/10 bg-white/5 text-white">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent style={selectDrop}>
                     <SelectItem value="python">Python</SelectItem>
                     <SelectItem value="javascript">JavaScript</SelectItem>
                     <SelectItem value="typescript">TypeScript</SelectItem>
@@ -312,14 +323,20 @@ export default function AIInterviewModal({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2.5 px-6 py-4 border-t bg-muted/20 rounded-b-xl">
-          <Button variant="outline" onClick={onClose} disabled={loading} className="rounded-lg">
+        <div className="flex justify-end gap-2.5 px-6 py-4 rounded-b-2xl" style={{ borderTop: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 transition-colors hover:text-white disabled:opacity-50"
+            style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
+          >
             Cancel
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={handleSubmit}
             disabled={loading || !resolvedCandidate}
-            className="rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 shadow-md shadow-cyan-600/20"
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
           >
             {loading ? (
               <span className="flex items-center gap-2">
@@ -330,7 +347,7 @@ export default function AIInterviewModal({
                 <Send className="h-4 w-4" /> Send Invite
               </span>
             )}
-          </Button>
+          </button>
         </div>
       </DialogContent>
     </Dialog>

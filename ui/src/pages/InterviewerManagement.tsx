@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useClientPagination } from '@/hooks/useClientPagination';
@@ -21,19 +16,36 @@ import {
   Briefcase, Sparkles, ArrowUpDown,
 } from 'lucide-react';
 
+/* ── Dark Glass Design System ──────────────────────────── */
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
+const sItemCls = 'text-slate-200 focus:bg-white/10 focus:text-white';
+
+const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = 'rgba(27,142,229,0.5)';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
+
 const SENIORITY_OPTIONS = ['Junior', 'Mid', 'Senior', 'Lead', 'Principal'] as const;
 const SENIORITY_COLORS: Record<string, string> = {
-  Junior: 'bg-sky-50 text-sky-700 border-sky-200',
-  Mid: 'bg-blue-50 text-blue-700 border-blue-200',
-  Senior: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  Lead: 'bg-violet-50 text-violet-700 border-violet-200',
-  Principal: 'bg-purple-50 text-purple-700 border-purple-200',
+  Junior: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+  Mid: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+  Senior: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+  Lead: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+  Principal: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
 };
 
 const AVATAR_GRADIENTS = [
-  'from-blue-500 to-indigo-600',
+  'from-blue-500 to-blue-600',
   'from-emerald-500 to-teal-600',
-  'from-violet-500 to-purple-600',
+  'from-blue-500 to-blue-600',
   'from-rose-500 to-pink-600',
   'from-amber-500 to-orange-600',
   'from-cyan-500 to-blue-600',
@@ -178,23 +190,19 @@ export default function InterviewerManagement() {
   const kpis = [
     {
       label: 'Total Interviewers', value: total, icon: Users,
-      gradient: 'from-blue-500/10 to-indigo-500/10',
-      iconBg: 'bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400',
+      iconBg: 'bg-blue-500/15 text-blue-400',
     },
     {
       label: 'Active Panel', value: active, icon: Award,
-      gradient: 'from-emerald-500/10 to-teal-500/10',
-      iconBg: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-400',
+      iconBg: 'bg-emerald-500/15 text-emerald-400',
     },
     {
       label: 'Avg Rating', value: avgRating, icon: Star, isDecimal: true,
-      gradient: 'from-amber-500/10 to-orange-500/10',
-      iconBg: 'bg-amber-100 text-amber-600 dark:bg-amber-900/50 dark:text-amber-400',
+      iconBg: 'bg-amber-500/15 text-amber-400',
     },
     {
       label: 'With Specializations', value: withSpecs, icon: Sparkles,
-      gradient: 'from-violet-500/10 to-purple-500/10',
-      iconBg: 'bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-400',
+      iconBg: 'bg-blue-500/15 text-blue-400',
     },
   ];
 
@@ -210,37 +218,37 @@ export default function InterviewerManagement() {
         >
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/25">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-blue-600 text-white shadow-lg shadow-blue-600/25">
                 <Users className="h-4.5 w-4.5" />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight">Interviewer Panel</h1>
+              <h1 className="text-2xl font-bold tracking-tight text-white">Interviewer Panel</h1>
             </div>
-            <p className="text-muted-foreground text-sm ml-[46px]">
+            <p className="text-slate-400 text-sm ml-[46px]">
               Manage your interviewer panel, track performance, and send invitations
             </p>
           </div>
-          <Button
+          <button
             onClick={() => setShowInvite(true)}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-600/25 transition-all duration-200 gap-2"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white shadow-lg shadow-blue-500/25 transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
           >
             <UserPlus className="h-4 w-4" />
             Invite Interviewer
-          </Button>
+          </button>
         </motion.div>
 
         {/* ── KPI Cards ────────────────────────────────────────────── */}
         <StaggerGrid className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {kpis.map(kpi => (
             <motion.div key={kpi.label} variants={scaleIn}>
-              <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-md transition-shadow duration-300">
-                <div className={`absolute inset-0 bg-gradient-to-br ${kpi.gradient} pointer-events-none`} />
-                <CardContent className="relative p-5">
+              <div className="relative overflow-hidden rounded-2xl" style={glassCard}>
+                <div className="p-5">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5">
                         {kpi.label}
                       </p>
-                      <p className="text-3xl font-bold tracking-tight">
+                      <p className="text-3xl font-bold tracking-tight text-white">
                         <CountingNumber
                           value={kpi.value}
                           decimalPlaces={(kpi as any).isDecimal ? 1 : 0}
@@ -251,8 +259,8 @@ export default function InterviewerManagement() {
                       <kpi.icon className="h-5 w-5" />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           ))}
         </StaggerGrid>
@@ -265,45 +273,48 @@ export default function InterviewerManagement() {
           className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3"
         >
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <input
               placeholder="Search by name or email..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-10 h-10 rounded-xl border-muted-foreground/20 bg-background/80 backdrop-blur-sm focus-visible:ring-blue-500/30"
+              className="w-full h-10 pl-10 pr-3 rounded-xl text-sm outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+              style={glassInput}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
             />
           </div>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl border-muted-foreground/20">
-              <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl text-white border-0" style={glassInput}>
+              <ArrowUpDown className="h-4 w-4 mr-2 text-slate-500" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name_asc">Name A-Z</SelectItem>
-              <SelectItem value="name_desc">Name Z-A</SelectItem>
-              <SelectItem value="most_interviews">Most Interviews</SelectItem>
-              <SelectItem value="highest_rating">Highest Rating</SelectItem>
-              <SelectItem value="active_first">Active First</SelectItem>
+            <SelectContent className="rounded-xl border-0" style={selectDrop}>
+              <SelectItem value="name_asc" className={sItemCls}>Name A-Z</SelectItem>
+              <SelectItem value="name_desc" className={sItemCls}>Name Z-A</SelectItem>
+              <SelectItem value="most_interviews" className={sItemCls}>Most Interviews</SelectItem>
+              <SelectItem value="highest_rating" className={sItemCls}>Highest Rating</SelectItem>
+              <SelectItem value="active_first" className={sItemCls}>Active First</SelectItem>
             </SelectContent>
           </Select>
           <Select value={deptFilter} onValueChange={v => setDeptFilter(v === 'all' ? '' : v)}>
-            <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl border-muted-foreground/20">
-              <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
+            <SelectTrigger className="w-full sm:w-[180px] h-10 rounded-xl text-white border-0" style={glassInput}>
+              <Building2 className="h-4 w-4 mr-2 text-slate-500" />
               <SelectValue placeholder="All Departments" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              {departments.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+            <SelectContent className="rounded-xl border-0" style={selectDrop}>
+              <SelectItem value="all" className={sItemCls}>All Departments</SelectItem>
+              {departments.map(d => <SelectItem key={d} value={d} className={sItemCls}>{d}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={String(pageSize)} onValueChange={v => setPageSize(Number(v))}>
-            <SelectTrigger className="w-full sm:w-[120px] h-10 rounded-xl border-muted-foreground/20">
+            <SelectTrigger className="w-full sm:w-[120px] h-10 rounded-xl text-white border-0" style={glassInput}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10 / page</SelectItem>
-              <SelectItem value="25">25 / page</SelectItem>
-              <SelectItem value="50">50 / page</SelectItem>
+            <SelectContent className="rounded-xl border-0" style={selectDrop}>
+              <SelectItem value="10" className={sItemCls}>10 / page</SelectItem>
+              <SelectItem value="25" className={sItemCls}>25 / page</SelectItem>
+              <SelectItem value="50" className={sItemCls}>50 / page</SelectItem>
             </SelectContent>
           </Select>
         </motion.div>
@@ -312,151 +323,145 @@ export default function InterviewerManagement() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <Card key={i} className="rounded-2xl border-0 shadow-sm">
-                <CardContent className="p-6">
+              <div key={i} className="rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                <div className="p-6">
                   <div className="animate-pulse space-y-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 rounded-full bg-muted" />
+                      <div className="h-12 w-12 rounded-full bg-white/10" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 w-32 bg-muted rounded" />
-                        <div className="h-3 w-48 bg-muted rounded" />
+                        <div className="h-4 w-32 bg-white/10 rounded" />
+                        <div className="h-3 w-48 bg-white/10 rounded" />
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <div className="h-5 w-16 bg-muted rounded-full" />
-                      <div className="h-5 w-20 bg-muted rounded-full" />
+                      <div className="h-5 w-16 bg-white/10 rounded-full" />
+                      <div className="h-5 w-20 bg-white/10 rounded-full" />
                     </div>
-                    <div className="h-px bg-muted" />
+                    <div className="h-px bg-white/10" />
                     <div className="flex gap-4">
-                      <div className="h-3 w-24 bg-muted rounded" />
-                      <div className="h-3 w-20 bg-muted rounded" />
+                      <div className="h-3 w-24 bg-white/10 rounded" />
+                      <div className="h-3 w-20 bg-white/10 rounded" />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         ) : interviewers.length === 0 ? (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }}>
-            <Card className="rounded-2xl border-dashed border-2 border-muted-foreground/20">
-              <CardContent className="p-16 text-center">
-                <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500/10 to-indigo-500/10 mb-4">
-                  <Users className="h-8 w-8 text-blue-500" />
-                </div>
-                <h3 className="text-lg font-semibold mb-1">No interviewers found</h3>
-                <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-                  Get started by inviting interviewers to build your interview panel
-                </p>
-                <Button
-                  onClick={() => setShowInvite(true)}
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white gap-2"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Invite Your First Interviewer
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl border-2 border-dashed border-white/10 p-16 text-center">
+              <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl bg-blue-500/10 mb-4">
+                <Users className="h-8 w-8 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-1">No interviewers found</h3>
+              <p className="text-sm text-slate-400 mb-6 max-w-sm mx-auto">
+                Get started by inviting interviewers to build your interview panel
+              </p>
+              <button
+                onClick={() => setShowInvite(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white shadow-lg shadow-blue-500/25 transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+              >
+                <UserPlus className="h-4 w-4" />
+                Invite Your First Interviewer
+              </button>
+            </div>
           </motion.div>
         ) : (
           <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {pageItems.map((iv) => (
               <motion.div key={iv.id} variants={fadeInUp} whileHover={hoverLift}>
-                <Card className="rounded-2xl border-0 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
-                  <CardContent className="p-0">
-                    {/* Card top accent bar */}
-                    <div className={`h-1 bg-gradient-to-r ${iv.is_active ? 'from-emerald-400 to-teal-500' : 'from-gray-300 to-gray-400'}`} />
+                <div className="rounded-2xl overflow-hidden transition-all duration-300 group" style={glassCard}>
+                  {/* Card top accent bar */}
+                  <div className={`h-1 bg-gradient-to-r ${iv.is_active ? 'from-emerald-400 to-teal-500' : 'from-gray-500 to-gray-600'}`} />
 
-                    <div className="p-5">
-                      {/* Header row */}
-                      <div className="flex items-start gap-3.5 mb-4">
-                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${getAvatarGradient(iv.id)} text-white text-sm font-bold shadow-lg ring-2 ring-white dark:ring-gray-800`}>
-                          {getInitials(...splitName(iv.full_name))}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold truncate">
-                              {iv.full_name}
-                            </h3>
-                            <Switch
-                              checked={iv.is_active}
-                              onCheckedChange={() => handleToggleActive(iv)}
-                              aria-label={`Toggle ${iv.full_name} active status`}
-                            />
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate flex items-center gap-1.5 mt-0.5">
-                            <Mail className="h-3 w-3 shrink-0" />
-                            {iv.email}
-                          </p>
-                        </div>
+                  <div className="p-5">
+                    {/* Header row */}
+                    <div className="flex items-start gap-3.5 mb-4">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${getAvatarGradient(iv.id)} text-white text-sm font-bold shadow-lg ring-2 ring-white/10`}>
+                        {getInitials(...splitName(iv.full_name))}
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-white truncate">
+                            {iv.full_name}
+                          </h3>
+                          <Switch
+                            checked={iv.is_active}
+                            onCheckedChange={() => handleToggleActive(iv)}
+                            aria-label={`Toggle ${iv.full_name} active status`}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-400 truncate flex items-center gap-1.5 mt-0.5">
+                          <Mail className="h-3 w-3 shrink-0" />
+                          {iv.email}
+                        </p>
+                      </div>
+                    </div>
 
-                      {/* Badges row */}
-                      <div className="flex items-center gap-1.5 flex-wrap mb-3">
-                        {iv.seniority && (
-                          <Badge
-                            variant="outline"
-                            className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${SENIORITY_COLORS[iv.seniority] || 'bg-muted text-foreground'}`}
-                          >
-                            {iv.seniority}
-                          </Badge>
-                        )}
-                        {iv.department && (
-                          <Badge variant="outline" className="text-[11px] px-2 py-0.5 rounded-full font-medium gap-1">
-                            <Building2 className="h-3 w-3" />
-                            {iv.department}
-                          </Badge>
-                        )}
-                        <Badge
-                          className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                            iv.is_active
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
-                              : 'bg-gray-100 text-gray-500 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700'
-                          }`}
-                          variant="outline"
+                    {/* Badges row */}
+                    <div className="flex items-center gap-1.5 flex-wrap mb-3">
+                      {iv.seniority && (
+                        <span
+                          className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium border ${SENIORITY_COLORS[iv.seniority] || 'bg-white/5 text-slate-400 border-white/10'}`}
                         >
-                          <span className={`inline-block h-1.5 w-1.5 rounded-full mr-1 ${iv.is_active ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                          {iv.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-
-                      {/* Specialization badges */}
-                      {iv.specializations?.length > 0 && (
-                        <div className="flex items-center gap-1.5 flex-wrap mb-4">
-                          {iv.specializations.slice(0, 3).map(s => (
-                            <Badge
-                              key={s}
-                              variant="secondary"
-                              className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border-0 dark:bg-blue-900/30 dark:text-blue-300"
-                            >
-                              {s}
-                            </Badge>
-                          ))}
-                          {iv.specializations.length > 3 && (
-                            <span className="text-[11px] text-muted-foreground font-medium">
-                              +{iv.specializations.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Stats footer */}
-                      <div className="flex items-center gap-5 pt-3.5 border-t border-dashed border-muted-foreground/15">
-                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Briefcase className="h-3.5 w-3.5" />
-                          <span className="font-semibold text-foreground">{iv.total_interviews ?? 0}</span>
-                          interviews
+                          {iv.seniority}
                         </span>
-                        {iv.avg_rating_given != null && (
-                          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                            <span className="font-semibold text-foreground">{iv.avg_rating_given.toFixed(1)}</span>
-                            rating
+                      )}
+                      {iv.department && (
+                        <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full font-medium bg-white/5 text-slate-300 border border-white/10">
+                          <Building2 className="h-3 w-3" />
+                          {iv.department}
+                        </span>
+                      )}
+                      <span
+                        className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-full font-medium border ${
+                          iv.is_active
+                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                            : 'bg-white/5 text-slate-400 border-white/10'
+                        }`}
+                      >
+                        <span className={`inline-block h-1.5 w-1.5 rounded-full mr-1 ${iv.is_active ? 'bg-emerald-500' : 'bg-gray-500'}`} />
+                        {iv.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+
+                    {/* Specialization badges */}
+                    {iv.specializations?.length > 0 && (
+                      <div className="flex items-center gap-1.5 flex-wrap mb-4">
+                        {iv.specializations.slice(0, 3).map(s => (
+                          <span
+                            key={s}
+                            className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 font-medium"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                        {iv.specializations.length > 3 && (
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            +{iv.specializations.length - 3} more
                           </span>
                         )}
                       </div>
+                    )}
+
+                    {/* Stats footer */}
+                    <div className="flex items-center gap-5 pt-3.5 border-t border-dashed border-white/10">
+                      <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                        <Briefcase className="h-3.5 w-3.5" />
+                        <span className="font-semibold text-white">{iv.total_interviews ?? 0}</span>
+                        interviews
+                      </span>
+                      {iv.avg_rating_given != null && (
+                        <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+                          <span className="font-semibold text-white">{iv.avg_rating_given.toFixed(1)}</span>
+                          rating
+                        </span>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </StaggerGrid>
@@ -475,81 +480,104 @@ export default function InterviewerManagement() {
 
       {/* ── Invite Interviewer Dialog ──────────────────────────────── */}
       <Dialog open={showInvite} onOpenChange={v => { if (!v) resetInviteDialog(); else setShowInvite(true); }}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent className="sm:max-w-md border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5 text-lg">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+            <DialogTitle className="flex items-center gap-2.5 text-lg text-white">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-600 text-white">
                 <UserPlus className="h-4 w-4" />
               </div>
               Invite Interviewer
             </DialogTitle>
-            <DialogDescription>Send an invitation to a new interviewer to join the panel.</DialogDescription>
+            <DialogDescription className="text-slate-400">Send an invitation to a new interviewer to join the panel.</DialogDescription>
           </DialogHeader>
           {!inviteUrl ? (
             <div className="space-y-4 py-2">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="inv-first" className="text-xs font-medium">First Name *</Label>
-                  <Input id="inv-first" value={inviteForm.first_name}
+                  <label htmlFor="inv-first" className="text-xs font-medium text-slate-300">First Name *</label>
+                  <input id="inv-first" value={inviteForm.first_name}
                     onChange={e => setInviteForm(f => ({ ...f, first_name: e.target.value }))}
-                    placeholder="Jane" className="rounded-xl" />
+                    placeholder="Jane"
+                    className="w-full h-10 px-3 rounded-xl text-sm outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+                    style={glassInput}
+                    onFocus={handleFocus} onBlur={handleBlur} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="inv-last" className="text-xs font-medium">Last Name *</Label>
-                  <Input id="inv-last" value={inviteForm.last_name}
+                  <label htmlFor="inv-last" className="text-xs font-medium text-slate-300">Last Name *</label>
+                  <input id="inv-last" value={inviteForm.last_name}
                     onChange={e => setInviteForm(f => ({ ...f, last_name: e.target.value }))}
-                    placeholder="Smith" className="rounded-xl" />
+                    placeholder="Smith"
+                    className="w-full h-10 px-3 rounded-xl text-sm outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+                    style={glassInput}
+                    onFocus={handleFocus} onBlur={handleBlur} />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="inv-email" className="text-xs font-medium">Email *</Label>
-                <Input id="inv-email" type="email" value={inviteForm.email}
+                <label htmlFor="inv-email" className="text-xs font-medium text-slate-300">Email *</label>
+                <input id="inv-email" type="email" value={inviteForm.email}
                   onChange={e => setInviteForm(f => ({ ...f, email: e.target.value }))}
-                  placeholder="jane.smith@company.com" className="rounded-xl" />
+                  placeholder="jane.smith@company.com"
+                  className="w-full h-10 px-3 rounded-xl text-sm outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={glassInput}
+                  onFocus={handleFocus} onBlur={handleBlur} />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="inv-specs" className="text-xs font-medium">Specializations</Label>
-                <Input id="inv-specs" value={inviteForm.specializations}
+                <label htmlFor="inv-specs" className="text-xs font-medium text-slate-300">Specializations</label>
+                <input id="inv-specs" value={inviteForm.specializations}
                   onChange={e => setInviteForm(f => ({ ...f, specializations: e.target.value }))}
-                  placeholder="React, System Design, Behavioral" className="rounded-xl" />
-                <p className="text-[11px] text-muted-foreground">Comma-separated list of interview topics</p>
+                  placeholder="React, System Design, Behavioral"
+                  className="w-full h-10 px-3 rounded-xl text-sm outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={glassInput}
+                  onFocus={handleFocus} onBlur={handleBlur} />
+                <p className="text-[11px] text-slate-500">Comma-separated list of interview topics</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="inv-seniority" className="text-xs font-medium">Seniority</Label>
+                  <label htmlFor="inv-seniority" className="text-xs font-medium text-slate-300">Seniority</label>
                   <Select value={inviteForm.seniority} onValueChange={v => setInviteForm(f => ({ ...f, seniority: v }))}>
-                    <SelectTrigger id="inv-seniority" className="rounded-xl"><SelectValue placeholder="Select..." /></SelectTrigger>
-                    <SelectContent>
-                      {SENIORITY_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    <SelectTrigger id="inv-seniority" className="h-10 rounded-xl text-white border-0" style={glassInput}>
+                      <SelectValue placeholder="Select..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                      {SENIORITY_OPTIONS.map(s => <SelectItem key={s} value={s} className={sItemCls}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="inv-dept" className="text-xs font-medium">Department</Label>
-                  <Input id="inv-dept" value={inviteForm.department}
+                  <label htmlFor="inv-dept" className="text-xs font-medium text-slate-300">Department</label>
+                  <input id="inv-dept" value={inviteForm.department}
                     onChange={e => setInviteForm(f => ({ ...f, department: e.target.value }))}
-                    placeholder="Engineering" className="rounded-xl" />
+                    placeholder="Engineering"
+                    className="w-full h-10 px-3 rounded-xl text-sm outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+                    style={glassInput}
+                    onFocus={handleFocus} onBlur={handleBlur} />
                 </div>
               </div>
             </div>
           ) : (
             <div className="space-y-4 py-3">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-                  <Check className="h-4 w-4 text-emerald-600" />
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/20">
+                  <Check className="h-4 w-4 text-emerald-400" />
                 </div>
-                <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Invitation created successfully</p>
+                <p className="text-sm text-emerald-400 font-medium">Invitation created successfully</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground mb-2">Share this link with the interviewer:</p>
+                <p className="text-xs text-slate-400 mb-2">Share this link with the interviewer:</p>
                 <div className="flex items-center gap-2">
-                  <Input value={inviteUrl} readOnly className="text-xs font-mono rounded-xl bg-muted/50" />
-                  <Button size="icon" variant="outline" onClick={handleCopy} className="shrink-0 rounded-xl h-10 w-10">
-                    {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                  </Button>
+                  <input value={inviteUrl} readOnly
+                    className="flex-1 h-10 px-3 rounded-xl text-xs font-mono outline-none"
+                    style={{ ...glassInput, background: 'var(--orbis-card)' }} />
+                  <button
+                    onClick={handleCopy}
+                    className="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl text-slate-300 transition-all hover:text-white"
+                    style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+                  >
+                    {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                  </button>
                 </div>
                 {copied && (
-                  <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+                  <p className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1">
                     <Check className="h-3 w-3" /> Copied to clipboard
                   </p>
                 )}
@@ -559,20 +587,35 @@ export default function InterviewerManagement() {
           <DialogFooter>
             {!inviteUrl ? (
               <>
-                <Button variant="outline" onClick={resetInviteDialog} className="rounded-xl">Cancel</Button>
-                <Button onClick={handleInvite}
+                <button
+                  onClick={resetInviteDialog}
+                  className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-slate-300 transition-all hover:text-white"
+                  style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleInvite}
                   disabled={inviteLoading || !inviteForm.email.trim() || !inviteForm.first_name.trim() || !inviteForm.last_name.trim()}
-                  className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+                  className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-white shadow-lg shadow-blue-500/25 transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+                >
                   {inviteLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       Inviting...
                     </span>
                   ) : 'Send Invite'}
-                </Button>
+                </button>
               </>
             ) : (
-              <Button onClick={resetInviteDialog} className="rounded-xl">Done</Button>
+              <button
+                onClick={resetInviteDialog}
+                className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-white shadow-lg shadow-blue-500/25 transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+              >
+                Done
+              </button>
             )}
           </DialogFooter>
         </DialogContent>

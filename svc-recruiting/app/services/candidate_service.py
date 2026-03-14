@@ -921,6 +921,9 @@ async def get_talent_pool_profile(db: AsyncSession, profile_id: str) -> Optional
         "ai_resume_analysis": ai,
         "parsed_metadata": profile.parsed_metadata,
         "created_at": str(profile.created_at) if profile.created_at else None,
+        "linkedin_url": profile.linkedin_url,
+        "github_url": profile.github_url,
+        "portfolio_url": profile.portfolio_url,
     }
 
 

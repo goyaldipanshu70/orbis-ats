@@ -16,45 +16,45 @@ interface EngagementTimelineProps {
 const EVENT_COLORS: Record<string, { dot: string; line: string; bg: string }> = {
   stage_change: {
     dot: 'bg-blue-500',
-    line: 'border-blue-300 dark:border-blue-800',
-    bg: 'bg-blue-50 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300',
+    line: 'border-blue-500/30',
+    bg: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
   },
   interview: {
-    dot: 'bg-purple-500',
-    line: 'border-purple-300 dark:border-purple-800',
-    bg: 'bg-purple-50 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300',
+    dot: 'bg-blue-500',
+    line: 'border-blue-500/30',
+    bg: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
   },
   feedback: {
-    dot: 'bg-green-500',
-    line: 'border-green-300 dark:border-green-800',
-    bg: 'bg-green-50 text-green-800 dark:bg-green-950/40 dark:text-green-300',
+    dot: 'bg-emerald-500',
+    line: 'border-emerald-500/30',
+    bg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
   },
   applied: {
-    dot: 'bg-indigo-500',
-    line: 'border-indigo-300 dark:border-indigo-800',
-    bg: 'bg-indigo-50 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300',
+    dot: 'bg-blue-500',
+    line: 'border-blue-500/30',
+    bg: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
   },
   offer: {
     dot: 'bg-amber-500',
-    line: 'border-amber-300 dark:border-amber-800',
-    bg: 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+    line: 'border-amber-500/30',
+    bg: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
   },
   hired: {
     dot: 'bg-emerald-500',
-    line: 'border-emerald-300 dark:border-emerald-800',
-    bg: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
+    line: 'border-emerald-500/30',
+    bg: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
   },
   rejected: {
     dot: 'bg-red-500',
-    line: 'border-red-300 dark:border-red-800',
-    bg: 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300',
+    line: 'border-red-500/30',
+    bg: 'bg-red-500/10 text-red-400 border border-red-500/20',
   },
 };
 
 const DEFAULT_COLORS = {
-  dot: 'bg-muted-foreground',
-  line: 'border-border',
-  bg: 'bg-muted text-foreground',
+  dot: 'bg-slate-500',
+  line: 'border-white/10',
+  bg: 'bg-white/5 text-slate-400 border border-white/10',
 };
 
 function formatDate(dateStr: string): string {
@@ -91,7 +91,7 @@ function formatEventType(type: string): string {
 export function EngagementTimeline({ events }: EngagementTimelineProps) {
   if (!events || events.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center py-12 text-sm text-slate-500">
         No timeline events yet
       </div>
     );
@@ -112,10 +112,10 @@ export function EngagementTimeline({ events }: EngagementTimelineProps) {
           <motion.div key={idx} variants={slideInRight} className="flex gap-4 group">
             {/* Left: Date */}
             <div className="w-24 shrink-0 text-right pt-1">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="text-xs font-medium text-slate-400">
                 {formatDate(event.date)}
               </p>
-              <p className="text-[10px] text-muted-foreground/70">
+              <p className="text-[10px] text-slate-500/70">
                 {formatTime(event.date)}
               </p>
             </div>
@@ -124,7 +124,7 @@ export function EngagementTimeline({ events }: EngagementTimelineProps) {
             <div className="flex flex-col items-center">
               <div
                 className={cn(
-                  'h-3 w-3 rounded-full ring-4 ring-background shrink-0 mt-1.5 z-10',
+                  'h-3 w-3 rounded-full shrink-0 mt-1.5 z-10 ring-4 ring-[var(--orbis-page)]',
                   colors.dot
                 )}
               />
@@ -140,7 +140,14 @@ export function EngagementTimeline({ events }: EngagementTimelineProps) {
 
             {/* Right: Content */}
             <div className={cn('flex-1 pb-6', isLast ? 'pb-0' : '')}>
-              <div className="rounded-lg border bg-card p-3 shadow-sm transition-shadow group-hover:shadow-md">
+              <div
+                className="rounded-lg p-3 transition-shadow group-hover:shadow-md group-hover:shadow-black/20"
+                style={{
+                  background: 'var(--orbis-card)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid var(--orbis-border)',
+                }}
+              >
                 <div className="flex items-center gap-2 mb-1">
                   <span
                     className={cn(
@@ -151,10 +158,10 @@ export function EngagementTimeline({ events }: EngagementTimelineProps) {
                     {formatEventType(event.event_type)}
                   </span>
                 </div>
-                <p className="text-sm text-foreground">{event.description}</p>
+                <p className="text-sm text-white">{event.description}</p>
                 {event.actor && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    by {event.actor}
+                  <p className="text-xs text-slate-500 mt-1">
+                    by {/^\d+$/.test(event.actor) ? 'Team Member' : event.actor}
                   </p>
                 )}
               </div>

@@ -82,6 +82,55 @@ export interface NodeTypeInfo {
   display_name: string;
   description: string;
   config_schema: Record<string, any>;
+  is_custom?: boolean;
+  id?: number;
+}
+
+export interface CustomNodeTypeCreate {
+  node_type: string;
+  category: 'trigger' | 'search' | 'ai' | 'processing' | 'action';
+  display_name: string;
+  description?: string;
+  config_schema?: Record<string, any>;
+  execution_code: string;
+  status?: 'draft' | 'published';
+}
+
+export interface CustomNodeTypeUpdate {
+  display_name?: string;
+  description?: string;
+  category?: string;
+  config_schema?: Record<string, any>;
+  execution_code?: string;
+  status?: 'draft' | 'published';
+}
+
+export interface CustomNodeTypeDetail {
+  id: number;
+  node_type: string;
+  category: string;
+  display_name: string;
+  description: string;
+  config_schema: Record<string, any>;
+  execution_code: string;
+  status: 'draft' | 'published';
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TestNodeRequest {
+  execution_code: string;
+  config_schema?: Record<string, any>;
+  config?: Record<string, any>;
+  input_data?: Record<string, any>;
+}
+
+export interface TestNodeResponse {
+  success: boolean;
+  error: string | null;
+  output: any;
+  lead_count?: number;
 }
 
 export interface WorkflowTemplate {

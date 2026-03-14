@@ -62,7 +62,7 @@ async def gather_candidate_context(db: AsyncSession, candidate_id: int, jd_id: i
             InterviewSchedule.jd_id == jd_id,
         )
     )
-    schedule_ids = [s.id for s in schedule_result.scalars().all()]
+    schedule_ids = list(schedule_result.scalars().all())
     feedback_list = []
     if schedule_ids:
         fb_result = await db.execute(

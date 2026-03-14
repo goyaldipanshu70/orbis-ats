@@ -1,11 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AppLayout from '@/components/layout/AppLayout';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
@@ -22,9 +17,14 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DataPagination } from '@/components/DataPagination';
-import { fadeInUp, staggerContainer } from '@/lib/animations';
-import { StaggerGrid } from '@/components/ui/stagger-grid';
-import { cn } from '@/lib/utils';
+
+// ---------------------------------------------------------------------------
+// Design system – dark glass tokens
+// ---------------------------------------------------------------------------
+
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,10 +58,10 @@ const PRIORITY_LABELS: Record<Priority, string> = {
 };
 
 const PRIORITY_BADGE: Record<Priority, string> = {
-  low: 'bg-muted text-foreground border-border',
-  normal: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800',
-  high: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-  urgent: 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800',
+  low: 'bg-white/5 text-slate-400 border border-white/10',
+  normal: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  high: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+  urgent: 'bg-red-500/10 text-red-400 border border-red-500/20',
 };
 
 const PRIORITY_ICON: Record<Priority, React.ElementType> = {
@@ -72,17 +72,17 @@ const PRIORITY_ICON: Record<Priority, React.ElementType> = {
 };
 
 const BORDER_COLOR: Record<Priority, string> = {
-  low: 'border-l-gray-400 dark:border-l-gray-500',
-  normal: 'border-l-blue-500 dark:border-l-blue-400',
-  high: 'border-l-amber-500 dark:border-l-amber-400',
-  urgent: 'border-l-red-500 dark:border-l-red-400',
+  low: 'border-l-gray-500',
+  normal: 'border-l-blue-400',
+  high: 'border-l-amber-400',
+  urgent: 'border-l-red-400',
 };
 
 const CARD_BG: Record<Priority, string> = {
   low: '',
   normal: '',
   high: '',
-  urgent: 'bg-red-50/60 dark:bg-red-950/20',
+  urgent: 'bg-red-500/[0.03]',
 };
 
 const FILTER_PILLS: { value: FilterPriority; label: string }[] = [
@@ -303,44 +303,50 @@ export default function Announcements() {
   const announcementForm = (
     <div className="space-y-5 py-2">
       <div className="space-y-2">
-        <Label htmlFor="ann-title" className="text-sm font-medium">Title</Label>
-        <Input
+        <label htmlFor="ann-title" className="text-sm font-medium text-slate-300">Title</label>
+        <input
           id="ann-title"
           placeholder="e.g. Office Closure on Friday"
           value={formTitle}
           onChange={(e) => setFormTitle(e.target.value)}
-          className="h-10"
+          className="w-full h-10 px-3 rounded-xl text-sm outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+          style={glassInput}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(27,142,229,0.5)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--orbis-border)'; }}
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="ann-content" className="text-sm font-medium">Content</Label>
-        <Textarea
+        <label htmlFor="ann-content" className="text-sm font-medium text-slate-300">Content</label>
+        <textarea
           id="ann-content"
           placeholder="Write the announcement body..."
           value={formContent}
           onChange={(e) => setFormContent(e.target.value)}
           rows={8}
-          className="resize-y min-h-[120px]"
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none resize-y min-h-[120px] placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+          style={glassInput}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(27,142,229,0.5)'; }}
+          onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--orbis-border)'; }}
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Priority</Label>
+          <label className="text-sm font-medium text-slate-300">Priority</label>
           <Select value={formPriority} onValueChange={(v) => setFormPriority(v as Priority)}>
-            <SelectTrigger className="h-10">
+            <SelectTrigger className="h-10 rounded-xl text-white border-0" style={glassInput}>
               <SelectValue placeholder="Select priority" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl border-0" style={selectDrop}>
               {PRIORITIES.map((p) => (
-                <SelectItem key={p} value={p}>
+                <SelectItem key={p} value={p} className="text-slate-200 focus:bg-white/10 focus:text-white">
                   <div className="flex items-center gap-2">
-                    <span className={cn(
+                    <span className={[
                       'h-2 w-2 rounded-full',
-                      p === 'urgent' && 'bg-red-500',
-                      p === 'high' && 'bg-amber-500',
-                      p === 'normal' && 'bg-blue-500',
-                      p === 'low' && 'bg-gray-400',
-                    )} />
+                      p === 'urgent' ? 'bg-red-500' : '',
+                      p === 'high' ? 'bg-amber-500' : '',
+                      p === 'normal' ? 'bg-blue-500' : '',
+                      p === 'low' ? 'bg-gray-400' : '',
+                    ].filter(Boolean).join(' ')} />
                     {PRIORITY_LABELS[p]}
                   </div>
                 </SelectItem>
@@ -349,10 +355,10 @@ export default function Announcements() {
           </Select>
         </div>
         <div className="space-y-2">
-          <Label className="text-sm font-medium">Pin to top</Label>
+          <label className="text-sm font-medium text-slate-300">Pin to top</label>
           <div className="flex items-center gap-3 pt-1.5">
             <Switch checked={formPinned} onCheckedChange={setFormPinned} />
-            <span className="text-sm text-muted-foreground">{formPinned ? 'Pinned' : 'Not pinned'}</span>
+            <span className="text-sm text-slate-400">{formPinned ? 'Pinned' : 'Not pinned'}</span>
           </div>
         </div>
       </div>
@@ -369,26 +375,33 @@ export default function Announcements() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
-            <p className="text-sm text-muted-foreground mt-1">Company-wide news and updates</p>
+            <h1 className="text-2xl font-bold text-white">Announcements</h1>
+            <p className="text-sm text-slate-400 mt-1">Company-wide news and updates</p>
           </div>
           {canWrite && (
-            <Button onClick={() => setCreateOpen(true)} size="default" className="gap-2 shadow-sm">
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white shadow-sm transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+            >
               <Plus className="h-4 w-4" />
               New Announcement
-            </Button>
+            </button>
           )}
         </div>
 
         {/* Search + Filter bar */}
         <div className="space-y-3">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <input
               placeholder="Search announcements..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-10"
+              className="w-full h-10 pl-10 pr-3 rounded-xl text-sm outline-none placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/40 transition-all"
+              style={glassInput}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'rgba(27,142,229,0.5)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--orbis-border)'; }}
             />
           </div>
 
@@ -399,12 +412,12 @@ export default function Announcements() {
                 <button
                   key={pill.value}
                   onClick={() => { setPriorityFilter(pill.value); setCurrentPage(1); }}
-                  className={cn(
-                    'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150',
+                  className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-150"
+                  style={
                     priorityFilter === pill.value
-                      ? 'bg-foreground text-background shadow-sm'
-                      : 'bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground',
-                  )}
+                      ? { background: 'rgba(27,142,229,0.15)', color: '#4db5f0' }
+                      : { background: 'var(--orbis-input)', color: '#94a3b8' }
+                  }
                 >
                   {pill.value === 'urgent' && <span className="h-1.5 w-1.5 rounded-full bg-red-500 mr-1.5" />}
                   {pill.value === 'normal' && <span className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-1.5" />}
@@ -417,14 +430,14 @@ export default function Announcements() {
             {/* Sort dropdown */}
             <div className="ml-auto">
               <Select value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
-                <SelectTrigger className="h-8 w-[150px] text-xs gap-1.5">
-                  <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                <SelectTrigger className="h-8 w-[150px] text-xs gap-1.5 rounded-xl text-white border-0" style={glassInput}>
+                  <ArrowUpDown className="h-3 w-3 text-slate-500" />
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest first</SelectItem>
-                  <SelectItem value="oldest">Oldest first</SelectItem>
-                  <SelectItem value="priority">By priority</SelectItem>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                  <SelectItem value="newest" className="text-slate-200 focus:bg-white/10 focus:text-white">Newest first</SelectItem>
+                  <SelectItem value="oldest" className="text-slate-200 focus:bg-white/10 focus:text-white">Oldest first</SelectItem>
+                  <SelectItem value="priority" className="text-slate-200 focus:bg-white/10 focus:text-white">By priority</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -435,60 +448,70 @@ export default function Announcements() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse rounded-lg border border-border p-5">
+              <div key={i} className="animate-pulse rounded-lg p-5" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
                 <div className="flex items-start justify-between mb-3">
                   <div className="space-y-2 flex-1">
-                    <div className="h-5 w-2/3 bg-muted rounded" />
-                    <div className="h-3 w-1/4 bg-muted rounded" />
+                    <div className="h-5 w-2/3 bg-white/10 rounded" />
+                    <div className="h-3 w-1/4 bg-white/10 rounded" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="h-3 w-full bg-muted rounded" />
-                  <div className="h-3 w-4/5 bg-muted rounded" />
-                  <div className="h-3 w-3/5 bg-muted rounded" />
+                  <div className="h-3 w-full bg-white/10 rounded" />
+                  <div className="h-3 w-4/5 bg-white/10 rounded" />
+                  <div className="h-3 w-3/5 bg-white/10 rounded" />
                 </div>
               </div>
             ))}
           </div>
         ) : filteredAnnouncements.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="p-4 rounded-full bg-muted/50 mb-4">
-              <Megaphone className="h-8 w-8 text-muted-foreground" />
+            <div className="p-4 rounded-full mb-4" style={{ background: 'var(--orbis-input)' }}>
+              <Megaphone className="h-8 w-8 text-slate-500" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1">No announcements found</h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
+            <h3 className="text-lg font-semibold text-white mb-1">No announcements found</h3>
+            <p className="text-sm text-slate-400 max-w-sm">
               {searchQuery || priorityFilter !== 'all'
                 ? 'Try adjusting your search or filters to find what you are looking for.'
                 : 'Create the first announcement to share updates with your team.'}
             </p>
             {canWrite && !searchQuery && priorityFilter === 'all' && (
-              <Button onClick={() => setCreateOpen(true)} variant="outline" className="gap-2 mt-4">
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl text-sm font-medium text-slate-300 transition-all hover:text-white"
+                style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+              >
                 <Plus className="h-4 w-4" />
                 Create Announcement
-              </Button>
+              </button>
             )}
           </div>
         ) : (
           <>
-            <StaggerGrid className="space-y-3">
+            <div className="space-y-3">
               {filteredAnnouncements.map((a) => {
                 const PriorityIcon = PRIORITY_ICON[a.priority] || Bell;
                 const isExpanded = expandedIds.has(a.id);
                 const isLongContent = a.content.length > 200;
 
                 return (
-                  <motion.div key={a.id} variants={fadeInUp}>
+                  <motion.div
+                    key={a.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
                     <div
-                      className={cn(
-                        'relative rounded-lg border border-border border-l-4 transition-all duration-200 hover:shadow-md',
+                      className={[
+                        'relative rounded-lg border-l-4 transition-all duration-200 hover:shadow-md',
                         BORDER_COLOR[a.priority],
                         CARD_BG[a.priority],
-                      )}
+                      ].filter(Boolean).join(' ')}
+                      style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
                     >
                       {/* Pinned indicator */}
                       {a.pinned && (
                         <div className="absolute top-3 right-3">
-                          <div className="flex items-center gap-1 text-blue-500">
+                          <div className="flex items-center gap-1 text-blue-400">
                             <Pin className="h-4 w-4 fill-current" />
                           </div>
                         </div>
@@ -499,24 +522,24 @@ export default function Announcements() {
                         <div className="flex items-start gap-3 pr-8">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2.5 mb-1">
-                              <h3 className="text-lg font-semibold text-foreground line-clamp-1">
+                              <h3 className="text-lg font-semibold text-white line-clamp-1">
                                 {a.title}
                               </h3>
-                              <Badge className={cn('text-[10px] px-2 py-0.5 gap-1 shrink-0', PRIORITY_BADGE[a.priority])}>
+                              <span className={`inline-flex items-center text-[10px] px-2 py-0.5 gap-1 shrink-0 rounded-md ${PRIORITY_BADGE[a.priority]}`}>
                                 <PriorityIcon className="h-3 w-3" />
                                 {PRIORITY_LABELS[a.priority]}
-                              </Badge>
+                              </span>
                             </div>
 
                             {/* Author + Date */}
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                            <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
                               <div className="flex items-center gap-1.5">
-                                <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center">
-                                  <User className="h-3 w-3 text-muted-foreground" />
+                                <div className="h-5 w-5 rounded-full flex items-center justify-center" style={{ background: 'var(--orbis-input)' }}>
+                                  <User className="h-3 w-3 text-slate-500" />
                                 </div>
                                 <span>Admin</span>
                               </div>
-                              <span className="text-muted-foreground/50">|</span>
+                              <span className="text-slate-400">|</span>
                               <span>{format(new Date(a.created_at), 'MMM d, yyyy h:mm a')}</span>
                             </div>
                           </div>
@@ -524,16 +547,16 @@ export default function Announcements() {
 
                         {/* Content */}
                         <div className="relative">
-                          <p className={cn(
-                            'text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed',
-                            !isExpanded && isLongContent && 'line-clamp-3',
-                          )}>
+                          <p className={[
+                            'text-sm text-slate-300 whitespace-pre-wrap leading-relaxed',
+                            !isExpanded && isLongContent ? 'line-clamp-3' : '',
+                          ].filter(Boolean).join(' ')}>
                             {a.content}
                           </p>
                           {isLongContent && (
                             <button
                               onClick={() => toggleExpand(a.id)}
-                              className="inline-flex items-center gap-1 mt-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                              className="inline-flex items-center gap-1 mt-1.5 text-xs font-medium text-blue-400 hover:text-blue-300 transition-colors"
                             >
                               {isExpanded ? (
                                 <>Read less <ChevronUp className="h-3 w-3" /></>
@@ -546,39 +569,33 @@ export default function Announcements() {
 
                         {/* Footer actions */}
                         {canWrite && (
-                          <div className="flex items-center gap-0.5 mt-4 pt-3 border-t border-border/60">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={cn(
-                                'h-8 px-2.5 gap-1.5 text-xs',
+                          <div className="flex items-center gap-0.5 mt-4 pt-3" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+                            <button
+                              className={[
+                                'inline-flex items-center h-8 px-2.5 gap-1.5 text-xs rounded-md transition-colors',
                                 a.pinned
-                                  ? 'text-blue-600 hover:text-blue-700'
-                                  : 'text-muted-foreground hover:text-blue-600',
-                              )}
+                                  ? 'text-blue-400 hover:text-blue-300'
+                                  : 'text-slate-500 hover:text-blue-400',
+                              ].join(' ')}
                               onClick={() => handleTogglePin(a)}
                             >
                               {a.pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
                               <span>{a.pinned ? 'Unpin' : 'Pin'}</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2.5 text-muted-foreground hover:text-amber-600 gap-1.5 text-xs"
+                            </button>
+                            <button
+                              className="inline-flex items-center h-8 px-2.5 text-slate-500 hover:text-amber-400 gap-1.5 text-xs rounded-md transition-colors"
                               onClick={() => openEdit(a)}
                             >
                               <Pencil className="h-3.5 w-3.5" />
                               <span>Edit</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2.5 text-muted-foreground hover:text-red-600 gap-1.5 text-xs"
+                            </button>
+                            <button
+                              className="inline-flex items-center h-8 px-2.5 text-slate-500 hover:text-red-400 gap-1.5 text-xs rounded-md transition-colors"
                               onClick={() => setDeleteTarget(a)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               <span>Delete</span>
-                            </Button>
+                            </button>
                           </div>
                         )}
                       </div>
@@ -586,7 +603,7 @@ export default function Announcements() {
                   </motion.div>
                 );
               })}
-            </StaggerGrid>
+            </div>
             <DataPagination
               page={paginationMeta.page}
               totalPages={paginationMeta.total_pages}
@@ -600,18 +617,29 @@ export default function Announcements() {
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="border-0 rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
             <DialogHeader>
-              <DialogTitle className="text-lg">New Announcement</DialogTitle>
-              <DialogDescription>Publish a new company-wide announcement.</DialogDescription>
+              <DialogTitle className="text-lg text-white">New Announcement</DialogTitle>
+              <DialogDescription className="text-slate-400">Publish a new company-wide announcement.</DialogDescription>
             </DialogHeader>
             {announcementForm}
             <DialogFooter className="pt-2">
-              <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
-              <Button onClick={handleCreate} disabled={saving} className="gap-2">
+              <button
+                onClick={() => setCreateOpen(false)}
+                className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-slate-300 transition-all hover:text-white"
+                style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={saving}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+              >
                 {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Publishing...</> : 'Publish'}
-              </Button>
+              </button>
             </DialogFooter>
           </motion.div>
         </DialogContent>
@@ -619,31 +647,53 @@ export default function Announcements() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) { setEditTarget(null); resetForm(); } }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="border-0 rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle className="text-lg">Edit Announcement</DialogTitle>
-            <DialogDescription>Update the announcement details.</DialogDescription>
+            <DialogTitle className="text-lg text-white">Edit Announcement</DialogTitle>
+            <DialogDescription className="text-slate-400">Update the announcement details.</DialogDescription>
           </DialogHeader>
           {announcementForm}
           <DialogFooter className="pt-2">
-            <Button variant="outline" onClick={() => { setEditTarget(null); resetForm(); }}>Cancel</Button>
-            <Button onClick={handleEdit} disabled={saving} className="gap-2">
+            <button
+              onClick={() => { setEditTarget(null); resetForm(); }}
+              className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-slate-300 transition-all hover:text-white"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleEdit}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+            >
               {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : 'Save Changes'}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="border-0 rounded-2xl max-w-sm" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle>Delete Announcement</DialogTitle>
-            <DialogDescription>Are you sure you want to delete &ldquo;{deleteTarget?.title}&rdquo;? This action cannot be undone.</DialogDescription>
+            <DialogTitle className="text-white">Delete Announcement</DialogTitle>
+            <DialogDescription className="text-slate-400">Are you sure you want to delete &ldquo;{deleteTarget?.title}&rdquo;? This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} className="gap-2"><Trash2 className="h-4 w-4" />Delete</Button>
+            <button
+              onClick={() => setDeleteTarget(null)}
+              className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-slate-300 transition-all hover:text-white"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-all"
+            >
+              <Trash2 className="h-4 w-4" />Delete
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

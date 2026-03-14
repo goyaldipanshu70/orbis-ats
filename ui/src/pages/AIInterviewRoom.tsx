@@ -16,6 +16,10 @@ import ThreeErrorBoundary from '@/components/ai-interview/three/ThreeErrorBounda
 const AiAvatarOrb = lazy(() => import('@/components/ai-interview/three/AiAvatarOrb'));
 const CelebrationScene = lazy(() => import('@/components/ai-interview/three/CelebrationScene'));
 
+/* ─── Design System ─── */
+
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 type InterviewState = 'loading' | 'lobby' | 'active' | 'completed' | 'error';
@@ -254,7 +258,7 @@ export default function AIInterviewRoom() {
 
   const progressPct = totalQuestions > 0 ? Math.round((currentQuestion / totalQuestions) * 100) : 0;
 
-  // ── Loading ────────────────────────────────────────────────────
+  // -- Loading ----
 
   if (state === 'loading') {
     return (
@@ -265,7 +269,7 @@ export default function AIInterviewRoom() {
           className="flex flex-col items-center gap-4"
         >
           <div className="relative">
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+            <div className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/20" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
               <Brain className="h-7 w-7 text-white" />
             </div>
             <Loader2 className="h-5 w-5 animate-spin text-blue-400 absolute -bottom-1 -right-1" />
@@ -276,7 +280,7 @@ export default function AIInterviewRoom() {
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────
+  // -- Error ----
 
   if (state === 'error') {
     return (
@@ -291,11 +295,12 @@ export default function AIInterviewRoom() {
           <div className="mx-auto w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
             <X className="h-10 w-10 text-red-400" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight">Interview Unavailable</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-white">Interview Unavailable</h2>
           <p className="text-slate-400 leading-relaxed">{errorMsg || 'This interview link is invalid or has expired.'}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-slate-300 hover:bg-white/10 transition-colors"
+            className="mt-4 px-6 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/10 transition-colors"
+            style={glassCard}
           >
             Try Again
           </button>
@@ -304,13 +309,13 @@ export default function AIInterviewRoom() {
     );
   }
 
-  // ── Lobby ──────────────────────────────────────────────────────
+  // -- Lobby ----
 
   if (state === 'lobby' && sessionInfo) {
     return <InterviewLobby sessionInfo={sessionInfo} onStart={handleStart} isStarting={isStarting} />;
   }
 
-  // ── Completed ──────────────────────────────────────────────────
+  // -- Completed ----
 
   if (state === 'completed') {
     const completionPct = completionStats.total > 0
@@ -324,9 +329,9 @@ export default function AIInterviewRoom() {
         <div className="fixed bottom-1/4 right-1/3 w-[500px] h-[500px] bg-blue-500/[0.04] rounded-full blur-[150px] pointer-events-none" />
 
         {/* Header */}
-        <header className="w-full flex items-center justify-between px-8 lg:px-20 py-5 border-b border-white/[0.04]">
+        <header className="w-full flex items-center justify-between px-8 lg:px-20 py-5" style={{ borderBottom: '1px solid var(--orbis-grid)' }}>
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+            <div className="h-9 w-9 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
               <Brain className="h-5 w-5 text-white" />
             </div>
             <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Orbis AI</span>
@@ -375,7 +380,7 @@ export default function AIInterviewRoom() {
           </motion.p>
 
           {/* Summary card */}
-          <motion.div variants={fadeIn} transition={{ duration: 0.5 }} className="backdrop-blur-2xl bg-white/[0.03] border border-white/[0.06] rounded-2xl p-8 w-full mb-14 shadow-xl shadow-black/20">
+          <motion.div variants={fadeIn} transition={{ duration: 0.5 }} className="rounded-2xl p-8 w-full mb-14 shadow-xl shadow-black/20" style={glassCard}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
                 { label: 'Duration', value: `${completionStats.duration || '\u2014'} min`, color: 'text-white' },
@@ -383,7 +388,7 @@ export default function AIInterviewRoom() {
                 { label: 'Completion', value: `${completionPct}%`, color: 'text-white' },
                 { label: 'Status', value: 'Under Review', color: 'text-amber-400', dot: 'bg-amber-500' },
               ].map((stat, i) => (
-                <div key={i} className={`flex flex-col items-center md:items-start gap-1.5 p-3 ${i > 0 ? 'md:border-l md:border-white/[0.06] md:pl-6' : ''}`}>
+                <div key={i} className={`flex flex-col items-center md:items-start gap-1.5 p-3 ${i > 0 ? 'md:border-l md:pl-6' : ''}`} style={i > 0 ? { borderLeftColor: 'var(--orbis-border)' } : undefined}>
                   <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">{stat.label}</p>
                   {stat.dot ? (
                     <div className="flex items-center gap-2">
@@ -406,7 +411,7 @@ export default function AIInterviewRoom() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
               {[
-                { icon: Brain, color: 'blue', text: 'Your responses are being analyzed by our AI' },
+                { icon: Brain, color: 'purple', text: 'Your responses are being analyzed by our AI' },
                 { icon: Timer, color: 'emerald', text: 'The hiring team will review your results within 24-48 hours' },
                 { icon: Mail, color: 'violet', text: 'You\'ll receive an email notification with updates' },
               ].map((item, i) => (
@@ -414,7 +419,8 @@ export default function AIInterviewRoom() {
                   key={i}
                   variants={fadeIn}
                   transition={{ duration: 0.4, delay: i * 0.1 }}
-                  className="group flex flex-col items-center p-6 rounded-2xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] hover:border-white/[0.08] transition-all duration-300"
+                  className="group flex flex-col items-center p-6 rounded-2xl hover:bg-white/[0.04] transition-all duration-300"
+                  style={glassCard}
                 >
                   <div className={`h-11 w-11 rounded-xl bg-${item.color}-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     <item.icon className={`h-5 w-5 text-${item.color}-400`} />
@@ -429,11 +435,12 @@ export default function AIInterviewRoom() {
           <motion.div variants={fadeIn} transition={{ duration: 0.5 }} className="mt-16 flex flex-col items-center gap-6">
             <button
               onClick={() => window.close()}
-              className="px-8 py-3 rounded-xl border border-white/10 text-white font-semibold hover:bg-white/[0.04] transition-all text-sm"
+              className="px-8 py-3 rounded-xl text-white font-semibold hover:bg-white/[0.04] transition-all text-sm"
+              style={glassCard}
             >
               Close Window
             </button>
-            <footer className="text-slate-600 text-xs flex items-center gap-2">
+            <footer className="text-slate-400 text-xs flex items-center gap-2">
               <span>Powered by Orbis AI</span>
               <span className="h-1 w-1 bg-slate-700 rounded-full" />
               <span>Secure Interview Session</span>
@@ -444,7 +451,7 @@ export default function AIInterviewRoom() {
     );
   }
 
-  // ── Active Interview ────────────────────────────────────────────
+  // -- Active Interview ----
 
   return (
     <div className="h-screen flex flex-col bg-[#0a0e1a] text-slate-100 overflow-hidden">
@@ -453,15 +460,16 @@ export default function AIInterviewRoom() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex items-center justify-between px-6 py-3 border-b border-white/[0.04] backdrop-blur-2xl bg-[#0a0e1a]/80 shrink-0 z-50"
+        className="flex items-center justify-between px-6 py-3 backdrop-blur-2xl bg-[#0a0e1a]/80 shrink-0 z-50"
+        style={{ borderBottom: '1px solid var(--orbis-grid)' }}
       >
         {/* Left: Brand + Job info */}
         <div className="flex items-center gap-4">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
+          <div className="h-9 w-9 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
             <Brain className="h-5 w-5 text-white" />
           </div>
           <div className="hidden sm:flex flex-col">
-            <span className="text-sm font-bold tracking-tight">Orbis AI Interview</span>
+            <span className="text-sm font-bold tracking-tight text-white">Orbis AI Interview</span>
             {sessionInfo && (
               <span className="text-xs text-slate-500 font-medium">{sessionInfo.job_title}</span>
             )}
@@ -487,11 +495,11 @@ export default function AIInterviewRoom() {
           <div className="h-6 w-px bg-white/[0.06] hidden md:block" />
 
           {/* Timer */}
-          <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl transition-all duration-300 ${
+          <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl transition-all duration-300`} style={
             timeRemaining < 300
-              ? 'bg-red-500/10 border border-red-500/20'
-              : 'bg-white/[0.03] border border-white/[0.06]'
-          }`}>
+              ? { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }
+              : glassCard
+          }>
             <Clock className={`h-3.5 w-3.5 ${timeRemaining < 300 ? 'text-red-400 animate-pulse' : 'text-slate-500'}`} />
             <span className={`text-sm font-mono font-bold tabular-nums ${timeRemaining < 300 ? 'text-red-400' : 'text-slate-300'}`}>
               {formatTime(timeRemaining)}
@@ -528,7 +536,7 @@ export default function AIInterviewRoom() {
           className={`flex flex-col gap-4 overflow-hidden transition-all duration-500 ${showCodePanel ? 'w-[40%]' : 'w-[60%]'}`}
         >
           {/* AI Avatar + Caption area */}
-          <div className="backdrop-blur-2xl bg-gradient-to-b from-white/[0.03] to-transparent border border-white/[0.06] rounded-2xl p-8 flex flex-col items-center justify-center relative flex-1 min-h-0 overflow-hidden">
+          <div className="rounded-2xl p-8 flex flex-col items-center justify-center relative flex-1 min-h-0 overflow-hidden" style={{ ...glassCard, background: 'linear-gradient(to bottom, var(--orbis-card), transparent)' }}>
             {/* Subtle radial glow behind avatar */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className="w-80 h-80 bg-blue-600/[0.04] rounded-full blur-[80px]" />
@@ -538,7 +546,7 @@ export default function AIInterviewRoom() {
             <div className="relative z-10">
               <ThreeErrorBoundary fallback={
                 <div className="relative mb-6">
-                  <div className="h-44 w-44 rounded-full bg-gradient-to-br from-blue-600/10 to-indigo-600/5 border-2 border-blue-600/20 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.15)]">
+                  <div className="h-44 w-44 rounded-full bg-gradient-to-br from-blue-600/10 to-blue-600/5 border-2 border-blue-600/20 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(27,142,229,0.15)]">
                     <Brain className="h-20 w-20 text-blue-500/70" />
                   </div>
                   <div className="absolute -inset-6 rounded-full border border-blue-500/10 border-dashed animate-[spin_12s_linear_infinite]" />
@@ -546,7 +554,7 @@ export default function AIInterviewRoom() {
               }>
                 <Suspense fallback={
                   <div className="relative mb-6">
-                    <div className="h-44 w-44 rounded-full bg-gradient-to-br from-blue-600/10 to-indigo-600/5 border-2 border-blue-600/20 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.15)]">
+                    <div className="h-44 w-44 rounded-full bg-gradient-to-br from-blue-600/10 to-blue-600/5 border-2 border-blue-600/20 flex items-center justify-center overflow-hidden shadow-[0_0_40px_rgba(27,142,229,0.15)]">
                       <Brain className="h-20 w-20 text-blue-500/70" />
                     </div>
                   </div>
@@ -562,7 +570,7 @@ export default function AIInterviewRoom() {
 
             {/* Name + waveform */}
             <div className="text-center mb-6 relative z-10">
-              <h3 className="text-xl font-bold mb-1.5 tracking-tight">Aria</h3>
+              <h3 className="text-xl font-bold mb-1.5 tracking-tight text-white">Aria</h3>
               <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-2">AI Interviewer</p>
               <AiWaveform active={isProcessing} />
             </div>
@@ -577,7 +585,7 @@ export default function AIInterviewRoom() {
                 transition={{ duration: 0.35 }}
                 className="w-full max-w-xl relative z-10"
               >
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-6 py-4">
+                <div className="rounded-xl px-6 py-4" style={glassCard}>
                   <p className="text-lg md:text-xl font-medium leading-relaxed text-slate-200 text-center">
                     {currentCaption ? `"${currentCaption}"` : '"Waiting for your response..."'}
                   </p>
@@ -587,13 +595,13 @@ export default function AIInterviewRoom() {
           </div>
 
           {/* Chat transcript */}
-          <div className="backdrop-blur-2xl bg-white/[0.02] border border-white/[0.06] rounded-2xl flex flex-col h-48 min-h-[192px]">
-            <div className="px-4 py-3 border-b border-white/[0.04] flex items-center justify-between shrink-0">
+          <div className="rounded-2xl flex flex-col h-48 min-h-[192px]" style={{ ...glassCard, background: 'var(--orbis-subtle)' }}>
+            <div className="px-4 py-3 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--orbis-grid)' }}>
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
                 <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">Transcript</span>
               </div>
-              <span className="text-[10px] text-slate-600 font-medium">{messages.length} messages</span>
+              <span className="text-[10px] text-slate-400 font-medium">{messages.length} messages</span>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3" ref={scrollRef}>
               <AnimatePresence initial={false}>
@@ -607,19 +615,23 @@ export default function AIInterviewRoom() {
                   >
                     <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${
                       msg.role === 'ai'
-                        ? 'bg-gradient-to-br from-blue-600/20 to-indigo-600/20 text-blue-400'
+                        ? 'bg-gradient-to-br from-blue-600/20 to-blue-600/20 text-blue-400'
                         : 'bg-slate-500/10 text-slate-400'
                     }`}>
                       {msg.role === 'ai' ? <Brain className="h-3.5 w-3.5" /> : <span className="text-[10px] font-bold">You</span>}
                     </div>
                     <div className={`rounded-xl px-3.5 py-2.5 max-w-[80%] ${
                       msg.role === 'ai'
-                        ? 'bg-white/[0.04] border border-white/[0.04] rounded-tl-sm'
-                        : 'bg-blue-600/15 border border-blue-600/10 rounded-tr-sm'
-                    }`}>
+                        ? 'rounded-tl-sm'
+                        : 'rounded-tr-sm'
+                    }`} style={
+                      msg.role === 'ai'
+                        ? { background: 'var(--orbis-grid)', border: '1px solid var(--orbis-grid)' }
+                        : { background: 'rgba(27,142,229,0.15)', border: '1px solid rgba(27,142,229,0.1)' }
+                    }>
                       <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                       {msg.codeContent && (
-                        <pre className="mt-2 p-2.5 bg-black/40 rounded-lg text-xs overflow-x-auto border border-white/[0.04]">
+                        <pre className="mt-2 p-2.5 bg-black/40 rounded-lg text-xs overflow-x-auto" style={{ border: '1px solid var(--orbis-grid)' }}>
                           <code className="text-slate-300">{msg.codeContent}</code>
                         </pre>
                       )}
@@ -633,10 +645,10 @@ export default function AIInterviewRoom() {
                   animate={{ opacity: 1 }}
                   className="flex gap-2.5"
                 >
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-600/20 to-indigo-600/20 text-blue-400 flex items-center justify-center shrink-0">
+                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-600/20 to-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
                     <Brain className="h-3.5 w-3.5" />
                   </div>
-                  <div className="bg-white/[0.04] border border-white/[0.04] rounded-xl rounded-tl-sm px-3.5 py-2.5">
+                  <div className="rounded-xl rounded-tl-sm px-3.5 py-2.5" style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-grid)' }}>
                     <div className="flex items-center gap-2 text-sm text-slate-500">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       <span className="font-medium">Aria is thinking...</span>
@@ -656,8 +668,8 @@ export default function AIInterviewRoom() {
           className={`flex flex-col gap-4 overflow-hidden transition-all duration-500 ${showCodePanel ? 'w-[60%]' : 'w-[40%]'}`}
         >
           {showCodePanel ? (
-            <div className="flex-1 rounded-2xl overflow-hidden border border-white/[0.06] bg-[#0d1117]">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] bg-white/[0.02]">
+            <div className="flex-1 rounded-2xl overflow-hidden bg-[#0d1117]" style={{ border: '1px solid var(--orbis-border)' }}>
+              <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
                 <div className="flex items-center gap-2">
                   <Code className="h-4 w-4 text-blue-400" />
                   <span className="text-sm font-semibold text-slate-300">Code Editor</span>
@@ -691,13 +703,15 @@ export default function AIInterviewRoom() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        className="px-4 py-3 border-t border-white/[0.04] backdrop-blur-2xl bg-[#0a0e1a]/80 shrink-0"
+        className="px-4 py-3 backdrop-blur-2xl bg-[#0a0e1a]/80 shrink-0"
+        style={{ borderTop: '1px solid var(--orbis-grid)' }}
       >
         {/* Progress bar */}
         <div className="max-w-5xl mx-auto mb-3">
           <div className="h-0.5 w-full bg-white/[0.04] rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full"
+              className="h-full rounded-full"
+              style={{ background: 'linear-gradient(to right, #1B8EE5, #1676c0)' }}
               initial={{ width: 0 }}
               animate={{ width: `${progressPct}%` }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -710,11 +724,12 @@ export default function AIInterviewRoom() {
           {sessionInfo?.include_coding && (
             <button
               onClick={() => setShowCodePanel(!showCodePanel)}
-              className={`flex flex-col items-center justify-center h-12 w-12 rounded-xl border transition-all duration-300 shrink-0 ${
+              className={`flex flex-col items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 shrink-0 ${
                 showCodePanel
-                  ? 'bg-blue-600/15 border-blue-600/30 text-blue-400'
-                  : 'bg-white/[0.02] border-white/[0.06] text-slate-500 hover:bg-white/[0.04] hover:text-slate-300'
+                  ? 'bg-blue-600/15 border-blue-600/30 text-blue-400 border'
+                  : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-300'
               }`}
+              style={!showCodePanel ? glassCard : undefined}
             >
               <Code className="h-4.5 w-4.5" />
               <span className="text-[9px] font-bold uppercase mt-0.5">Code</span>
@@ -722,7 +737,7 @@ export default function AIInterviewRoom() {
           )}
 
           {/* Text input */}
-          <div className="flex-1 flex items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-2xl px-4 py-2 focus-within:border-blue-600/30 focus-within:bg-white/[0.04] transition-all duration-300">
+          <div className="flex-1 flex items-center gap-3 rounded-2xl px-4 py-2 focus-within:border-blue-600/30 transition-all duration-300" style={{ ...glassCard, background: 'var(--orbis-card)' }}>
             <input
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
@@ -734,12 +749,13 @@ export default function AIInterviewRoom() {
               }}
               placeholder="Type your answer..."
               disabled={isProcessing}
-              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-slate-200 placeholder:text-slate-600 font-medium text-sm"
+              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-slate-200 placeholder:text-slate-500 font-medium text-sm"
             />
             <button
               onClick={() => sendMessage(textInput)}
               disabled={!textInput.trim() || isProcessing}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:scale-105 transition-all duration-200 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
+              className="p-2.5 rounded-xl text-white shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:scale-105 transition-all duration-200 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
             >
               <Send className="h-4 w-4" />
             </button>

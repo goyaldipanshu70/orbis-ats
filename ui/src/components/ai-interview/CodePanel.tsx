@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Send, Loader2 } from 'lucide-react';
 
@@ -49,12 +48,22 @@ export default function CodePanel({
   };
 
   return (
-    <div className="flex flex-col h-full border-l">
+    <div
+      className="flex flex-col h-full"
+      style={{ borderLeft: '1px solid var(--orbis-border)' }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/30">
-        <h3 className="text-sm font-semibold">Code Editor</h3>
+      <div
+        className="flex items-center justify-between px-4 py-2"
+        style={{
+          background: 'var(--orbis-card)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid var(--orbis-border)',
+        }}
+      >
+        <h3 className="text-sm font-semibold text-white">Code Editor</h3>
         <Select value={language} onValueChange={(v) => { setLanguage(v); if (!initialCode) setCode(STARTER_CODE[v] || ''); }} disabled={readOnly}>
-          <SelectTrigger className="w-[140px] h-8">
+          <SelectTrigger className="w-[140px] h-8" style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' }}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -67,14 +76,20 @@ export default function CodePanel({
 
       {/* Problem description */}
       {problemDescription && (
-        <div className="px-4 py-2 border-b bg-blue-50 dark:bg-blue-950/30 text-sm">
-          <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Problem:</p>
-          <p className="text-blue-600 dark:text-blue-400 whitespace-pre-wrap">{problemDescription}</p>
+        <div
+          className="px-4 py-2 text-sm"
+          style={{
+            background: 'rgba(27,142,229,0.08)',
+            borderBottom: '1px solid var(--orbis-border)',
+          }}
+        >
+          <p className="font-medium text-blue-300 mb-1">Problem:</p>
+          <p className="text-blue-200/80 whitespace-pre-wrap">{problemDescription}</p>
         </div>
       )}
 
       {/* Editor */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0" style={{ background: '#0d0a1f' }}>
         <Editor
           height="100%"
           language={language}
@@ -94,14 +109,26 @@ export default function CodePanel({
 
       {/* Submit button */}
       {!readOnly && (
-        <div className="px-4 py-2 border-t bg-muted/30">
-          <Button onClick={handleSubmit} disabled={isSubmitting || !code.trim()} className="w-full gap-2">
+        <div
+          className="px-4 py-2"
+          style={{
+            background: 'var(--orbis-card)',
+            backdropFilter: 'blur(12px)',
+            borderTop: '1px solid var(--orbis-border)',
+          }}
+        >
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !code.trim()}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-white font-semibold text-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5 0%, #5b2dba 100%)' }}
+          >
             {isSubmitting ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Evaluating...</>
             ) : (
               <><Send className="h-4 w-4" /> Submit Code</>
             )}
-          </Button>
+          </button>
         </div>
       )}
     </div>

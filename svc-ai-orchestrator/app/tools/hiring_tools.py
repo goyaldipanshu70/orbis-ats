@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def _get_recruiting_models():
     """Lazy import of recruiting DB models (these are declarative ORM classes on recruiting_db)."""
-    from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Numeric
+    from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, Numeric, UniqueConstraint
     from sqlalchemy.dialects.postgresql import JSONB
     from sqlalchemy.orm import DeclarativeBase
 
@@ -83,6 +83,7 @@ def _get_recruiting_models():
         __tablename__ = "interview_evaluations"
         id = Column(Integer, primary_key=True)
         candidate_id = Column(Integer, nullable=False)
+        jd_id = Column(Integer, nullable=True)
         ai_interview_result = Column(JSONB, nullable=False, default=dict)
         created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
@@ -117,6 +118,46 @@ def _get_recruiting_models():
         created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
         deleted_at = Column(DateTime, nullable=True)
 
+    class InterviewerFeedback(RecruitingBase):
+        __tablename__ = "interviewer_feedback"
+        id = Column(Integer, primary_key=True)
+        schedule_id = Column(Integer, nullable=False)
+        interviewer_id = Column(String(50), nullable=False)
+        interviewer_name = Column(String(255), nullable=False)
+        rating = Column(Integer, nullable=False)
+        recommendation = Column(String(20), nullable=False)
+        strengths = Column(Text, nullable=True)
+        concerns = Column(Text, nullable=True)
+        notes = Column(Text, nullable=True)
+        criteria_scores = Column(JSONB, nullable=True)
+        rubric_scores = Column(JSONB, nullable=True)
+        created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    class ScreeningQuestion(RecruitingBase):
+        __tablename__ = "screening_questions"
+        id = Column(Integer, primary_key=True)
+        jd_id = Column(Integer, nullable=False)
+        question = Column(Text, nullable=False)
+        question_type = Column(String(20), nullable=False, default="text")
+        options = Column(JSONB, nullable=True)
+        required = Column(Boolean, nullable=False, default=True)
+        ai_generated = Column(Boolean, nullable=False, default=False)
+        sort_order = Column(Integer, nullable=False, default=0)
+        is_knockout = Column(Boolean, nullable=False, default=False)
+        knockout_condition = Column(String(100), nullable=True)
+        created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    class ScreeningResponse(RecruitingBase):
+        __tablename__ = "screening_responses"
+        id = Column(Integer, primary_key=True)
+        candidate_id = Column(Integer, nullable=False)
+        question_id = Column(Integer, nullable=False)
+        response = Column(Text, nullable=False)
+        created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+        __table_args__ = (
+            UniqueConstraint("candidate_id", "question_id", name="uq_candidate_question"),
+        )
+
     return {
         "JobDescription": JobDescription,
         "CandidateProfile": CandidateProfile,
@@ -124,6 +165,9 @@ def _get_recruiting_models():
         "InterviewEvaluation": InterviewEvaluation,
         "InterviewSchedule": InterviewSchedule,
         "Offer": Offer,
+        "InterviewerFeedback": InterviewerFeedback,
+        "ScreeningQuestion": ScreeningQuestion,
+        "ScreeningResponse": ScreeningResponse,
     }
 
 

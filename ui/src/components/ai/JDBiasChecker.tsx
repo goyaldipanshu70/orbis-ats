@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldCheck, Loader2, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
 import { apiClient } from '@/utils/api';
@@ -22,26 +20,29 @@ interface BiasResult {
 
 interface Props {
   text: string;
+  jdId?: number;
   onFixApplied?: (oldPhrase: string, newPhrase: string) => void;
 }
 
 const BIAS_TYPE_COLORS: Record<string, string> = {
-  gendered: 'bg-pink-50 text-pink-700 border-pink-200',
-  age: 'bg-orange-50 text-orange-700 border-orange-200',
-  ability: 'bg-red-50 text-red-700 border-red-200',
-  racial: 'bg-red-50 text-red-700 border-red-200',
-  cultural: 'bg-amber-50 text-amber-700 border-amber-200',
-  socioeconomic: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  default: 'bg-slate-50 text-slate-700 border-slate-200',
+  gendered: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+  age: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  ability: 'bg-red-500/10 text-red-400 border-red-500/20',
+  racial: 'bg-red-500/10 text-red-400 border-red-500/20',
+  cultural: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  socioeconomic: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  exclusionary: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  aggressive: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  default: 'bg-white/5 text-slate-400 border-white/10',
 };
 
 function getScoreColor(score: number) {
-  if (score >= 80) return { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', ring: 'ring-green-500/20' };
-  if (score >= 50) return { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200', ring: 'ring-yellow-500/20' };
-  return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', ring: 'ring-red-500/20' };
+  if (score >= 80) return { bg: 'rgba(34,197,94,0.1)', text: 'text-green-400', border: '1px solid rgba(34,197,94,0.2)' };
+  if (score >= 50) return { bg: 'rgba(234,179,8,0.1)', text: 'text-yellow-400', border: '1px solid rgba(234,179,8,0.2)' };
+  return { bg: 'rgba(239,68,68,0.1)', text: 'text-red-400', border: '1px solid rgba(239,68,68,0.2)' };
 }
 
-export default function JDBiasChecker({ text, onFixApplied }: Props) {
+export default function JDBiasChecker({ text, jdId, onFixApplied }: Props) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BiasResult | null>(null);
   const [checked, setChecked] = useState(false);
@@ -74,6 +75,9 @@ export default function JDBiasChecker({ text, onFixApplied }: Props) {
       };
       setResult(biasResult);
       setChecked(true);
+      if (jdId) {
+        try { await apiClient.setAICache('job', jdId, 'bias-check', biasResult); } catch { /* non-critical */ }
+      }
     } catch (err: any) {
       toast({
         title: 'Bias Check Failed',
@@ -88,7 +92,6 @@ export default function JDBiasChecker({ text, onFixApplied }: Props) {
   const handleAcceptFix = (flag: BiasFlag) => {
     if (onFixApplied && flag.suggestion) {
       onFixApplied(flag.phrase, flag.suggestion);
-      // Remove this flag from results
       setResult(prev =>
         prev
           ? { ...prev, flags: prev.flags.filter(f => f.phrase !== flag.phrase) }
@@ -105,11 +108,10 @@ export default function JDBiasChecker({ text, onFixApplied }: Props) {
     <div className="space-y-3">
       {/* Trigger button */}
       <div className="flex items-center gap-2">
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs rounded-lg gap-1.5 border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
+          className="inline-flex items-center gap-1.5 h-7 px-3 text-xs font-semibold rounded-lg transition-all disabled:opacity-50"
+          style={{ background: 'rgba(27,142,229,0.08)', border: '1px solid rgba(27,142,229,0.2)', color: '#4db5f0' }}
           onClick={handleCheck}
           disabled={loading || !text.trim()}
         >
@@ -124,39 +126,45 @@ export default function JDBiasChecker({ text, onFixApplied }: Props) {
               Check for Bias
             </>
           )}
-        </Button>
+        </button>
 
         {/* Score badge inline when checked */}
-        {checked && result && !loading && (
-          <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${getScoreColor(result.score).bg} ${getScoreColor(result.score).text} ${getScoreColor(result.score).border}`}>
-            Inclusivity Score: {result.score}/100
-          </div>
-        )}
+        {checked && result && !loading && (() => {
+          const sc = getScoreColor(result.score);
+          return (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${sc.text}`}
+              style={{ background: sc.bg, border: sc.border }}
+            >
+              Inclusivity Score: {result.score}/100
+            </span>
+          );
+        })()}
       </div>
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+        <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <div className="flex items-center gap-3">
-            <Skeleton className="h-6 w-32" />
-            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-6 w-32 bg-white/10" />
+            <Skeleton className="h-5 w-20 bg-white/10" />
           </div>
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full bg-white/10" />
+          <Skeleton className="h-12 w-full bg-white/10" />
         </div>
       )}
 
       {/* Results */}
       {checked && result && !loading && (
-        <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
+        <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           {result.flags.length === 0 ? (
-            <div className="flex items-center gap-2 text-sm text-green-700">
+            <div className="flex items-center gap-2 text-sm text-emerald-400">
               <CheckCircle2 className="w-4 h-4" />
               <span className="font-medium">All clear! No biased language detected.</span>
             </div>
           ) : (
             <div className="space-y-2.5">
-              <p className="text-xs text-muted-foreground font-medium">
+              <p className="text-xs text-slate-500 font-medium">
                 {result.flags.length} issue{result.flags.length !== 1 ? 's' : ''} found
               </p>
               {result.flags.map((flag, idx) => {
@@ -164,42 +172,39 @@ export default function JDBiasChecker({ text, onFixApplied }: Props) {
                 return (
                   <div
                     key={idx}
-                    className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg border border-border bg-card p-3"
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg p-3"
+                    style={{ background: 'var(--orbis-subtle)', border: '1px solid var(--orbis-border)' }}
                   >
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center rounded-md bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs font-medium text-amber-800">
+                        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
                           <AlertTriangle className="w-3 h-3 mr-1" />
                           {flag.phrase}
                         </span>
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] px-1.5 py-0 h-5 ${typeColor}`}
-                        >
+                        <span className={`inline-flex items-center text-[10px] px-1.5 py-0 h-5 rounded-md border ${typeColor}`}>
                           {flag.bias_type}
-                        </Badge>
+                        </span>
                       </div>
                       {flag.explanation && (
-                        <p className="text-[11px] text-muted-foreground">{flag.explanation}</p>
+                        <p className="text-[11px] text-slate-500">{flag.explanation}</p>
                       )}
                       {flag.suggestion && (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
                           <ArrowRight className="w-3 h-3" />
-                          Suggested: <span className="font-medium text-green-700">{flag.suggestion}</span>
+                          Suggested: <span className="font-medium text-emerald-400">{flag.suggestion}</span>
                         </div>
                       )}
                     </div>
                     {flag.suggestion && onFixApplied && (
-                      <Button
+                      <button
                         type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs rounded-lg shrink-0 border-green-200 text-green-700 hover:bg-green-50"
+                        className="inline-flex items-center gap-1 h-7 px-3 text-xs font-semibold rounded-lg shrink-0 transition-all"
+                        style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: '#34d399' }}
                         onClick={() => handleAcceptFix(flag)}
                       >
-                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        <CheckCircle2 className="w-3 h-3" />
                         Accept
-                      </Button>
+                      </button>
                     )}
                   </div>
                 );

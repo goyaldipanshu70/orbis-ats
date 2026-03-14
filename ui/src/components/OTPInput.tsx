@@ -78,12 +78,13 @@ const OTPInput = ({ length = 6, onComplete, disabled = false, autoFocus = true }
             w-12 h-14 text-center text-xl font-bold rounded-xl border-2 outline-none
             transition-all duration-150
             ${disabled
-              ? 'bg-muted border-border text-muted-foreground cursor-not-allowed'
+              ? 'border-white/10 bg-white/5 text-slate-500 cursor-not-allowed'
               : value
-                ? 'border-blue-500 bg-blue-50/50 text-foreground'
-                : 'border-border bg-card text-foreground focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
+                ? 'border-blue-500 bg-blue-500/10 text-white'
+                : 'border-white/10 bg-white/[0.03] text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20'
             }
           `}
+          style={{ backdropFilter: 'blur(12px)' }}
         />
       ))}
     </div>

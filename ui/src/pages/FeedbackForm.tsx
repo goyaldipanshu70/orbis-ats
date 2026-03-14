@@ -3,10 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { staggerContainer, fadeInUp, scaleIn } from '@/lib/animations';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/utils/api';
@@ -34,6 +30,20 @@ import {
   Lightbulb,
 } from 'lucide-react';
 
+/* -- Shared Styles -------------------------------------------------------- */
+
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+
 /* -- Types ---------------------------------------------------------------- */
 
 interface CriterionDef {
@@ -58,12 +68,12 @@ const CRITERIA: CriterionDef[] = [
   { key: 'leadership_growth', label: 'Leadership / Growth', description: 'Initiative, learning mindset, mentorship potential', icon: <Lightbulb className="size-5" /> },
 ];
 
-const RECOMMENDATIONS: { value: Recommendation; icon: React.ReactNode; color: string; bg: string; ring: string; activeBg: string }[] = [
-  { value: 'Strong Yes', icon: <ChevronUp className="size-4" />, color: 'text-green-700 dark:text-green-400', bg: 'bg-card border-border hover:border-green-300 dark:hover:border-green-700', ring: 'ring-green-500/30', activeBg: 'bg-green-50 dark:bg-green-950/40 border-green-400 dark:border-green-600' },
-  { value: 'Yes', icon: <CheckCircle2 className="size-4" />, color: 'text-emerald-700 dark:text-emerald-400', bg: 'bg-card border-border hover:border-emerald-300 dark:hover:border-emerald-700', ring: 'ring-emerald-500/30', activeBg: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-600' },
-  { value: 'Neutral', icon: <Minus className="size-4" />, color: 'text-gray-700 dark:text-gray-300', bg: 'bg-card border-border hover:border-gray-400 dark:hover:border-gray-600', ring: 'ring-gray-500/30', activeBg: 'bg-gray-100 dark:bg-gray-800/60 border-gray-400 dark:border-gray-500' },
-  { value: 'No', icon: <XCircle className="size-4" />, color: 'text-orange-700 dark:text-orange-400', bg: 'bg-card border-border hover:border-orange-300 dark:hover:border-orange-700', ring: 'ring-orange-500/30', activeBg: 'bg-orange-50 dark:bg-orange-950/40 border-orange-400 dark:border-orange-600' },
-  { value: 'Strong No', icon: <ChevronDown className="size-4" />, color: 'text-red-700 dark:text-red-400', bg: 'bg-card border-border hover:border-red-300 dark:hover:border-red-700', ring: 'ring-red-500/30', activeBg: 'bg-red-50 dark:bg-red-950/40 border-red-400 dark:border-red-600' },
+const RECOMMENDATIONS: { value: Recommendation; icon: React.ReactNode; color: string; activeColor: string; activeBorder: string; activeRing: string; activeBg: string }[] = [
+  { value: 'Strong Yes', icon: <ChevronUp className="size-4" />, color: 'text-slate-400', activeColor: 'text-green-400', activeBorder: 'rgba(74,222,128,0.5)', activeRing: '0 0 20px rgba(74,222,128,0.15)', activeBg: 'rgba(74,222,128,0.08)' },
+  { value: 'Yes', icon: <CheckCircle2 className="size-4" />, color: 'text-slate-400', activeColor: 'text-emerald-400', activeBorder: 'rgba(52,211,153,0.5)', activeRing: '0 0 20px rgba(52,211,153,0.15)', activeBg: 'rgba(52,211,153,0.08)' },
+  { value: 'Neutral', icon: <Minus className="size-4" />, color: 'text-slate-400', activeColor: 'text-gray-300', activeBorder: 'rgba(156,163,175,0.5)', activeRing: '0 0 20px rgba(156,163,175,0.12)', activeBg: 'rgba(156,163,175,0.08)' },
+  { value: 'No', icon: <XCircle className="size-4" />, color: 'text-slate-400', activeColor: 'text-orange-400', activeBorder: 'rgba(251,146,60,0.5)', activeRing: '0 0 20px rgba(251,146,60,0.15)', activeBg: 'rgba(251,146,60,0.08)' },
+  { value: 'Strong No', icon: <ChevronDown className="size-4" />, color: 'text-slate-400', activeColor: 'text-red-400', activeBorder: 'rgba(248,113,113,0.5)', activeRing: '0 0 20px rgba(248,113,113,0.15)', activeBg: 'rgba(248,113,113,0.08)' },
 ];
 
 /* -- Score Color Helper --------------------------------------------------- */
@@ -73,15 +83,29 @@ function scoreColor(score: number): string {
   if (score >= 3) return 'text-yellow-500';
   if (score >= 2) return 'text-orange-400';
   if (score >= 1) return 'text-red-400';
-  return 'text-muted-foreground/30';
+  return 'text-slate-400';
 }
 
-function scoreBg(score: number): string {
-  if (score >= 4) return 'bg-green-500/10';
-  if (score >= 3) return 'bg-yellow-500/10';
-  if (score >= 2) return 'bg-orange-400/10';
-  if (score >= 1) return 'bg-red-400/10';
-  return 'bg-muted/30';
+function scoreBgStyle(score: number): React.CSSProperties {
+  if (score >= 4) return { background: 'rgba(34,197,94,0.1)' };
+  if (score >= 3) return { background: 'rgba(234,179,8,0.1)' };
+  if (score >= 2) return { background: 'rgba(251,146,60,0.1)' };
+  if (score >= 1) return { background: 'rgba(248,113,113,0.1)' };
+  return { background: 'var(--orbis-card)' };
+}
+
+/* -- Focus / Blur Handlers ------------------------------------------------ */
+
+function handleInputFocus(e: React.FocusEvent<HTMLTextAreaElement | HTMLInputElement>) {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+}
+
+function handleInputBlur(e: React.FocusEvent<HTMLTextAreaElement | HTMLInputElement>) {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
 }
 
 /* -- Star Rating ---------------------------------------------------------- */
@@ -90,12 +114,12 @@ function StarRating({ value, onChange, size = 22, label }: { value: number; onCh
   const [hover, setHover] = useState(0);
 
   const getStarColor = (i: number, active: boolean) => {
-    if (!active) return 'fill-transparent text-muted-foreground/25';
+    if (!active) return 'fill-transparent text-slate-400';
     const target = hover || value;
-    if (target >= 4) return 'fill-green-400 text-green-400';
-    if (target >= 3) return 'fill-yellow-400 text-yellow-400';
-    if (target >= 2) return 'fill-orange-400 text-orange-400';
-    return 'fill-red-400 text-red-400';
+    if (target >= 4) return 'fill-amber-400 text-amber-400';
+    if (target >= 3) return 'fill-amber-400 text-amber-400';
+    if (target >= 2) return 'fill-amber-500 text-amber-500';
+    return 'fill-amber-500 text-amber-500';
   };
 
   return (
@@ -109,7 +133,7 @@ function StarRating({ value, onChange, size = 22, label }: { value: number; onCh
             onClick={() => onChange(i)}
             onMouseEnter={() => setHover(i)}
             aria-label={`Rate ${label || 'rating'} ${i} out of 5`}
-            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm p-0.5"
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm p-0.5"
             whileHover={{ scale: 1.25, rotate: active ? 0 : 15 }}
             whileTap={{ scale: 0.85 }}
             transition={{ type: 'spring', stiffness: 400, damping: 15 }}
@@ -139,12 +163,15 @@ function StarRating({ value, onChange, size = 22, label }: { value: number; onCh
 function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle?: string }) {
   return (
     <div className="flex items-center gap-3 pb-1">
-      <div className="flex items-center justify-center size-10 rounded-xl bg-primary/10 text-primary shrink-0">
-        {icon}
+      <div
+        className="flex items-center justify-center size-10 rounded-xl shrink-0"
+        style={{ background: 'rgba(27,142,229,0.15)' }}
+      >
+        <span className="text-blue-400">{icon}</span>
       </div>
       <div>
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
-        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+        <h2 className="text-base font-semibold text-white">{title}</h2>
+        {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
       </div>
     </div>
   );
@@ -172,15 +199,16 @@ function CompletionProgress({ criteriaScores, overallRating, recommendation, str
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex-1 h-2 rounded-full bg-muted/50 overflow-hidden">
+      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
         <motion.div
-          className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70"
+          className="h-full rounded-full"
+          style={{ background: 'linear-gradient(to right, #1B8EE5, rgba(27,142,229,0.7))' }}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
         />
       </div>
-      <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">
+      <span className="text-xs font-medium text-slate-400 tabular-nums whitespace-nowrap">
         {filled}/{total} complete
       </span>
     </div>
@@ -273,25 +301,25 @@ export default function FeedbackForm() {
         initial="hidden"
         animate="visible"
       >
-        {/* ── Header ─────────────────────────────────────────────────── */}
+        {/* -- Header -------------------------------------------------------- */}
         <motion.div variants={fadeInUp}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
+              <button
+                type="button"
                 aria-label="Go back"
                 onClick={() => navigate('/interviews')}
-                className="rounded-xl border-border/60 hover:bg-muted/60 shrink-0"
+                className="flex items-center justify-center size-10 rounded-xl text-slate-300 shrink-0 transition-colors hover:text-white"
+                style={{ ...glassCard }}
               >
                 <ArrowLeft size={18} />
-              </Button>
+              </button>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold text-foreground tracking-tight">Interview Scorecard</h1>
-                  <Sparkles className="size-5 text-primary/60" />
+                  <h1 className="text-2xl font-bold text-white tracking-tight">Interview Scorecard</h1>
+                  <Sparkles className="size-5 text-blue-400/60" />
                 </div>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-sm text-slate-400 mt-0.5">
                   Provide structured feedback for interview #{scheduleId}
                 </p>
               </div>
@@ -301,13 +329,14 @@ export default function FeedbackForm() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl ${scoreBg(avgScore)} border border-border/40`}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                style={{ ...scoreBgStyle(avgScore), border: '1px solid var(--orbis-hover)' }}
               >
                 <BarChart3 className={`size-4 ${scoreColor(avgScore)}`} />
                 <span className={`text-sm font-bold tabular-nums ${scoreColor(avgScore)}`}>
                   {avgScore.toFixed(1)}
                 </span>
-                <span className="text-xs text-muted-foreground">avg</span>
+                <span className="text-xs text-slate-500">avg</span>
               </motion.div>
             )}
           </div>
@@ -322,7 +351,7 @@ export default function FeedbackForm() {
           </div>
         </motion.div>
 
-        {/* ── Validation Errors ───────────────────────────────────────── */}
+        {/* -- Validation Errors ---------------------------------------------- */}
         <AnimatePresence>
           {errors.length > 0 && (
             <motion.div
@@ -331,33 +360,37 @@ export default function FeedbackForm() {
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="border-red-200 dark:border-red-900/50 bg-red-50/80 dark:bg-red-950/20 rounded-xl overflow-hidden">
-                <CardContent className="py-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex items-center justify-center size-8 rounded-lg bg-red-100 dark:bg-red-900/40 shrink-0 mt-0.5">
-                      <AlertTriangle className="size-4 text-red-600 dark:text-red-400" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-red-700 dark:text-red-400 text-sm">Please fix the following:</p>
-                      <ul className="mt-2 space-y-1">
-                        {errors.map((e, i) => (
-                          <li key={i} className="text-sm text-red-600 dark:text-red-400/80 flex items-start gap-2">
-                            <span className="text-red-400 mt-1 shrink-0">&bull;</span>
-                            {e}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+              <div
+                className="rounded-xl overflow-hidden py-4 px-5"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="flex items-center justify-center size-8 rounded-lg shrink-0 mt-0.5"
+                    style={{ background: 'rgba(239,68,68,0.15)' }}
+                  >
+                    <AlertTriangle className="size-4 text-red-400" />
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <p className="font-semibold text-red-400 text-sm">Please fix the following:</p>
+                    <ul className="mt-2 space-y-1">
+                      {errors.map((e, i) => (
+                        <li key={i} className="text-sm text-red-400/80 flex items-start gap-2">
+                          <span className="text-red-500 mt-1 shrink-0">&bull;</span>
+                          {e}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── Criteria Section ────────────────────────────────────────── */}
+        {/* -- Criteria Section ----------------------------------------------- */}
         <motion.div variants={fadeInUp}>
-          <Card className="rounded-xl border-border/60 shadow-sm overflow-hidden">
+          <div className="rounded-xl overflow-hidden" style={glassCard}>
             <div className="px-6 pt-6 pb-2">
               <SectionHeader
                 icon={<ClipboardCheck className="size-5" />}
@@ -365,7 +398,7 @@ export default function FeedbackForm() {
                 subtitle="Rate each area and provide specific examples or observations"
               />
             </div>
-            <CardContent className="px-6 pb-6 pt-2">
+            <div className="px-6 pb-6 pt-2">
               <div className="space-y-2">
                 {CRITERIA.map((c, idx) => {
                   const state = criteriaScores[c.key];
@@ -376,33 +409,33 @@ export default function FeedbackForm() {
                     <motion.div
                       key={c.key}
                       variants={fadeInUp}
-                      className={`rounded-xl border p-4 transition-colors duration-200 ${
+                      className="rounded-xl p-4 transition-colors duration-200"
+                      style={
                         isComplete
-                          ? 'border-green-200 dark:border-green-900/40 bg-green-50/30 dark:bg-green-950/10'
-                          : 'border-border/50 bg-card hover:border-border'
-                      }`}
+                          ? { background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)' }
+                          : { background: 'var(--orbis-subtle)', border: '1px solid var(--orbis-border)' }
+                      }
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3 min-w-0">
-                          <div className={`flex items-center justify-center size-9 rounded-lg shrink-0 mt-0.5 transition-colors ${
-                            state.score > 0
-                              ? `${scoreBg(state.score)}`
-                              : 'bg-muted/40'
-                          }`}>
-                            <span className={state.score > 0 ? scoreColor(state.score) : 'text-muted-foreground/50'}>
+                          <div
+                            className="flex items-center justify-center size-9 rounded-lg shrink-0 mt-0.5 transition-colors"
+                            style={state.score > 0 ? scoreBgStyle(state.score) : { background: 'var(--orbis-input)' }}
+                          >
+                            <span className={state.score > 0 ? scoreColor(state.score) : 'text-slate-400'}>
                               {c.icon}
                             </span>
                           </div>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-foreground text-sm">{c.label}</p>
+                              <p className="font-medium text-white text-sm">{c.label}</p>
                               {isComplete && (
                                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500 }}>
                                   <CheckCircle2 className="size-3.5 text-green-500" />
                                 </motion.div>
                               )}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">{c.description}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{c.description}</p>
                           </div>
                         </div>
                         <div className="shrink-0">
@@ -410,12 +443,15 @@ export default function FeedbackForm() {
                         </div>
                       </div>
                       <div className="mt-3 ml-12">
-                        <Textarea
+                        <textarea
                           placeholder={`Comments on ${c.label.toLowerCase()} (min 20 characters)...`}
                           value={state.comment}
                           onChange={(e) => updateCriterion(c.key, 'comment', e.target.value)}
                           rows={2}
-                          className="resize-none text-sm rounded-lg border-border/50 bg-background/60 focus:bg-background transition-colors"
+                          className="w-full resize-none text-sm rounded-lg px-3 py-2 placeholder:text-slate-500 outline-none transition-all duration-200"
+                          style={glassInput}
+                          onFocus={handleInputFocus}
+                          onBlur={handleInputBlur}
                         />
                         <AnimatePresence>
                           {commentTooShort && (
@@ -423,7 +459,7 @@ export default function FeedbackForm() {
                               initial={{ opacity: 0, y: -4 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -4 }}
-                              className="text-xs text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1"
+                              className="text-xs text-amber-400 mt-1.5 flex items-center gap-1"
                             >
                               <AlertTriangle className="size-3" />
                               {20 - state.comment.trim().length} more character{20 - state.comment.trim().length !== 1 ? 's' : ''} needed
@@ -435,13 +471,13 @@ export default function FeedbackForm() {
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </motion.div>
 
-        {/* ── Overall Assessment ──────────────────────────────────────── */}
+        {/* -- Overall Assessment --------------------------------------------- */}
         <motion.div variants={fadeInUp}>
-          <Card className="rounded-xl border-border/60 shadow-sm overflow-hidden">
+          <div className="rounded-xl overflow-hidden" style={glassCard}>
             <div className="px-6 pt-6 pb-2">
               <SectionHeader
                 icon={<BarChart3 className="size-5" />}
@@ -449,22 +485,25 @@ export default function FeedbackForm() {
                 subtitle="Your overall evaluation and hiring recommendation"
               />
             </div>
-            <CardContent className="px-6 pb-6 pt-2 space-y-6">
+            <div className="px-6 pb-6 pt-2 space-y-6">
               {/* Overall Rating */}
-              <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
-                <Label className="text-sm font-medium text-foreground flex items-center gap-2 mb-3">
-                  <Star className="size-4 text-primary/70" />
+              <div
+                className="rounded-xl p-4"
+                style={{ background: 'var(--orbis-subtle)', border: '1px solid var(--orbis-border)' }}
+              >
+                <label className="text-sm font-medium text-slate-300 flex items-center gap-2 mb-3">
+                  <Star className="size-4 text-blue-400/70" />
                   Overall Rating
-                </Label>
+                </label>
                 <StarRating value={overallRating} onChange={setOverallRating} size={30} label="Overall" />
               </div>
 
               {/* Recommendation */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <ThumbsUp className="size-4 text-primary/70" />
+                <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                  <ThumbsUp className="size-4 text-blue-400/70" />
                   Hiring Recommendation
-                </Label>
+                </label>
                 <div className="grid grid-cols-5 gap-2">
                   {RECOMMENDATIONS.map((r) => {
                     const selected = recommendation === r.value;
@@ -475,13 +514,16 @@ export default function FeedbackForm() {
                         onClick={() => setRecommendation(r.value)}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
-                        className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border text-xs font-medium transition-all duration-200 ${
-                          selected
-                            ? `${r.activeBg} ${r.color} ring-2 ${r.ring} shadow-sm`
-                            : `${r.bg} text-muted-foreground`
+                        className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-xs font-medium transition-all duration-200 ${
+                          selected ? r.activeColor : r.color
                         }`}
+                        style={
+                          selected
+                            ? { background: r.activeBg, border: `1px solid ${r.activeBorder}`, boxShadow: r.activeRing }
+                            : { ...glassCard }
+                        }
                       >
-                        <span className={selected ? r.color : 'text-muted-foreground/60'}>{r.icon}</span>
+                        <span className={selected ? r.activeColor : 'text-slate-400'}>{r.icon}</span>
                         <span className="leading-tight text-center">{r.value}</span>
                       </motion.button>
                     );
@@ -491,16 +533,19 @@ export default function FeedbackForm() {
 
               {/* Strengths */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
                   <ThumbsUp className="size-4 text-green-500/70" />
                   Strengths <span className="text-red-400 text-xs ml-1">*</span>
-                </Label>
-                <Textarea
+                </label>
+                <textarea
                   placeholder="Key strengths observed during the interview (min 20 characters)..."
                   value={strengths}
                   onChange={(e) => setStrengths(e.target.value)}
                   rows={3}
-                  className="resize-none text-sm rounded-lg border-border/50"
+                  className="w-full resize-none text-sm rounded-lg px-3 py-2 placeholder:text-slate-500 outline-none transition-all duration-200"
+                  style={glassInput}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                 />
                 <AnimatePresence>
                   {strengths.trim().length > 0 && strengths.trim().length < 20 && (
@@ -508,7 +553,7 @@ export default function FeedbackForm() {
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
-                      className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1"
+                      className="text-xs text-amber-400 flex items-center gap-1"
                     >
                       <AlertTriangle className="size-3" />
                       {20 - strengths.trim().length} more character{20 - strengths.trim().length !== 1 ? 's' : ''} needed
@@ -519,72 +564,86 @@ export default function FeedbackForm() {
 
               {/* Concerns */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
                   <AlertTriangle className="size-4 text-orange-400/70" />
                   Concerns
-                  <span className="text-xs text-muted-foreground font-normal">(optional)</span>
-                </Label>
-                <Textarea
+                  <span className="text-xs text-slate-500 font-normal">(optional)</span>
+                </label>
+                <textarea
                   placeholder="Any concerns or areas for improvement..."
                   value={concerns}
                   onChange={(e) => setConcerns(e.target.value)}
                   rows={3}
-                  className="resize-none text-sm rounded-lg border-border/50"
+                  className="w-full resize-none text-sm rounded-lg px-3 py-2 placeholder:text-slate-500 outline-none transition-all duration-200"
+                  style={glassInput}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                 />
               </div>
 
               {/* Notes */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
                   <StickyNote className="size-4 text-blue-400/70" />
                   Additional Notes
-                  <span className="text-xs text-muted-foreground font-normal">(optional)</span>
-                </Label>
-                <Textarea
+                  <span className="text-xs text-slate-500 font-normal">(optional)</span>
+                </label>
+                <textarea
                   placeholder="Any other observations or context..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
-                  className="resize-none text-sm rounded-lg border-border/50"
+                  className="w-full resize-none text-sm rounded-lg px-3 py-2 placeholder:text-slate-500 outline-none transition-all duration-200"
+                  style={glassInput}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                 />
               </div>
 
               {/* Would interview again */}
-              <div className="flex items-center justify-between rounded-xl border border-border/50 bg-muted/20 px-5 py-4">
+              <div
+                className="flex items-center justify-between rounded-xl px-5 py-4"
+                style={{ background: 'var(--orbis-subtle)', border: '1px solid var(--orbis-border)' }}
+              >
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center size-9 rounded-lg bg-primary/10 shrink-0">
-                    <RefreshCw className="size-4 text-primary" />
+                  <div
+                    className="flex items-center justify-center size-9 rounded-lg shrink-0"
+                    style={{ background: 'rgba(27,142,229,0.15)' }}
+                  >
+                    <RefreshCw className="size-4 text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground">Would you interview this candidate again?</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">For a different role or a future opportunity</p>
+                    <p className="text-sm font-medium text-white">Would you interview this candidate again?</p>
+                    <p className="text-xs text-slate-500 mt-0.5">For a different role or a future opportunity</p>
                   </div>
                 </div>
                 <Switch checked={wouldInterviewAgain} onCheckedChange={setWouldInterviewAgain} />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </motion.div>
 
-        {/* ── Submit ──────────────────────────────────────────────────── */}
+        {/* -- Submit --------------------------------------------------------- */}
         <motion.div variants={fadeInUp} className="flex items-center justify-between pb-8">
-          <Button
-            variant="outline"
+          <button
+            type="button"
             onClick={() => navigate('/interviews')}
-            className="rounded-xl border-border/60"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-slate-300 transition-colors hover:text-white"
+            style={glassCard}
           >
-            <ArrowLeft className="size-4 mr-2" />
+            <ArrowLeft className="size-4" />
             Cancel
-          </Button>
-          <Button
-            size="lg"
+          </button>
+          <button
+            type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="gap-2 min-w-[180px] rounded-xl shadow-md hover:shadow-lg transition-shadow"
+            className="flex items-center justify-center gap-2 min-w-[180px] px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-blue-500/20"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #6528d7)' }}
           >
             {submitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
             {submitting ? 'Submitting...' : 'Submit Feedback'}
-          </Button>
+          </button>
         </motion.div>
       </motion.div>
     </AppLayout>

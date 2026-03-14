@@ -209,11 +209,13 @@ class ScreeningQuestion(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     jd_id = Column(Integer, ForeignKey("job_descriptions.id", ondelete="CASCADE"), nullable=False, index=True)
     question = Column(Text, nullable=False)
-    question_type = Column(String(20), nullable=False, default="text")  # text, multiple_choice, yes_no
+    question_type = Column(String(20), nullable=False, default="text")  # text, multiple_choice, yes_no, numeric, date
     options = Column(JSONB, nullable=True)  # for multiple_choice
     required = Column(Boolean, nullable=False, default=True)
     ai_generated = Column(Boolean, nullable=False, default=False)
     sort_order = Column(Integer, nullable=False, default=0)
+    is_knockout = Column(Boolean, nullable=False, default=False, server_default="false")
+    knockout_condition = Column(String(100), nullable=True)  # e.g. "equals:No", "less_than:2"
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
@@ -229,6 +231,20 @@ class ScreeningResponse(Base):
     __table_args__ = (
         UniqueConstraint("candidate_id", "question_id", name="uq_candidate_question"),
     )
+
+
+class ScreeningTemplateQuestion(Base):
+    __tablename__ = "screening_template_questions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    question = Column(Text, nullable=False)
+    question_type = Column(String(20), nullable=False, default="text")
+    options = Column(JSONB, nullable=True)
+    category = Column(String(50), nullable=False, default="general")  # logistics, eligibility, experience, compensation, general
+    is_knockout = Column(Boolean, nullable=False, default=False, server_default="false")
+    knockout_condition = Column(String(100), nullable=True)
+    created_by = Column(String(50), nullable=True)  # NULL = system default
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
 
 class InterviewSchedule(Base):

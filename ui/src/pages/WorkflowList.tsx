@@ -2,12 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -65,18 +59,21 @@ import type {
 import type { PaginatedResponse } from '@/types/pagination';
 import { cn } from '@/lib/utils';
 
+// ── Design-system constants ───────────────────────────────────────────
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const STATUS_TABS = ['all', 'active', 'draft', 'archived'] as const;
 
-const STATUS_COLORS: Record<string, string> = {
-  draft:
-    'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
-  active:
-    'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border-green-200 dark:border-green-800',
-  archived: 'bg-muted text-muted-foreground border-border',
+const STATUS_BADGE: Record<string, string> = {
+  draft: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+  active: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  archived: 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
 };
 
 const TRIGGER_LABELS: Record<string, string> = {
@@ -87,7 +84,7 @@ const TRIGGER_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  trigger: '#8b5cf6',
+  trigger: '#1B8EE5',
   search: '#22c55e',
   ai: '#3b82f6',
   processing: '#f59e0b',
@@ -104,7 +101,7 @@ function nodeTypeToCategory(type: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Mini flow visualisation (unchanged)
+// Mini flow visualisation
 // ---------------------------------------------------------------------------
 
 function MiniFlowViz({ definition }: { definition: WorkflowDefinition }) {
@@ -145,8 +142,7 @@ function MiniFlowViz({ definition }: { definition: WorkflowDefinition }) {
             y1={s.y}
             x2={t.x}
             y2={t.y}
-            stroke="currentColor"
-            className="text-muted-foreground/40"
+            stroke="rgba(148,163,184,0.3)"
             strokeWidth={1.5}
           />
         );
@@ -212,7 +208,7 @@ export default function WorkflowList() {
 
   const pageSize = 20;
 
-  // ── Queries ────────────────────────────────────────────────────────
+  // -- Queries ---------------------------------------------------------------
 
   const queryParams = new URLSearchParams({
     page: String(page),
@@ -241,7 +237,7 @@ export default function WorkflowList() {
       apiClient.request<WorkflowTemplate[]>('/api/workflows/templates'),
   });
 
-  // ── Mutations ──────────────────────────────────────────────────────
+  // -- Mutations -------------------------------------------------------------
 
   const createMutation = useMutation({
     mutationFn: (body: { name: string; description: string; template_id?: string }) =>
@@ -294,7 +290,7 @@ export default function WorkflowList() {
     onError: (err: Error) => toast.error(err.message),
   });
 
-  // ── Helpers ────────────────────────────────────────────────────────
+  // -- Helpers ---------------------------------------------------------------
 
   function resetCreateForm() {
     setCreateName('');
@@ -321,7 +317,7 @@ export default function WorkflowList() {
     setCreateOpen(true);
   }
 
-  // ── Stats (from current page data; could come from a dedicated endpoint) ──
+  // -- Stats -----------------------------------------------------------------
 
   const stats = {
     total: workflowsResponse?.total ?? 0,
@@ -331,13 +327,13 @@ export default function WorkflowList() {
   };
 
   const statCards = [
-    { label: 'Total Workflows', value: stats.total, icon: Workflow, color: 'from-violet-500 to-purple-600' },
+    { label: 'Total Workflows', value: stats.total, icon: Workflow, color: 'from-blue-500 to-blue-600' },
     { label: 'Active', value: stats.active, icon: Zap, color: 'from-green-500 to-emerald-600' },
-    { label: 'Total Runs', value: stats.totalRuns, icon: BarChart3, color: 'from-blue-500 to-indigo-600' },
+    { label: 'Total Runs', value: stats.totalRuns, icon: BarChart3, color: 'from-blue-500 to-blue-600' },
     { label: 'Leads Generated', value: stats.leadsGenerated, icon: Users, color: 'from-amber-500 to-orange-600' },
   ];
 
-  // ── Render ─────────────────────────────────────────────────────────
+  // -- Render ----------------------------------------------------------------
 
   return (
     <AppLayout>
@@ -346,15 +342,19 @@ export default function WorkflowList() {
         <Fade direction="down" distance={12}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">AI Workflows</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-2xl font-bold tracking-tight text-white">AI Workflows</h1>
+              <p className="text-slate-400 mt-1">
                 Build automated talent sourcing and scoring pipelines
               </p>
             </div>
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <button
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-opacity"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+            >
+              <Plus className="h-4 w-4" />
               Create Workflow
-            </Button>
+            </button>
           </div>
         </Fade>
 
@@ -362,17 +362,17 @@ export default function WorkflowList() {
         <StaggerGrid className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {statCards.map((stat) => (
             <motion.div key={stat.label} variants={fadeInUp}>
-              <Card className="relative overflow-hidden border-0 shadow-sm">
+              <div className="relative overflow-hidden rounded-xl" style={glassCard}>
                 <div
-                  className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-[0.06] dark:opacity-[0.12]`}
+                  className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-[0.12]`}
                 />
-                <CardContent className="p-4">
+                <div className="p-4 relative">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">
                         {stat.label}
                       </p>
-                      <div className="text-2xl font-bold mt-1">
+                      <div className="text-2xl font-bold mt-1 text-white">
                         <CountingNumber value={stat.value} />
                       </div>
                     </div>
@@ -382,8 +382,8 @@ export default function WorkflowList() {
                       <stat.icon className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           ))}
         </StaggerGrid>
@@ -392,15 +392,16 @@ export default function WorkflowList() {
         <Fade>
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+              <input
                 placeholder="Search workflows..."
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-9"
+                className="w-full pl-9 pr-3 py-2 rounded-lg text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                style={glassInput}
               />
             </div>
-            <div className="flex rounded-lg border bg-muted/50 p-0.5">
+            <div className="flex rounded-lg p-0.5" style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-border)' }}>
               {STATUS_TABS.map((tab) => (
                 <button
                   key={tab}
@@ -411,8 +412,8 @@ export default function WorkflowList() {
                   className={cn(
                     'px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize',
                     statusFilter === tab
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-white/10 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
                   )}
                 >
                   {tab === 'all' ? 'All' : tab}
@@ -425,76 +426,81 @@ export default function WorkflowList() {
         {/* Workflow Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
           </div>
         ) : workflows.length === 0 ? (
           <Fade>
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                  <GitBranch className="h-8 w-8 text-muted-foreground" />
+            <div className="rounded-xl border-dashed" style={{ ...glassCard, borderStyle: 'dashed' }}>
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="h-16 w-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: 'var(--orbis-input)' }}>
+                  <GitBranch className="h-8 w-8 text-slate-400" />
                 </div>
-                <h3 className="text-lg font-semibold mb-1">No workflows yet</h3>
-                <p className="text-muted-foreground text-sm mb-4 text-center max-w-sm">
+                <h3 className="text-lg font-semibold mb-1 text-white">No workflows yet</h3>
+                <p className="text-slate-400 text-sm mb-4 text-center max-w-sm">
                   Create your first AI-powered workflow to automate talent
                   sourcing, scoring, and outreach.
                 </p>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={() => navigate('/workflows/templates')}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 transition-colors hover:text-white"
+                    style={glassCard}
                   >
-                    <LayoutTemplate className="h-4 w-4 mr-2" />
+                    <LayoutTemplate className="h-4 w-4" />
                     Browse Templates
-                  </Button>
-                  <Button onClick={() => setCreateOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
+                  </button>
+                  <button
+                    onClick={() => setCreateOpen(true)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-white"
+                    style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+                  >
+                    <Plus className="h-4 w-4" />
                     Create Workflow
-                  </Button>
+                  </button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </Fade>
         ) : (
           <StaggerGrid className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {workflows.map((workflow) => (
               <motion.div key={workflow.id} variants={fadeInUp}>
                 <motion.div whileHover={hoverLift} whileTap={tapScale}>
-                  <Card className="group cursor-pointer transition-colors hover:border-primary/30">
-                    <CardHeader className="pb-3">
+                  <div
+                    className="group cursor-pointer rounded-xl transition-colors hover:border-blue-500/30"
+                    style={glassCard}
+                  >
+                    <div className="px-5 pt-5 pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h3
-                              className="font-semibold truncate hover:underline"
+                              className="font-semibold truncate hover:underline text-white"
                               onClick={() =>
                                 navigate(`/workflows/${workflow.id}`)
                               }
                             >
                               {workflow.name}
                             </h3>
-                            <Badge
-                              variant="outline"
-                              className={`text-[10px] px-1.5 shrink-0 ${STATUS_COLORS[workflow.status]}`}
+                            <span
+                              className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${STATUS_BADGE[workflow.status] || 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}
                             >
                               {workflow.status}
-                            </Badge>
+                            </span>
                           </div>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                          <p className="text-sm text-slate-400 line-clamp-2">
                             {workflow.description || 'No description'}
                           </p>
                         </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
+                            <button
+                              className="h-8 w-8 shrink-0 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
                             >
                               <MoreVertical className="h-4 w-4" />
-                            </Button>
+                            </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" style={selectDrop}>
                             <DropdownMenuItem
                               onClick={() =>
                                 navigate(`/workflows/${workflow.id}`)
@@ -521,7 +527,7 @@ export default function WorkflowList() {
                               Duplicate
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
+                              className="text-red-400 focus:text-red-400"
                               onClick={() => setDeleteId(workflow.id)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -530,13 +536,13 @@ export default function WorkflowList() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
+                    </div>
+                    <div className="px-5 pb-5">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-muted-foreground">
+                        <div className="flex items-center gap-1">
                           <MiniFlowViz definition={workflow.definition_json} />
                         </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-4 text-xs text-slate-500">
                           <span className="flex items-center gap-1">
                             <Zap className="h-3 w-3" />
                             {TRIGGER_LABELS[workflow.trigger_type] ||
@@ -552,47 +558,43 @@ export default function WorkflowList() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-4 pt-3 border-t">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="h-8"
+                      <div className="flex items-center gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+                        <button
+                          className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-sm font-medium text-white disabled:opacity-50 transition-opacity"
+                          style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
                           disabled={runMutation.isPending || workflow.status !== 'active'}
                           onClick={(e) => {
                             e.stopPropagation();
                             runMutation.mutate(workflow.id);
                           }}
                         >
-                          <Play className="h-3.5 w-3.5 mr-1" />
+                          <Play className="h-3.5 w-3.5" />
                           Run
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8"
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                          style={glassCard}
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/workflows/${workflow.id}`);
                           }}
                         >
-                          <Pencil className="h-3.5 w-3.5 mr-1" />
+                          <Pencil className="h-3.5 w-3.5" />
                           Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 ml-auto"
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1 h-8 px-3 rounded-lg text-sm font-medium text-slate-400 hover:text-white ml-auto transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/workflows/${workflow.id}/runs`);
                           }}
                         >
-                          <BarChart3 className="h-3.5 w-3.5 mr-1" />
+                          <BarChart3 className="h-3.5 w-3.5" />
                           History
-                        </Button>
+                        </button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </motion.div>
               </motion.div>
             ))}
@@ -615,10 +617,10 @@ export default function WorkflowList() {
           <Fade>
             <div className="space-y-4 pt-4">
               <div>
-                <h2 className="text-lg font-semibold tracking-tight">
+                <h2 className="text-lg font-semibold tracking-tight text-white">
                   Create from Template
                 </h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
+                <p className="text-sm text-slate-400 mt-0.5">
                   Start with a pre-built workflow and customise it for your needs
                 </p>
               </div>
@@ -629,38 +631,37 @@ export default function WorkflowList() {
                     whileHover={hoverLift}
                     whileTap={tapScale}
                   >
-                    <Card className="h-full transition-colors hover:border-primary/30 cursor-pointer">
-                      <CardContent className="p-5 flex flex-col h-full">
+                    <div
+                      className="h-full rounded-xl transition-colors hover:border-blue-500/30 cursor-pointer"
+                      style={glassCard}
+                    >
+                      <div className="p-5 flex flex-col h-full">
                         <div className="flex items-start gap-3 mb-3">
-                          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <LayoutTemplate className="h-4.5 w-4.5 text-primary" />
+                          <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                            <LayoutTemplate className="h-4 w-4 text-blue-400" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-sm truncate">
+                            <h3 className="font-semibold text-sm truncate text-white">
                               {template.name}
                             </h3>
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] mt-1"
-                            >
+                            <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full mt-1 bg-slate-500/10 text-slate-400 border border-slate-500/20">
                               {template.category}
-                            </Badge>
+                            </span>
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
+                        <p className="text-sm text-slate-400 line-clamp-2 flex-1">
                           {template.description}
                         </p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-4 w-full"
+                        <button
+                          className="inline-flex items-center justify-center gap-1.5 mt-4 w-full px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors"
+                          style={glassCard}
                           onClick={() => handleCreateFromTemplate(template)}
                         >
-                          <Plus className="h-3.5 w-3.5 mr-1.5" />
+                          <Plus className="h-3.5 w-3.5" />
                           Use Template
-                        </Button>
-                      </CardContent>
-                    </Card>
+                        </button>
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -677,67 +678,75 @@ export default function WorkflowList() {
           if (!open) resetCreateForm();
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle>Create Workflow</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Create Workflow</DialogTitle>
+            <DialogDescription className="text-slate-400">
               Set up a new AI-powered workflow for your hiring pipeline.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="wf-name">Name</Label>
-              <Input
+              <label htmlFor="wf-name" className="text-sm font-medium text-slate-300">Name</label>
+              <input
                 id="wf-name"
                 placeholder="e.g. Senior Engineer Pipeline"
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                style={glassInput}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="wf-desc">Description</Label>
-              <Textarea
+              <label htmlFor="wf-desc" className="text-sm font-medium text-slate-300">Description</label>
+              <textarea
                 id="wf-desc"
                 placeholder="Describe what this workflow does..."
                 rows={3}
                 value={createDesc}
                 onChange={(e) => setCreateDesc(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-y"
+                style={glassInput}
               />
             </div>
             {createTemplateId && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+              <div
+                className="flex items-center gap-2 text-sm text-slate-400 rounded-md px-3 py-2"
+                style={{ background: 'var(--orbis-grid)' }}
+              >
                 <LayoutTemplate className="h-4 w-4 shrink-0" />
                 <span>Creating from template</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 ml-auto"
+                <button
+                  className="h-5 w-5 ml-auto rounded flex items-center justify-center text-slate-400 hover:text-white"
                   onClick={() => setCreateTemplateId(null)}
                 >
                   <Trash2 className="h-3 w-3" />
-                </Button>
+                </button>
               </div>
             )}
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
+            <button
+              className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              style={glassCard}
               onClick={() => {
                 setCreateOpen(false);
                 resetCreateForm();
               }}
             >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50 transition-opacity"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
               onClick={handleCreate}
               disabled={createMutation.isPending || !createName.trim()}
             >
               {createMutation.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               )}
               Create
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -747,18 +756,18 @@ export default function WorkflowList() {
         open={deleteId !== null}
         onOpenChange={() => setDeleteId(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Workflow</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-white">Delete Workflow</AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-400">
               This will permanently delete this workflow and all its run history.
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="border-white/10 text-slate-300 hover:text-white hover:bg-white/5">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 text-white hover:bg-red-700"
               onClick={() => deleteId && deleteMutation.mutate(deleteId)}
             >
               {deleteMutation.isPending ? (

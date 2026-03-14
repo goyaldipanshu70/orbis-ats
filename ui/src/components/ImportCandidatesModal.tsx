@@ -1,7 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   UserPlus, Search, Briefcase, User, Clock, X, Loader2, Users, AlertCircle,
@@ -10,7 +7,7 @@ import {
 import { toast } from 'sonner';
 import { apiClient } from '@/utils/api';
 
-/* ── Types ────────────────────────────────────────────────────────── */
+/* -- Types ---------------------------------------------------------------- */
 
 interface Job {
   job_id: string;
@@ -45,18 +42,38 @@ const CATEGORIES = [
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Engineering: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
-  HR: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800',
-  Finance: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
-  Marketing: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800',
-  Sales: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800',
-  IT: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800',
-  Product: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
-  Design: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/40 dark:text-pink-300 dark:border-pink-800',
-  Other: 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800/40 dark:text-gray-300 dark:border-gray-700',
+  Engineering: 'bg-blue-900/40 text-blue-300 border-blue-700',
+  HR: 'bg-blue-900/40 text-blue-300 border-blue-700',
+  Finance: 'bg-emerald-900/40 text-emerald-300 border-emerald-700',
+  Marketing: 'bg-orange-900/40 text-orange-300 border-orange-700',
+  Sales: 'bg-cyan-900/40 text-cyan-300 border-cyan-700',
+  IT: 'bg-blue-900/40 text-blue-300 border-blue-700',
+  Product: 'bg-amber-900/40 text-amber-300 border-amber-700',
+  Design: 'bg-pink-900/40 text-pink-300 border-pink-700',
+  Other: 'bg-white/5 text-slate-400 border-white/10',
 };
 
-/* ── Helpers ──────────────────────────────────────────────────────── */
+/* -- Styles --------------------------------------------------------------- */
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+
+const glassInputFocusStyle: React.CSSProperties = {
+  background: 'var(--orbis-hover)',
+  borderColor: '#1B8EE5',
+  boxShadow: '0 0 20px rgba(27,142,229,0.15)',
+};
+
+const glassInputBlurStyle: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  borderColor: 'var(--orbis-border)',
+  boxShadow: 'none',
+};
+
+/* -- Helpers -------------------------------------------------------------- */
 
 function normalizeCandidate(raw: any): CandidateForImport {
   return {
@@ -81,7 +98,22 @@ function useDebounce(value: string, delay: number) {
   return debounced;
 }
 
-/* ── Main Component ───────────────────────────────────────────────── */
+/* -- GlassInput component ------------------------------------------------- */
+
+function GlassInput({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <input
+      {...props}
+      className={`w-full h-10 px-3 rounded-lg text-sm outline-none transition-all duration-200 placeholder:text-slate-500 ${className || ''}`}
+      style={focused ? { ...glassInput, ...glassInputFocusStyle } : glassInput}
+      onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
+      onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
+    />
+  );
+}
+
+/* -- Main Component ------------------------------------------------------- */
 
 const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: ImportCandidatesModalProps) => {
   const [mode, setMode] = useState<ImportMode>('job');
@@ -123,7 +155,6 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
     onClose();
   }, [isImporting, onClose]);
 
-  // Escape to close
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
@@ -131,7 +162,6 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
     return () => document.removeEventListener('keydown', handler);
   }, [isOpen, handleClose]);
 
-  // Search jobs
   useEffect(() => {
     if (!isOpen || mode !== 'job' || selectedJob) return;
     setIsSearchingJobs(true);
@@ -141,7 +171,6 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
       .finally(() => setIsSearchingJobs(false));
   }, [debouncedJobQuery, isOpen, mode, selectedJob, currentJobId]);
 
-  // Load candidates for selected job (with category filter)
   useEffect(() => {
     if (!selectedJob) { setJobCandidates([]); return; }
     setIsLoadingCandidates(true);
@@ -151,7 +180,6 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
       .finally(() => setIsLoadingCandidates(false));
   }, [selectedJob, categoryFilter]);
 
-  // Search candidates globally (with category filter)
   useEffect(() => {
     if (!isOpen || mode !== 'candidate') return;
     if (!debouncedCandidateQuery.trim()) { setGlobalCandidates([]); return; }
@@ -162,7 +190,6 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
       .finally(() => setIsSearchingCandidates(false));
   }, [debouncedCandidateQuery, isOpen, mode, currentJobId, categoryFilter]);
 
-  // Clear selection when switching modes or changing filter
   useEffect(() => { setSelectedCandidates(new Set()); }, [mode, categoryFilter]);
 
   const toggleCandidate = (id: string) => {
@@ -205,45 +232,45 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
       {/* Modal */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="pointer-events-auto w-full max-w-[900px] bg-background rounded-xl shadow-2xl border flex flex-col animate-in fade-in zoom-in-95 duration-200"
-          style={{ maxHeight: 'min(85vh, 720px)' }}
+          className="pointer-events-auto w-full max-w-[900px] rounded-2xl shadow-2xl flex flex-col animate-in fade-in zoom-in-95 duration-200 border-0"
+          style={{ maxHeight: 'min(85vh, 720px)', background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
           onClick={e => e.stopPropagation()}
         >
-          {/* ── Header ──────────────────────────────────────────── */}
-          <div className="px-6 pt-5 pb-4 border-b shrink-0">
+          {/* -- Header ---------------------------------------------------- */}
+          <div className="px-6 pt-5 pb-4 shrink-0" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400">
                   <UserPlus className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold">Import Candidates</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Candidates are imported as profiles — AI evaluation runs against the new job
+                  <h2 className="text-lg font-semibold text-white">Import Candidates</h2>
+                  <p className="text-sm text-slate-400">
+                    Candidates are imported as profiles -- AI evaluation runs against the new job
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleClose} className="shrink-0 -mt-1 -mr-2">
+              <button onClick={handleClose} className="shrink-0 -mt-1 -mr-2 h-8 w-8 inline-flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
                 <X className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
 
             {/* Mode toggle + category filter */}
             <div className="flex items-center justify-between mt-4">
-              <div className="flex bg-muted rounded-lg p-1 w-fit">
+              <div className="flex rounded-lg p-1 w-fit" style={{ background: 'var(--orbis-input)' }}>
                 <button
                   onClick={() => setMode('job')}
                   className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                     mode === 'job'
-                      ? 'bg-background shadow-sm text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-blue-600 shadow-sm text-white'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <Briefcase className="h-3.5 w-3.5 inline mr-1.5 -mt-0.5" />
@@ -253,8 +280,8 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
                   onClick={() => setMode('candidate')}
                   className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                     mode === 'candidate'
-                      ? 'bg-background shadow-sm text-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-blue-600 shadow-sm text-white'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   <Users className="h-3.5 w-3.5 inline mr-1.5 -mt-0.5" />
@@ -264,24 +291,26 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
 
               {/* Category filter */}
               <div className="relative">
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
                   onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                  className={`gap-1.5 text-xs ${categoryFilter ? 'border-blue-300 bg-blue-50 text-blue-700' : ''}`}
+                  className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-colors font-medium ${
+                    categoryFilter
+                      ? 'border-blue-500/30 bg-blue-500/10 text-blue-300'
+                      : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10'
+                  }`}
                 >
                   <Filter className="h-3.5 w-3.5" />
                   {categoryFilter || 'All Categories'}
                   <ChevronDown className="h-3 w-3" />
-                </Button>
+                </button>
                 {showCategoryDropdown && (
                   <>
                     <div className="fixed inset-0 z-[60]" onClick={() => setShowCategoryDropdown(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-[70] w-44 bg-background border rounded-lg shadow-lg py-1">
+                    <div className="absolute right-0 top-full mt-1 z-[70] w-44 rounded-lg shadow-lg py-1" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' }}>
                       <button
                         onClick={() => { setCategoryFilter(''); setShowCategoryDropdown(false); }}
-                        className={`w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors ${
-                          !categoryFilter ? 'font-medium text-blue-600' : ''
+                        className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 transition-colors ${
+                          !categoryFilter ? 'font-medium text-blue-400' : 'text-slate-300'
                         }`}
                       >
                         All Categories
@@ -290,11 +319,11 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
                         <button
                           key={cat}
                           onClick={() => { setCategoryFilter(cat); setShowCategoryDropdown(false); }}
-                          className={`w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors flex items-center gap-2 ${
-                            categoryFilter === cat ? 'font-medium text-blue-600' : ''
+                          className={`w-full text-left px-3 py-1.5 text-sm hover:bg-white/5 transition-colors flex items-center gap-2 ${
+                            categoryFilter === cat ? 'font-medium text-blue-400' : 'text-slate-300'
                           }`}
                         >
-                          <span className={`inline-block w-2 h-2 rounded-full ${CATEGORY_COLORS[cat]?.split(' ')[0] || 'bg-gray-200'}`} />
+                          <span className={`inline-block w-2 h-2 rounded-full ${CATEGORY_COLORS[cat]?.split(' ')[0] || 'bg-gray-700'}`} />
                           {cat}
                         </button>
                       ))}
@@ -305,7 +334,7 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
             </div>
           </div>
 
-          {/* ── Body ────────────────────────────────────────────── */}
+          {/* -- Body ------------------------------------------------------ */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="px-6 py-4 space-y-4">
 
@@ -314,10 +343,10 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
                 <>
                   {!selectedJob ? (
                     <div>
-                      <label className="text-sm font-medium mb-1.5 block text-muted-foreground">Search source job</label>
+                      <label className="text-sm font-medium mb-1.5 block text-slate-400">Search source job</label>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                        <GlassInput
                           placeholder="Type to search jobs by title..."
                           value={jobQuery}
                           onChange={e => setJobQuery(e.target.value)}
@@ -325,44 +354,44 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
                           autoFocus
                         />
                         {isSearchingJobs && (
-                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-slate-500" />
                         )}
                       </div>
                       {jobResults.length > 0 && (
-                        <div className="mt-2 border rounded-lg divide-y max-h-48 overflow-y-auto">
+                        <div className="mt-2 rounded-lg divide-y divide-white/5 max-h-48 overflow-y-auto border border-white/10">
                           {jobResults.map(job => (
                             <button
                               key={job.job_id}
                               onClick={() => { setSelectedJob(job); setJobQuery(''); setJobResults([]); }}
-                              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-muted/50 transition-colors text-left"
+                              className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 transition-colors text-left"
                             >
                               <div className="flex items-center gap-2 min-w-0">
-                                <Briefcase className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="text-sm font-medium truncate">{job.job_title}</span>
+                                <Briefcase className="h-4 w-4 text-slate-500 shrink-0" />
+                                <span className="text-sm font-medium text-white truncate">{job.job_title}</span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0 ml-2">
-                                <Badge variant="outline" className="text-[10px]">{job.status}</Badge>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">{job.candidate_count} candidates</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-slate-400">{job.status}</span>
+                                <span className="text-xs text-slate-500 whitespace-nowrap">{job.candidate_count} candidates</span>
                               </div>
                             </button>
                           ))}
                         </div>
                       )}
                       {!isSearchingJobs && jobResults.length === 0 && debouncedJobQuery.trim() && (
-                        <p className="text-sm text-muted-foreground mt-3 text-center">No jobs found matching "{debouncedJobQuery}"</p>
+                        <p className="text-sm text-slate-500 mt-3 text-center">No jobs found matching "{debouncedJobQuery}"</p>
                       )}
                     </div>
                   ) : (
                     <div>
-                      <label className="text-sm font-medium mb-1.5 block text-muted-foreground">Source job</label>
-                      <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-3 py-2 text-sm font-medium dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300">
+                      <label className="text-sm font-medium mb-1.5 block text-slate-400">Source job</label>
+                      <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 text-blue-300 rounded-lg px-3 py-2 text-sm font-medium">
                         <Briefcase className="h-4 w-4" />
                         <span>{selectedJob.job_title}</span>
-                        <Badge variant="outline" className="text-[10px] border-blue-300">{selectedJob.status}</Badge>
-                        <span className="text-blue-600 text-xs">{selectedJob.candidate_count} candidates</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-blue-500/30 bg-blue-500/10">{selectedJob.status}</span>
+                        <span className="text-blue-400 text-xs">{selectedJob.candidate_count} candidates</span>
                         <button
                           onClick={() => { setSelectedJob(null); setJobCandidates([]); setSelectedCandidates(new Set()); }}
-                          className="ml-1 hover:bg-blue-100 rounded p-0.5"
+                          className="ml-1 hover:bg-blue-500/20 rounded p-0.5"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -387,10 +416,10 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
               {mode === 'candidate' && (
                 <>
                   <div>
-                    <label className="text-sm font-medium mb-1.5 block text-muted-foreground">Search candidates</label>
+                    <label className="text-sm font-medium mb-1.5 block text-slate-400">Search candidates</label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                      <GlassInput
                         placeholder="Search by name or email..."
                         value={candidateQuery}
                         onChange={e => setCandidateQuery(e.target.value)}
@@ -398,13 +427,13 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
                         autoFocus
                       />
                       {isSearchingCandidates && (
-                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-slate-500" />
                       )}
                     </div>
                   </div>
 
                   {!debouncedCandidateQuery.trim() ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-500">
                       <Search className="h-10 w-10 mb-3 opacity-40" />
                       <p className="text-sm">Start typing to search candidates across all jobs</p>
                     </div>
@@ -423,31 +452,35 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
             </div>
           </div>
 
-          {/* ── Footer ──────────────────────────────────────────── */}
-          <div className="px-6 py-3 border-t bg-muted/30 flex items-center justify-between shrink-0 rounded-b-xl">
-            <span className="text-sm text-muted-foreground">
+          {/* -- Footer ---------------------------------------------------- */}
+          <div className="px-6 py-3 flex items-center justify-between shrink-0 rounded-b-2xl" style={{ borderTop: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
+            <span className="text-sm text-slate-500">
               {selectedCandidates.size > 0
                 ? `${selectedCandidates.size} candidate${selectedCandidates.size === 1 ? '' : 's'} selected`
                 : 'No candidates selected'}
             </span>
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleClose} disabled={isImporting}>
+              <button
+                onClick={handleClose}
+                disabled={isImporting}
+                className="px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 transition-colors font-medium text-sm disabled:opacity-50"
+              >
                 Cancel
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={handleImport}
                 disabled={isImporting || selectedCandidates.size === 0}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-500 hover:to-blue-500 text-white px-5 py-2 rounded-lg shadow-md shadow-blue-600/20 font-medium text-sm disabled:opacity-50 transition-all"
               >
                 {isImporting ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin inline" />
                     Importing...
                   </>
                 ) : (
                   `Import ${selectedCandidates.size || ''} Candidate${selectedCandidates.size === 1 ? '' : 's'}`
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         </div>
@@ -456,7 +489,7 @@ const ImportCandidatesModal = ({ currentJobId, isOpen, onClose, onImport }: Impo
   );
 };
 
-/* ── Candidate List Sub-Component ─────────────────────────────────── */
+/* -- Candidate List Sub-Component ----------------------------------------- */
 
 function CandidateList({
   candidates,
@@ -476,14 +509,14 @@ function CandidateList({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
       </div>
     );
   }
 
   if (candidates.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-12 text-slate-500">
         <AlertCircle className="h-10 w-10 mb-3 opacity-40" />
         <p className="text-sm">No candidates found</p>
       </div>
@@ -495,58 +528,58 @@ function CandidateList({
       <div className="flex items-center justify-between mb-2">
         <button
           onClick={onToggleAll}
-          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+          className="text-xs text-blue-400 hover:text-blue-300 font-medium"
         >
           {selected.size === candidates.length ? 'Deselect All' : 'Select All'}
         </button>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-slate-500">
           {selected.size} of {candidates.length} selected
         </span>
       </div>
 
-      <div className="border rounded-lg divide-y max-h-[340px] overflow-y-auto">
+      <div className="border border-white/10 rounded-lg divide-y divide-white/5 max-h-[340px] overflow-y-auto">
         {candidates.map(c => (
           <label
             key={c.candidate_id}
             className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
               selected.has(c.candidate_id)
-                ? 'bg-blue-50/60 dark:bg-blue-950/30'
-                : 'hover:bg-muted/40'
+                ? 'bg-blue-500/10'
+                : 'hover:bg-white/[0.03]'
             }`}
           >
             <Checkbox
               checked={selected.has(c.candidate_id)}
               onCheckedChange={() => onToggle(c.candidate_id)}
-              className="shrink-0"
+              className="shrink-0 border-white/20 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
             />
 
             {/* Avatar */}
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-200 text-muted-foreground text-xs font-bold">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600/40 to-blue-600/40 text-slate-300 text-xs font-bold">
               {(c.name || '?').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium truncate">{c.name}</span>
-                <Badge variant="outline" className={`text-[10px] shrink-0 ${CATEGORY_COLORS[c.category] || CATEGORY_COLORS.Other}`}>
+                <span className="text-sm font-medium text-white truncate">{c.name}</span>
+                <span className={`text-[10px] shrink-0 px-2 py-0.5 rounded-full border ${CATEGORY_COLORS[c.category] || CATEGORY_COLORS.Other}`}>
                   {c.category}
-                </Badge>
+                </span>
                 {showSourceJob && c.source_job_title && (
-                  <Badge variant="outline" className="text-[10px] shrink-0 max-w-[180px] truncate">
+                  <span className="text-[10px] shrink-0 max-w-[180px] truncate px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-slate-400">
                     from: {c.source_job_title}
-                  </Badge>
+                  </span>
                 )}
               </div>
               <div className="flex items-center gap-3 mt-0.5">
-                <span className="text-xs text-muted-foreground truncate">{c.email}</span>
+                <span className="text-xs text-slate-500 truncate">{c.email}</span>
                 {c.currentRole !== 'N/A' && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                  <span className="text-xs text-slate-500 flex items-center gap-1 shrink-0">
                     <User className="h-3 w-3" /> {c.currentRole}
                   </span>
                 )}
                 {c.experience > 0 && (
-                  <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
+                  <span className="text-xs text-slate-500 flex items-center gap-1 shrink-0">
                     <Clock className="h-3 w-3" /> {c.experience}y exp
                   </span>
                 )}

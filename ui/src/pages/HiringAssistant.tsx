@@ -18,22 +18,28 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import AppLayout from '@/components/layout/AppLayout';
+
+/* ─── Design System ─── */
+
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const _selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
 
 // Inline DataChart stub
 function DataChart({ headers, rows, title, compact }: { headers: string[]; rows: string[][]; title?: string; compact?: boolean }) {
   return (
-    <div className={`overflow-x-auto my-3 rounded-xl border border-border ${compact ? 'text-xs' : 'text-sm'}`}>
-      {title && <div className="px-4 py-2 bg-muted border-b border-border font-semibold text-foreground">{title}</div>}
+    <div className={`overflow-x-auto my-3 rounded-xl ${compact ? 'text-xs' : 'text-sm'}`} style={{ border: '1px solid var(--orbis-border)' }}>
+      {title && <div className="px-4 py-2 font-semibold text-white" style={{ background: 'var(--orbis-grid)', borderBottom: '1px solid var(--orbis-border)' }}>{title}</div>}
       <table className="min-w-full">
-        <thead className="bg-muted border-b border-border">
-          <tr>{headers.map((h, i) => <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>)}</tr>
+        <thead style={{ background: 'var(--orbis-grid)', borderBottom: '1px solid var(--orbis-border)' }}>
+          <tr>{headers.map((h, i) => <th key={i} className="px-4 py-2.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">{h}</th>)}</tr>
         </thead>
         <tbody>
           {rows.map((row, i) => (
             <tr key={i}>
-              {row.map((cell, j) => <td key={j} className="px-4 py-2.5 text-foreground border-t border-border">{cell}</td>)}
+              {row.map((cell, j) => <td key={j} className="px-4 py-2.5 text-white" style={{ borderTop: '1px solid var(--orbis-border)' }}>{cell}</td>)}
             </tr>
           ))}
         </tbody>
@@ -99,50 +105,50 @@ interface Conversation {
 const SUGGESTIONS = [
   {
     icon: Search,
-    color: 'from-blue-500/20 to-blue-600/10 text-blue-500 border-blue-500/20',
+    color: 'from-blue-500/20 to-blue-600/10 text-blue-400 border-blue-500/20',
     title: 'Show top candidates for a role',
     desc: 'Search and rank candidates by job fit score',
   },
   {
     icon: Users,
-    color: 'from-violet-500/20 to-violet-600/10 text-violet-500 border-violet-500/20',
+    color: 'from-blue-500/20 to-blue-600/10 text-blue-400 border-blue-500/20',
     title: 'Compare top candidates',
     desc: 'Side-by-side analysis of shortlisted profiles',
   },
   {
     icon: GitBranch,
-    color: 'from-emerald-500/20 to-emerald-600/10 text-emerald-500 border-emerald-500/20',
+    color: 'from-emerald-500/20 to-emerald-600/10 text-emerald-400 border-emerald-500/20',
     title: 'Pipeline status for open roles',
     desc: 'Visualize where candidates stand in the funnel',
   },
   {
     icon: CalendarCheck,
-    color: 'from-amber-500/20 to-amber-600/10 text-amber-500 border-amber-500/20',
+    color: 'from-amber-500/20 to-amber-600/10 text-amber-400 border-amber-500/20',
     title: 'Interview schedule this week',
     desc: 'Plan and coordinate upcoming interviews',
   },
   {
     icon: Briefcase,
-    color: 'from-rose-500/20 to-rose-600/10 text-rose-500 border-rose-500/20',
+    color: 'from-rose-500/20 to-rose-600/10 text-rose-400 border-rose-500/20',
     title: 'Create a new job posting',
     desc: 'AI creates the job directly via natural language',
   },
   {
     icon: BarChart3,
-    color: 'from-cyan-500/20 to-cyan-600/10 text-cyan-500 border-cyan-500/20',
+    color: 'from-cyan-500/20 to-cyan-600/10 text-cyan-400 border-cyan-500/20',
     title: 'Generate hiring report',
     desc: 'Get a summary of recruitment metrics',
   },
   {
     icon: CheckCircle2,
-    color: 'from-teal-500/20 to-teal-600/10 text-teal-500 border-teal-500/20',
+    color: 'from-teal-500/20 to-teal-600/10 text-teal-400 border-teal-500/20',
     title: 'Show compliance report',
     desc: 'Check SLA status and diversity metrics',
     href: '/compliance',
   },
   {
     icon: Zap,
-    color: 'from-orange-500/20 to-orange-600/10 text-orange-500 border-orange-500/20',
+    color: 'from-orange-500/20 to-orange-600/10 text-orange-400 border-orange-500/20',
     title: 'View candidate scorecards',
     desc: 'Detailed evaluation breakdowns',
     href: '/jobs',
@@ -161,18 +167,18 @@ const QUICK_ACTIONS = [
 /* ─── Tool label map ─── */
 
 const TOOL_LABELS: Record<string, { label: string; color: string }> = {
-  create_job_posting: { label: 'Job Created', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-  move_candidate_stage: { label: 'Candidate Moved', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
-  add_candidates_to_job: { label: 'Candidates Added', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300' },
-  schedule_interview: { label: 'Interview Scheduled', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
-  create_offer: { label: 'Offer Created', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
-  update_job_status: { label: 'Job Updated', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300' },
-  search_candidates: { label: 'Talent Search', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300' },
-  web_search: { label: 'Web Search', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
-  view_scorecard: { label: 'Scorecard', color: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300' },
-  check_compliance: { label: 'Compliance Check', color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300' },
-  create_referral: { label: 'Referral Created', color: 'bg-lime-100 text-lime-700 dark:bg-lime-900/40 dark:text-lime-300' },
-  start_campaign: { label: 'Campaign Started', color: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300' },
+  create_job_posting: { label: 'Job Created', color: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' },
+  move_candidate_stage: { label: 'Candidate Moved', color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' },
+  add_candidates_to_job: { label: 'Candidates Added', color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' },
+  schedule_interview: { label: 'Interview Scheduled', color: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' },
+  create_offer: { label: 'Offer Created', color: 'bg-rose-500/10 text-rose-400 border border-rose-500/20' },
+  update_job_status: { label: 'Job Updated', color: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' },
+  search_candidates: { label: 'Talent Search', color: 'bg-blue-500/10 text-blue-400 border border-blue-500/20' },
+  web_search: { label: 'Web Search', color: 'bg-orange-500/10 text-orange-400 border border-orange-500/20' },
+  view_scorecard: { label: 'Scorecard', color: 'bg-teal-500/10 text-teal-400 border border-teal-500/20' },
+  check_compliance: { label: 'Compliance Check', color: 'bg-sky-500/10 text-sky-400 border border-sky-500/20' },
+  create_referral: { label: 'Referral Created', color: 'bg-lime-500/10 text-lime-400 border border-lime-500/20' },
+  start_campaign: { label: 'Campaign Started', color: 'bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20' },
 };
 
 /* ─── Speech support detection ─── */
@@ -599,7 +605,7 @@ export default function HiringAssistant() {
 
         for (const line of lines) {
           if (line.startsWith('event: ')) {
-            const eventType = line.slice(7).trim();
+            const _eventType = line.slice(7).trim();
             // Next line should be data:
             continue;
           }
@@ -746,7 +752,7 @@ export default function HiringAssistant() {
       <>
         <div className="flex flex-wrap gap-2 mt-3">
           {actions.map((action, i) => {
-            const info = TOOL_LABELS[action.tool] || { label: action.tool, color: 'bg-muted text-muted-foreground' };
+            const info = TOOL_LABELS[action.tool] || { label: action.tool, color: 'bg-slate-500/10 text-slate-400' };
             const success = action.result?.success !== false;
             const isPending = action.result?.pending_confirmation;
             const link = action.result?.link;
@@ -758,7 +764,7 @@ export default function HiringAssistant() {
                 key={i}
                 onClick={link ? () => navigate(link) : undefined}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                  success ? info.color : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                  success ? info.color : 'bg-red-500/10 text-red-400 border border-red-500/20'
                 } ${link ? 'cursor-pointer hover:opacity-80' : ''}`}
               >
                 {success ? <CheckCircle2 className="w-3 h-3" /> : <X className="w-3 h-3" />}
@@ -774,22 +780,24 @@ export default function HiringAssistant() {
           const token = action.result?.confirmation_token;
           if (!token || !pendingConfirmations.has(token)) return null;
           return (
-            <div key={`confirm-${i}`} className="mt-3 border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 rounded-xl p-4">
+            <div key={`confirm-${i}`} className="mt-3 rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
               <div className="flex items-start gap-3">
-                <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">Confirmation Required</p>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">{action.result.description}</p>
+                  <p className="text-sm font-semibold text-amber-200">Confirmation Required</p>
+                  <p className="text-xs text-amber-300/80 mt-1">{action.result.description}</p>
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => handleConfirm(token)}
-                      className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg hover:bg-emerald-500 transition-colors"
+                      className="px-3 py-1.5 text-white text-xs font-semibold rounded-lg transition-colors"
+                      style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}
                     >
                       Confirm
                     </button>
                     <button
                       onClick={() => handleCancelConfirmation(token)}
-                      className="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-semibold rounded-lg hover:bg-muted/80 transition-colors border border-border"
+                      className="px-3 py-1.5 text-slate-400 text-xs font-semibold rounded-lg hover:text-white transition-colors"
+                      style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
                     >
                       Cancel
                     </button>
@@ -803,18 +811,18 @@ export default function HiringAssistant() {
         {/* Web search sources */}
         {webSources.length > 0 && (
           <details className="mt-3 group">
-            <summary className="text-xs font-semibold text-muted-foreground cursor-pointer hover:text-foreground flex items-center gap-1">
+            <summary className="text-xs font-semibold text-slate-400 cursor-pointer hover:text-white flex items-center gap-1">
               <Globe className="w-3 h-3" />
               {webSources.length} source{webSources.length !== 1 ? 's' : ''}
               <ChevronDown className="w-3 h-3 group-open:rotate-180 transition-transform" />
             </summary>
-            <div className="mt-2 space-y-1.5 pl-4 border-l-2 border-border">
+            <div className="mt-2 space-y-1.5 pl-4" style={{ borderLeft: '2px solid var(--orbis-border)' }}>
               {webSources.map((src: any, si: number) => (
                 <div key={si} className="text-xs">
-                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-medium">
                     {src.title || src.url}
                   </a>
-                  {src.content && <p className="text-muted-foreground mt-0.5 line-clamp-2">{src.content}</p>}
+                  {src.content && <p className="text-slate-500 mt-0.5 line-clamp-2">{src.content}</p>}
                 </div>
               ))}
             </div>
@@ -835,31 +843,32 @@ export default function HiringAssistant() {
         const score = c.category_scores?.total_score;
         const recommendation = c.ai_recommendation || 'Pending';
 
-        let recColor = 'bg-muted text-muted-foreground';
+        let recColor = 'bg-slate-500/10 text-slate-400';
         if (recommendation === 'Interview' || recommendation === 'Interview Immediately')
-          recColor = 'bg-emerald-100 text-emerald-700';
-        else if (recommendation === 'Consider') recColor = 'bg-amber-100 text-amber-700';
+          recColor = 'bg-emerald-500/10 text-emerald-400';
+        else if (recommendation === 'Consider') recColor = 'bg-amber-500/10 text-amber-400';
         else if (recommendation === 'Reject' || recommendation === 'Do Not Recommend')
-          recColor = 'bg-red-100 text-red-700';
+          recColor = 'bg-red-500/10 text-red-400';
 
         return (
           <div
             key={c.candidate_id || i}
-            className="bg-card border border-border rounded-xl p-4 hover:shadow-md hover:border-blue-200 transition-all"
+            className="rounded-xl p-4 hover:shadow-md transition-all"
+            style={{ ...glassCard }}
           >
             <div className="flex items-start justify-between mb-2">
               <div>
-                <p className="font-semibold text-foreground text-sm">{name}</p>
-                <p className="text-xs text-muted-foreground">{role}</p>
+                <p className="font-semibold text-white text-sm">{name}</p>
+                <p className="text-xs text-slate-400">{role}</p>
               </div>
               {score != null && (
-                <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-xs font-bold">
+                <div className="flex items-center gap-1 bg-blue-500/10 text-blue-400 px-2 py-1 rounded-lg text-xs font-bold border border-blue-500/20">
                   <Star className="w-3 h-3" />
                   {score}
                 </div>
               )}
             </div>
-            <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="space-y-1 text-xs text-slate-400">
               {email && (
                 <div className="flex items-center gap-1.5">
                   <Mail className="w-3 h-3" /> {email}
@@ -883,7 +892,7 @@ export default function HiringAssistant() {
               {c.highlighted_skills && c.highlighted_skills.length > 0 && (
                 <div className="flex gap-1">
                   {c.highlighted_skills.slice(0, 2).map((s: string, si: number) => (
-                    <span key={si} className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                    <span key={si} className="text-[10px] bg-slate-500/10 text-slate-400 px-1.5 py-0.5 rounded">
                       {s}
                     </span>
                   ))}
@@ -912,7 +921,7 @@ export default function HiringAssistant() {
                 ))}
               </div>
             )}
-            <div className="bg-blue-600 text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed shadow-sm">
+            <div className="rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed text-white shadow-lg" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
               {msg.content}
             </div>
           </div>
@@ -922,15 +931,15 @@ export default function HiringAssistant() {
 
     return (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className="flex gap-3">
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shrink-0 mt-1">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center shadow-md shrink-0 mt-1" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
           <Bot className="w-3.5 h-3.5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="bg-muted/50 border border-border rounded-2xl rounded-bl-sm px-4 py-3">
+          <div className="rounded-2xl rounded-bl-sm px-4 py-3" style={glassCard}>
             {/* Action results badges */}
             {renderActionResults(msg.actions)}
 
-            <div className="prose prose-sm max-w-none prose-slate dark:prose-invert prose-p:leading-relaxed prose-headings:font-semibold prose-headings:text-foreground prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0">
+            <div className="prose prose-sm max-w-none prose-invert prose-p:leading-relaxed prose-headings:font-semibold prose-headings:text-white prose-code:before:content-none prose-code:after:content-none prose-pre:bg-transparent prose-pre:p-0">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeRaw]}
@@ -940,7 +949,7 @@ export default function HiringAssistant() {
                     const codeStr = String(children).replace(/\n$/, '');
                     if (!match) {
                       if (!codeStr.includes('\n')) {
-                        return <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-foreground" {...props}>{children}</code>;
+                        return <code className="px-1.5 py-0.5 rounded text-xs font-mono text-white" style={{ background: 'var(--orbis-hover)' }} {...props}>{children}</code>;
                       }
                     }
                     const lang = match ? match[1] : 'text';
@@ -949,8 +958,8 @@ export default function HiringAssistant() {
                       if (chartData) return <DataChart headers={chartData.headers} rows={chartData.rows} title="Data Visualization" compact />;
                     }
                     return (
-                      <SyntaxHighlighter style={oneLight} language={lang} PreTag="div"
-                        customStyle={{ margin: 0, padding: '12px', background: '#fafafa', fontSize: '12px', lineHeight: '1.6', borderRadius: '12px', border: '1px solid #e2e8f0' }}
+                      <SyntaxHighlighter style={oneDark} language={lang} PreTag="div"
+                        customStyle={{ margin: 0, padding: '12px', fontSize: '12px', lineHeight: '1.6', borderRadius: '12px', border: '1px solid var(--orbis-hover)' }}
                         wrapLongLines>{codeStr}</SyntaxHighlighter>
                     );
                   },
@@ -965,11 +974,11 @@ export default function HiringAssistant() {
                         if (headers.length > 0 && rows.length > 0) return <DataChart headers={headers} rows={rows} />;
                       }
                     } catch {}
-                    return <div className="overflow-x-auto my-3 rounded-xl border border-border"><table className="min-w-full text-sm" {...props}>{children}</table></div>;
+                    return <div className="overflow-x-auto my-3 rounded-xl" style={{ border: '1px solid var(--orbis-border)' }}><table className="min-w-full text-sm" {...props}>{children}</table></div>;
                   },
-                  thead({ children, ...props }: any) { return <thead className="bg-muted border-b border-border" {...props}>{children}</thead>; },
-                  th({ children, ...props }: any) { return <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider" {...props}>{children}</th>; },
-                  td({ children, ...props }: any) { return <td className="px-4 py-2.5 text-sm text-foreground border-t border-border" {...props}>{children}</td>; },
+                  thead({ children, ...props }: any) { return <thead style={{ background: 'var(--orbis-grid)', borderBottom: '1px solid var(--orbis-border)' }} {...props}>{children}</thead>; },
+                  th({ children, ...props }: any) { return <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider" {...props}>{children}</th>; },
+                  td({ children, ...props }: any) { return <td className="px-4 py-2.5 text-sm text-white" style={{ borderTop: '1px solid var(--orbis-border)' }} {...props}>{children}</td>; },
                 }}
               >
                 {msg.content}
@@ -985,7 +994,7 @@ export default function HiringAssistant() {
             <button
               onClick={() => copyText(msg.content)}
               title="Copy"
-              className="p-1.5 text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted rounded-lg transition-all"
+              className="p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
             >
               <Copy className="w-3.5 h-3.5" />
             </button>
@@ -993,7 +1002,7 @@ export default function HiringAssistant() {
               <button
                 onClick={() => speakText(msg.content)}
                 title="Read aloud"
-                className="p-1.5 text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted rounded-lg transition-all"
+                className="p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-all"
               >
                 <Volume2 className="w-3.5 h-3.5" />
               </button>
@@ -1008,23 +1017,23 @@ export default function HiringAssistant() {
 
   return (
     <AppLayout noPadding>
-      <div className="flex h-[calc(100vh-theme(spacing.16))] overflow-hidden">
+      <div className="flex h-[calc(100vh-theme(spacing.16))] overflow-hidden bg-[var(--orbis-page)]">
         {/* ── LEFT PANEL: Quick Context + Conversations ── */}
-        <aside className="w-80 shrink-0 border-r border-border bg-card flex flex-col overflow-hidden">
+        <aside className="w-80 shrink-0 flex flex-col overflow-hidden" style={{ borderRight: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
           {/* Header */}
-          <div className="px-5 pt-6 pb-4 border-b border-border">
+          <div className="px-5 pt-6 pb-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
             <div className="flex items-center gap-3 mb-1">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-200/50 dark:shadow-blue-900/30">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1">
-                <h2 className="text-base font-bold text-foreground">Hiring Assistant</h2>
-                <p className="text-[11px] text-muted-foreground">AI-powered recruitment</p>
+                <h2 className="text-base font-bold text-white">Hiring Assistant</h2>
+                <p className="text-[11px] text-slate-500">AI-powered recruitment</p>
               </div>
               <button
                 onClick={startNewConversation}
                 title="New conversation"
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -1032,30 +1041,30 @@ export default function HiringAssistant() {
           </div>
 
           {/* Quick Stats */}
-          <div className="px-4 py-4 border-b border-border">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+          <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
               Quick Stats
             </p>
             <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-3 gap-2">
               {[
-                { label: 'Active Jobs', value: stats.active_jobs, icon: Briefcase, color: 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-950/50' },
-                { label: 'Candidates', value: stats.total_candidates, icon: Users, color: 'text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-950/50' },
-                { label: 'Interviews', value: stats.pending_interviews, icon: Clock, color: 'text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/50' },
+                { label: 'Active Jobs', value: stats.active_jobs, icon: Briefcase, color: 'text-blue-400 bg-blue-500/10' },
+                { label: 'Candidates', value: stats.total_candidates, icon: Users, color: 'text-blue-400 bg-blue-500/10' },
+                { label: 'Interviews', value: stats.pending_interviews, icon: Clock, color: 'text-amber-400 bg-amber-500/10' },
               ].map(({ label, value, icon: Icon, color }) => (
-                <motion.div key={label} variants={fadeInUp} className="text-center p-2 rounded-xl bg-muted border border-border">
+                <motion.div key={label} variants={fadeInUp} className="text-center p-2 rounded-xl" style={glassCard}>
                   <div className={`w-7 h-7 rounded-lg ${color} flex items-center justify-center mx-auto mb-1.5`}>
                     <Icon className="w-3.5 h-3.5" />
                   </div>
-                  <p className="text-lg font-bold text-foreground">{value}</p>
-                  <p className="text-[9px] text-muted-foreground font-medium">{label}</p>
+                  <p className="text-lg font-bold text-white">{value}</p>
+                  <p className="text-[9px] text-slate-500 font-medium">{label}</p>
                 </motion.div>
               ))}
             </motion.div>
           </div>
 
           {/* Quick Actions */}
-          <div className="px-4 py-4 border-b border-border">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+          <div className="px-4 py-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
               Quick Actions
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -1063,10 +1072,11 @@ export default function HiringAssistant() {
                 <button
                   key={label}
                   onClick={() => handleQuickAction(label)}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border bg-muted/50 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 transition-all group text-center"
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-blue-500/10 hover:border-blue-500/20 transition-all group text-center"
+                  style={glassCard}
                 >
-                  <Icon className="w-4 h-4 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
-                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-blue-700 dark:group-hover:text-blue-300 leading-tight">
+                  <Icon className="w-4 h-4 text-slate-400 group-hover:text-blue-400 transition-colors" />
+                  <span className="text-[10px] font-medium text-slate-400 group-hover:text-blue-300 leading-tight">
                     {label}
                   </span>
                 </button>
@@ -1075,40 +1085,40 @@ export default function HiringAssistant() {
           </div>
 
           {/* Conversation History */}
-          <div className="border-b border-border">
+          <div style={{ borderBottom: '1px solid var(--orbis-border)' }}>
             <button
               onClick={() => setConversationSidebarOpen(!conversationSidebarOpen)}
-              className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted transition-colors"
+              className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/[0.03] transition-colors"
             >
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                 <MessageSquare className="w-3 h-3" />
                 Conversations
                 {conversations.length > 0 && (
-                  <span className="bg-muted text-muted-foreground text-[9px] px-1.5 py-0.5 rounded-full">{conversations.length}</span>
+                  <span className="bg-white/5 text-slate-400 text-[9px] px-1.5 py-0.5 rounded-full">{conversations.length}</span>
                 )}
               </p>
-              <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${conversationSidebarOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3 h-3 text-slate-500 transition-transform ${conversationSidebarOpen ? 'rotate-180' : ''}`} />
             </button>
             {conversationSidebarOpen && (
               <div className="px-3 pb-3 max-h-40 overflow-y-auto space-y-1" style={{ scrollbarWidth: 'thin' }}>
                 {conversations.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground text-center py-2">No saved conversations</p>
+                  <p className="text-[10px] text-slate-500 text-center py-2">No saved conversations</p>
                 ) : (
                   conversations.map(convo => (
                     <div
                       key={convo.id}
                       className={`group flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer transition-colors ${
                         activeConversationId === convo.id
-                          ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
-                          : 'hover:bg-muted border border-transparent'
+                          ? 'bg-blue-500/10 border border-blue-500/20'
+                          : 'hover:bg-white/[0.03] border border-transparent'
                       }`}
                       onClick={() => loadConversation(convo)}
                     >
-                      <MessageSquare className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <span className="text-[11px] text-foreground truncate flex-1">{convo.title || 'Untitled'}</span>
+                      <MessageSquare className="w-3 h-3 text-slate-500 shrink-0" />
+                      <span className="text-[11px] text-white truncate flex-1">{convo.title || 'Untitled'}</span>
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteConversation(convo.id); }}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 text-muted-foreground hover:text-red-500 transition-all"
+                        className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-500 hover:text-red-400 transition-all"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -1121,14 +1131,14 @@ export default function HiringAssistant() {
 
           {/* Active Jobs List */}
           <div className="flex-1 overflow-y-auto px-4 py-4" style={{ scrollbarWidth: 'thin' }}>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-3">
               Active Jobs
             </p>
             {jobs.filter(j => j.status === 'Open').length === 0 ? (
               <div className="text-center py-8">
-                <Briefcase className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No active jobs</p>
-                <p className="text-[10px] text-muted-foreground mt-1">Create one to get started</p>
+                <Briefcase className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-xs text-slate-500">No active jobs</p>
+                <p className="text-[10px] text-slate-500 mt-1">Create one to get started</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -1140,29 +1150,30 @@ export default function HiringAssistant() {
                       onClick={() =>
                         sendMessage(`Show me candidates for ${job.job_title}`)
                       }
-                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-200 dark:hover:border-blue-800 transition-all group text-left"
+                      className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-blue-500/10 transition-all group text-left"
+                      style={glassCard}
                     >
-                      <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center shrink-0">
-                        <Briefcase className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <Briefcase className="w-3.5 h-3.5 text-blue-400" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate group-hover:text-blue-700 dark:group-hover:text-blue-300">
+                        <p className="text-xs font-semibold text-white truncate group-hover:text-blue-300">
                           {job.job_title}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-[10px] text-slate-500">
                             <UserCheck className="w-3 h-3 inline mr-0.5" />
                             {job.statistics?.total_candidates || 0}
                           </span>
                           {(job.statistics?.recommended_count || 0) > 0 && (
-                            <span className="text-[10px] text-emerald-500 font-medium">
+                            <span className="text-[10px] text-emerald-400 font-medium">
                               <TrendingUp className="w-3 h-3 inline mr-0.5" />
                               {job.statistics.recommended_count} rec.
                             </span>
                           )}
                         </div>
                       </div>
-                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-blue-500 shrink-0" />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-400 shrink-0" />
                     </button>
                   ))}
               </div>
@@ -1171,16 +1182,16 @@ export default function HiringAssistant() {
         </aside>
 
         {/* ── CENTER PANEL: Chat Interface ── */}
-        <main className="flex-1 flex flex-col overflow-hidden bg-background">
+        <main className="flex-1 flex flex-col overflow-hidden bg-[var(--orbis-page)]">
           {/* Chat Header */}
-          <div className="px-6 py-4 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between shrink-0">
+          <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)', backdropFilter: 'blur(12px)' }}>
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md">
+              <div className="w-9 h-9 rounded-full flex items-center justify-center shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
                 <Bot className="w-4.5 h-4.5 text-white" />
               </div>
               <div>
-                <h1 className="text-sm font-semibold text-foreground">Hiring Assistant</h1>
-                <p className="text-xs text-muted-foreground">AI-powered assistant for recruitment queries</p>
+                <h1 className="text-sm font-semibold text-white">Hiring Assistant</h1>
+                <p className="text-xs text-slate-500">AI-powered assistant for recruitment queries</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1191,20 +1202,21 @@ export default function HiringAssistant() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-full px-3 py-1.5"
+                    className="flex items-center gap-2 rounded-full px-3 py-1.5"
+                    style={{ background: 'rgba(27,142,229,0.1)', border: '1px solid rgba(27,142,229,0.2)' }}
                   >
-                    <Activity className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
+                    <Activity className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
                     <div className="flex items-center gap-1">
                       {['gathering', 'planning', 'executing', 'finalizing'].map((phase, i) => (
                         <div key={phase} className="flex items-center gap-1">
-                          {i > 0 && <ChevronRight className="w-2.5 h-2.5 text-muted-foreground" />}
+                          {i > 0 && <ChevronRight className="w-2.5 h-2.5 text-slate-400" />}
                           <span
                             className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full transition-all ${
                               agentPhase === phase
-                                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                                ? 'bg-blue-500/20 text-blue-300'
                                 : ['gathering', 'planning', 'executing', 'finalizing'].indexOf(agentPhase) > i
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-muted-foreground/50'
+                                ? 'text-emerald-400'
+                                : 'text-slate-400'
                             }`}
                           >
                             {phase.charAt(0).toUpperCase() + phase.slice(1)}
@@ -1222,8 +1234,8 @@ export default function HiringAssistant() {
                   onClick={() => setToolPanelOpen(!toolPanelOpen)}
                   className={`p-2 rounded-lg transition-colors ${
                     toolPanelOpen
-                      ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ? 'bg-blue-500/15 text-blue-400'
+                      : 'text-slate-500 hover:text-white hover:bg-white/5'
                   }`}
                   title={toolPanelOpen ? 'Hide tool panel' : 'Show tool panel'}
                 >
@@ -1238,16 +1250,16 @@ export default function HiringAssistant() {
             <div className="flex-1 flex flex-col items-center justify-center px-8 overflow-y-auto">
               {/* Hero */}
               <div className="relative mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-600 flex items-center justify-center shadow-2xl shadow-blue-300/30 dark:shadow-blue-900/40">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-900/40" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
                   <Bot className="w-8 h-8 text-white" />
                 </div>
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400 to-violet-600 blur-3xl opacity-15 -z-10 scale-150" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 blur-3xl opacity-15 -z-10 scale-150" />
               </div>
 
-              <h1 className="text-2xl font-bold text-foreground mb-2 tracking-tight text-center">
+              <h1 className="text-2xl font-bold text-white mb-2 tracking-tight text-center">
                 Hi {firstName}! I'm your Hiring Assistant
               </h1>
-              <p className="text-sm text-muted-foreground mb-10 text-center max-w-md leading-relaxed">
+              <p className="text-sm text-slate-400 mb-10 text-center max-w-md leading-relaxed">
                 I can create jobs, move candidates, schedule interviews, search the web, and analyze files -- all through natural conversation.
               </p>
 
@@ -1258,7 +1270,8 @@ export default function HiringAssistant() {
                   <button
                     key={title}
                     onClick={() => sendMessage(title)}
-                    className="w-full flex items-start gap-3.5 p-4 bg-card border border-border rounded-2xl hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-left group"
+                    className="w-full flex items-start gap-3.5 p-4 rounded-2xl hover:border-blue-500/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 text-left group"
+                    style={glassCard}
                   >
                     <div
                       className={`w-9 h-9 rounded-xl bg-gradient-to-br ${color} border flex items-center justify-center shrink-0 mt-0.5`}
@@ -1266,12 +1279,12 @@ export default function HiringAssistant() {
                       <Icon className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      <p className="text-sm font-semibold text-white group-hover:text-blue-300 transition-colors">
                         {title}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{desc}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-snug">{desc}</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-blue-400 shrink-0 mt-0.5 transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-400 shrink-0 mt-0.5 transition-colors" />
                   </button>
                   </motion.div>
                 ))}
@@ -1280,7 +1293,7 @@ export default function HiringAssistant() {
           ) : (
             <div
               className="flex-1 overflow-y-auto"
-              style={{ scrollbarWidth: 'thin', scrollbarColor: '#e2e8f0 transparent' }}
+              style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--orbis-border) transparent' }}
             >
               <div className="max-w-3xl mx-auto px-6 py-8 space-y-4">
                 {messages.map(msg => (
@@ -1296,10 +1309,10 @@ export default function HiringAssistant() {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex gap-3"
                   >
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shrink-0 mt-1">
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center shadow-md shrink-0 mt-1" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
                       <Bot className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <div className="bg-muted/50 border border-border rounded-2xl rounded-bl-sm px-4 py-3">
+                    <div className="rounded-2xl rounded-bl-sm px-4 py-3" style={glassCard}>
                       <div className="flex items-center gap-1.5">
                         <span
                           className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
@@ -1323,7 +1336,7 @@ export default function HiringAssistant() {
           )}
 
           {/* ── INPUT BAR (sticky bottom) ── */}
-          <div className="px-6 pb-5 pt-3 bg-gradient-to-t from-background via-background to-background/80 border-t border-border/50">
+          <div className="px-6 pb-5 pt-3" style={{ borderTop: '1px solid var(--orbis-grid)', background: 'linear-gradient(to top, var(--orbis-page), var(--orbis-page), var(--orbis-overlay))' }}>
             <div className="max-w-3xl mx-auto">
               {/* Attached file chips */}
               {attachedFiles.length > 0 && (
@@ -1331,13 +1344,14 @@ export default function HiringAssistant() {
                   {attachedFiles.map((f, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 rounded-full text-xs font-medium border border-blue-200 dark:border-blue-800"
+                      className="inline-flex items-center gap-1.5 text-blue-300 px-2.5 py-1 rounded-full text-xs font-medium"
+                      style={{ background: 'rgba(27,142,229,0.1)', border: '1px solid rgba(27,142,229,0.2)' }}
                     >
                       <Paperclip className="w-3 h-3" />
                       {f.filename}
                       <button
                         onClick={() => removeFile(i)}
-                        className="ml-0.5 p-0.5 hover:bg-blue-200 dark:hover:bg-blue-800 rounded-full transition-colors"
+                        className="ml-0.5 p-0.5 hover:bg-blue-500/20 rounded-full transition-colors"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -1353,16 +1367,17 @@ export default function HiringAssistant() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="flex items-center gap-3 mb-2 px-4 py-2.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl"
+                    className="flex items-center gap-3 mb-2 px-4 py-2.5 rounded-xl"
+                    style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}
                   >
                     <div className="relative flex items-center justify-center">
                       <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                       <div className="absolute w-5 h-5 bg-red-500/30 rounded-full animate-ping" />
                     </div>
-                    <span className="text-xs font-medium text-red-700 dark:text-red-300">Listening... speak now</span>
+                    <span className="text-xs font-medium text-red-300">Listening... speak now</span>
                     <button
                       onClick={stopRecording}
-                      className="ml-auto text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 transition-colors"
+                      className="ml-auto text-xs font-semibold text-red-400 hover:text-red-200 transition-colors"
                     >
                       Stop
                     </button>
@@ -1371,11 +1386,13 @@ export default function HiringAssistant() {
               </AnimatePresence>
 
               <div
-                className={`flex items-end gap-2 bg-card border rounded-2xl px-3 py-2.5 shadow-sm transition-all duration-200 ${
-                  inputFocused
-                    ? 'border-blue-300 dark:border-blue-700 ring-4 ring-blue-500/8 shadow-md'
-                    : 'border-border hover:border-border'
-                }`}
+                className="flex items-end gap-2 rounded-2xl px-3 py-2.5 shadow-sm transition-all duration-200"
+                style={{
+                  ...(inputFocused
+                    ? { background: 'var(--orbis-border)', border: '1px solid rgba(27,142,229,0.3)', boxShadow: '0 0 0 3px rgba(27,142,229,0.08)' }
+                    : glassInput
+                  ),
+                }}
               >
                 {/* Left action buttons */}
                 <div className="flex items-center gap-0.5 pb-1.5">
@@ -1391,7 +1408,7 @@ export default function HiringAssistant() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingFile}
                     title="Attach file"
-                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all disabled:opacity-50"
+                    className="p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-all disabled:opacity-50"
                   >
                     {uploadingFile ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1406,8 +1423,8 @@ export default function HiringAssistant() {
                     title={webSearchEnabled ? 'Web search ON' : 'Web search OFF'}
                     className={`p-1.5 rounded-lg transition-all ${
                       webSearchEnabled
-                        ? 'text-blue-600 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-950/50'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        ? 'text-blue-400 bg-blue-500/15'
+                        : 'text-slate-500 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     <Globe className="w-4 h-4" />
@@ -1423,7 +1440,7 @@ export default function HiringAssistant() {
                   onBlur={() => setInputFocused(false)}
                   placeholder="Type your message..."
                   rows={1}
-                  className="flex-1 bg-transparent resize-none text-sm text-foreground placeholder-muted-foreground outline-none border-none focus:ring-0 py-1.5 leading-relaxed"
+                  className="flex-1 bg-transparent resize-none text-sm text-white placeholder-slate-600 outline-none border-none focus:ring-0 py-1.5 leading-relaxed"
                 />
 
                 <div className="flex items-center gap-1 pb-1">
@@ -1434,10 +1451,10 @@ export default function HiringAssistant() {
                     title={!HAS_SPEECH_RECOGNITION ? 'Voice not supported in this browser' : isRecording ? 'Stop recording' : 'Voice input'}
                     className={`p-2 rounded-xl transition-all ${
                       !HAS_SPEECH_RECOGNITION
-                        ? 'text-muted-foreground/40 cursor-not-allowed'
+                        ? 'text-slate-700 cursor-not-allowed'
                         : isRecording
-                        ? 'text-red-500 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        ? 'text-red-400 bg-red-500/15'
+                        : 'text-slate-500 hover:text-white hover:bg-white/5'
                     }`}
                   >
                     {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -1449,9 +1466,10 @@ export default function HiringAssistant() {
                     disabled={!input.trim() || isLoading}
                     className={`p-2 rounded-full transition-all duration-200 shrink-0 ${
                       input.trim() && !isLoading
-                        ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-md shadow-blue-200/50 dark:shadow-blue-900/30'
-                        : 'bg-muted text-muted-foreground cursor-not-allowed'
+                        ? 'text-white shadow-md shadow-blue-900/30'
+                        : 'bg-white/5 text-slate-400 cursor-not-allowed'
                     }`}
+                    style={input.trim() && !isLoading ? { background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' } : undefined}
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1469,7 +1487,7 @@ export default function HiringAssistant() {
                     <button
                       onClick={() => { setAutoSpeak(!autoSpeak); stopSpeaking(); }}
                       className={`flex items-center gap-1 text-[10px] font-medium transition-colors ${
-                        autoSpeak ? 'text-blue-600' : 'text-muted-foreground hover:text-foreground'
+                        autoSpeak ? 'text-blue-400' : 'text-slate-500 hover:text-white'
                       }`}
                     >
                       {autoSpeak ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
@@ -1477,13 +1495,13 @@ export default function HiringAssistant() {
                     </button>
                   )}
                   {webSearchEnabled && (
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-blue-600">
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-blue-400">
                       <Zap className="w-3 h-3" />
                       Web search enabled
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-slate-400">
                   Orbis AI Hiring Assistant
                 </p>
               </div>
@@ -1494,15 +1512,15 @@ export default function HiringAssistant() {
         {/* ── RIGHT PANEL: Tool Execution Panel ── */}
         <AnimatePresence>
           {toolPanelOpen && (
-            <motion.aside initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 320 }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.25 }} className="shrink-0 border-l border-border bg-card flex flex-col overflow-hidden">
-              <div className="px-4 pt-4 pb-3 border-b border-border flex items-center justify-between">
+            <motion.aside initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 320 }} exit={{ opacity: 0, width: 0 }} transition={{ duration: 0.25 }} className="shrink-0 flex flex-col overflow-hidden" style={{ borderLeft: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
+              <div className="px-4 pt-4 pb-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
                 <div className="flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold text-foreground">Tool Actions</h3>
+                  <Wrench className="w-4 h-4 text-slate-400" />
+                  <h3 className="text-sm font-semibold text-white">Tool Actions</h3>
                   {(() => {
                     const totalActions = messages.reduce((acc, m) => acc + (m.actions?.length || 0), 0);
                     return totalActions > 0 ? (
-                      <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      <span className="bg-blue-500/10 text-blue-300 text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-blue-500/20">
                         {totalActions}
                       </span>
                     ) : null;
@@ -1510,7 +1528,7 @@ export default function HiringAssistant() {
                 </div>
                 <button
                   onClick={() => setToolPanelOpen(false)}
-                  className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
+                  className="p-1 text-slate-500 hover:text-white rounded transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1522,15 +1540,14 @@ export default function HiringAssistant() {
                     (m.actions || []).map((action, ai) => {
                       const key = `${mi}-${ai}`;
                       const numKey = mi * 100 + ai;
-                      const info = TOOL_LABELS[action.tool] || { label: action.tool, color: 'bg-muted text-muted-foreground' };
+                      const info = TOOL_LABELS[action.tool] || { label: action.tool, color: 'bg-slate-500/10 text-slate-400' };
                       const success = action.result?.success !== false;
                       const isExpanded = expandedTools.has(numKey);
                       return (
                         <div
                           key={key}
-                          className={`border rounded-xl overflow-hidden transition-all ${
-                            success ? 'border-border' : 'border-red-200'
-                          }`}
+                          className="rounded-xl overflow-hidden transition-all"
+                          style={{ border: success ? '1px solid var(--orbis-hover)' : '1px solid rgba(239,68,68,0.2)' }}
                         >
                           <button
                             onClick={() => {
@@ -1539,33 +1556,33 @@ export default function HiringAssistant() {
                               else next.add(numKey);
                               setExpandedTools(next);
                             }}
-                            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-muted transition-colors text-left"
+                            className="w-full flex items-center gap-2 px-3 py-2.5 hover:bg-white/[0.03] transition-colors text-left"
                           >
                             {success ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                             ) : (
-                              <X className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                              <X className="w-3.5 h-3.5 text-red-400 shrink-0" />
                             )}
-                            <span className="text-xs font-semibold text-foreground flex-1">
+                            <span className="text-xs font-semibold text-white flex-1">
                               {info.label}
                             </span>
                             <ChevronDown
-                              className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${
+                              className={`w-3.5 h-3.5 text-slate-500 transition-transform ${
                                 isExpanded ? 'rotate-180' : ''
                               }`}
                             />
                           </button>
                           {isExpanded && (
-                            <div className="px-3 pb-3 border-t border-border">
+                            <div className="px-3 pb-3" style={{ borderTop: '1px solid var(--orbis-border)' }}>
                               <div className="mt-2">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Arguments</p>
-                                <pre className="text-[10px] text-muted-foreground bg-muted rounded-lg p-2 overflow-x-auto whitespace-pre-wrap font-mono">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Arguments</p>
+                                <pre className="text-[10px] text-slate-400 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap font-mono" style={{ background: 'var(--orbis-grid)' }}>
                                   {JSON.stringify(action.args, null, 2)}
                                 </pre>
                               </div>
                               <div className="mt-2">
-                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Result</p>
-                                <pre className="text-[10px] text-muted-foreground bg-muted rounded-lg p-2 overflow-x-auto whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">Result</p>
+                                <pre className="text-[10px] text-slate-400 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap font-mono max-h-32 overflow-y-auto" style={{ background: 'var(--orbis-grid)' }}>
                                   {JSON.stringify(action.result, null, 2)}
                                 </pre>
                               </div>
@@ -1577,9 +1594,9 @@ export default function HiringAssistant() {
                   )}
                 {messages.every(m => !m.actions || m.actions.length === 0) && (
                   <div className="text-center py-12">
-                    <Wrench className="w-8 h-8 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-xs text-muted-foreground">No tool actions yet</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
+                    <Wrench className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                    <p className="text-xs text-slate-500">No tool actions yet</p>
+                    <p className="text-[10px] text-slate-400 mt-1">
                       Tool calls will appear here when the agent takes actions
                     </p>
                   </div>

@@ -1,7 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, RefreshCw, Loader2, AlertTriangle, CheckCircle2, MessageSquare } from 'lucide-react';
 import { apiClient } from '@/utils/api';
@@ -12,15 +9,10 @@ interface Strength {
   evidence?: string;
 }
 
-interface Concern {
-  point: string;
-  severity?: string;
-}
-
 interface FitSummary {
   rating: string;
   strengths: Strength[];
-  concerns: Concern[];
+  concerns: (string | { point: string; severity?: string })[];
   recommendation: string;
   generated_at: string;
 }
@@ -32,11 +24,11 @@ interface Props {
 
 function getRatingStyle(rating: string) {
   const r = rating?.toLowerCase() || '';
-  if (r === 'strong') return { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800' };
-  if (r === 'good') return { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', border: 'border-blue-200 dark:border-blue-800' };
-  if (r === 'moderate') return { bg: 'bg-amber-50 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', border: 'border-amber-200 dark:border-amber-800' };
-  if (r === 'weak') return { bg: 'bg-red-50 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300', border: 'border-red-200 dark:border-red-800' };
-  return { bg: 'bg-slate-50 dark:bg-slate-800', text: 'text-slate-700 dark:text-slate-300', border: 'border-slate-200 dark:border-slate-700' };
+  if (r === 'strong') return { bg: 'rgba(16,185,129,0.1)', text: 'text-emerald-400', border: '1px solid rgba(16,185,129,0.2)' };
+  if (r === 'good') return { bg: 'rgba(59,130,246,0.1)', text: 'text-blue-400', border: '1px solid rgba(59,130,246,0.2)' };
+  if (r === 'moderate') return { bg: 'rgba(245,158,11,0.1)', text: 'text-amber-400', border: '1px solid rgba(245,158,11,0.2)' };
+  if (r === 'weak') return { bg: 'rgba(239,68,68,0.1)', text: 'text-red-400', border: '1px solid rgba(239,68,68,0.2)' };
+  return { bg: 'var(--orbis-input)', text: 'text-slate-400', border: '1px solid var(--orbis-border)' };
 }
 
 function timeAgo(dateStr: string): string {
@@ -59,11 +51,8 @@ export default function AIFitSummaryCard({ candidateId, jdId }: Props) {
   const [error, setError] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadCached();
-  }, [candidateId, jdId]);
-
-  const loadCached = async () => {
+  const loadCached = useCallback(async () => {
+    setData(null);
     setLoading(true);
     setError(false);
     try {
@@ -76,7 +65,11 @@ export default function AIFitSummaryCard({ candidateId, jdId }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [candidateId]);
+
+  useEffect(() => {
+    loadCached();
+  }, [loadCached]);
 
   const generate = async () => {
     setGenerating(true);
@@ -91,7 +84,6 @@ export default function AIFitSummaryCard({ candidateId, jdId }: Props) {
         generated_at: result.generated_at || new Date().toISOString(),
       };
       setData(summary);
-      // Cache the result
       try {
         await apiClient.setAICache('candidate', candidateId, 'fit-summary', summary);
       } catch {
@@ -106,111 +98,119 @@ export default function AIFitSummaryCard({ candidateId, jdId }: Props) {
     }
   };
 
+  const glassCard: React.CSSProperties = {
+    background: 'var(--orbis-card)',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid var(--orbis-border)',
+  };
+
   if (loading) {
     return (
-      <Card className="border border-border/50 rounded-xl shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-5 w-5 rounded" />
-            <Skeleton className="h-5 w-40" />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-8 w-24 rounded-lg" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-5/6" />
-        </CardContent>
-      </Card>
+      <div className="rounded-xl p-5 space-y-3" style={glassCard}>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-5 rounded bg-white/10" />
+          <Skeleton className="h-5 w-40 bg-white/10" />
+        </div>
+        <Skeleton className="h-8 w-24 rounded-lg bg-white/10" />
+        <Skeleton className="h-4 w-full bg-white/10" />
+        <Skeleton className="h-4 w-3/4 bg-white/10" />
+      </div>
     );
   }
 
   if (error && !data) {
     return (
-      <Card className="border border-red-200/60 dark:border-red-900/40 rounded-xl shadow-sm">
-        <CardContent className="p-6 text-center">
-          <div className="w-10 h-10 mx-auto mb-3 rounded-lg bg-red-50 dark:bg-red-950/40 flex items-center justify-center">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-          </div>
-          <p className="text-sm font-medium text-foreground mb-1">AI analysis unavailable</p>
-          <p className="text-xs text-muted-foreground mb-4">Could not load or generate fit analysis.</p>
-          <Button variant="outline" size="sm" onClick={generate} disabled={generating} className="rounded-xl">
-            {generating ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
-            Retry
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl p-6 text-center" style={{ ...glassCard, borderColor: 'rgba(244,63,94,0.2)' }}>
+        <div className="w-10 h-10 mx-auto mb-3 rounded-lg flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.1)' }}>
+          <AlertTriangle className="w-5 h-5 text-rose-400" />
+        </div>
+        <p className="text-sm font-medium text-white mb-1">AI analysis unavailable</p>
+        <p className="text-xs text-slate-500 mb-4">Could not load or generate fit analysis.</p>
+        <button
+          onClick={generate}
+          disabled={generating}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-50"
+          style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+        >
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          Retry
+        </button>
+      </div>
     );
   }
 
   if (!data) {
     return (
-      <Card className="border border-dashed border-border/60 rounded-xl shadow-sm">
-        <CardContent className="p-6 text-center">
-          <div className="w-10 h-10 mx-auto mb-3 rounded-lg bg-primary/5 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary/60" />
-          </div>
-          <p className="text-sm font-medium text-foreground mb-1">AI Fit Analysis</p>
-          <p className="text-xs text-muted-foreground mb-4">Generate an AI-powered analysis of this candidate's fit for the role.</p>
-          <Button size="sm" onClick={generate} disabled={generating} className="rounded-xl">
-            {generating ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5" />}
-            {generating ? 'Analyzing...' : 'Generate AI Analysis'}
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="rounded-xl p-6 text-center" style={{ ...glassCard, borderStyle: 'dashed' }}>
+        <div className="w-10 h-10 mx-auto mb-3 rounded-lg flex items-center justify-center" style={{ background: 'rgba(27,142,229,0.1)' }}>
+          <Sparkles className="w-5 h-5 text-blue-400" />
+        </div>
+        <p className="text-sm font-medium text-white mb-1">AI Fit Analysis</p>
+        <p className="text-xs text-slate-500 mb-4">Generate an AI-powered analysis of this candidate's fit for the role.</p>
+        <button
+          onClick={generate}
+          disabled={generating}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all disabled:opacity-50"
+          style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 16px rgba(27,142,229,0.25)' }}
+        >
+          {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          {generating ? 'Analyzing...' : 'Generate AI Analysis'}
+        </button>
+      </div>
     );
   }
 
   const ratingStyle = getRatingStyle(data.rating);
 
   return (
-    <Card className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-      <div className="h-1 bg-gradient-to-r from-violet-500 to-indigo-500" />
-      <CardHeader className="pb-3">
+    <div className="rounded-xl overflow-hidden transition-all duration-300" style={glassCard}>
+      <div className="h-1" style={{ background: 'linear-gradient(90deg, #1B8EE5, #1676c0)' }} />
+      <div className="p-5 space-y-4">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2.5 text-lg">
-            <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center">
-              <Sparkles className="w-4.5 h-4.5 text-violet-500" />
+          <div className="flex items-center gap-2.5 text-lg font-semibold text-white">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(27,142,229,0.1)' }}>
+              <Sparkles className="w-4.5 h-4.5 text-blue-400" />
             </div>
             AI Fit Analysis
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
+          </div>
+          <button
             onClick={generate}
             disabled={generating}
-            className="text-xs text-muted-foreground hover:text-foreground rounded-lg h-8"
+            className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors disabled:opacity-50"
           >
-            {generating ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+            {generating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
             {generating ? 'Analyzing...' : 'Refresh'}
-          </Button>
+          </button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+
         {/* Rating Badge */}
         <div>
-          <Badge className={`${ratingStyle.bg} ${ratingStyle.text} ${ratingStyle.border} border text-base font-semibold px-4 py-1.5 rounded-lg`}>
+          <span
+            className={`inline-flex items-center ${ratingStyle.text} text-base font-semibold px-4 py-1.5 rounded-lg`}
+            style={{ background: ratingStyle.bg, border: ratingStyle.border }}
+          >
             {data.rating}
-          </Badge>
+          </span>
         </div>
 
         {/* Strengths */}
         {data.strengths && data.strengths.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               Strengths
             </h4>
             <div className="space-y-2">
               {data.strengths.map((s, i) => (
-                <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0" />
+                <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2 shrink-0" />
                   <div>
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-sm font-medium text-white">
                       {typeof s === 'string' ? s : s.point}
                     </span>
                     {typeof s !== 'string' && s.evidence && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{s.evidence}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{s.evidence}</p>
                     )}
                   </div>
                 </div>
@@ -222,15 +222,15 @@ export default function AIFitSummaryCard({ candidateId, jdId }: Props) {
         {/* Concerns */}
         {data.concerns && data.concerns.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-amber-400" />
               Concerns
             </h4>
             <div className="space-y-2">
               {data.concerns.map((c, i) => (
-                <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-                  <span className="text-sm text-amber-800 dark:text-amber-300">
+                <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+                  <span className="text-sm text-amber-300">
                     {typeof c === 'string' ? c : c.point}
                   </span>
                 </div>
@@ -241,22 +241,22 @@ export default function AIFitSummaryCard({ candidateId, jdId }: Props) {
 
         {/* Recommendation */}
         {data.recommendation && (
-          <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+          <div className="p-3.5 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+            <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               <MessageSquare className="w-3.5 h-3.5" />
               Recommendation
             </h4>
-            <p className="text-sm text-foreground leading-relaxed">{data.recommendation}</p>
+            <p className="text-sm text-slate-200 leading-relaxed">{data.recommendation}</p>
           </div>
         )}
 
         {/* Timestamp */}
         {data.generated_at && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-slate-400">
             Updated {timeAgo(data.generated_at)}
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

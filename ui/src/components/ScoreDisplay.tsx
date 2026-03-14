@@ -1,4 +1,3 @@
-
 interface ScoreDisplayProps {
   score: number;
   maxScore?: number;
@@ -8,11 +7,11 @@ interface ScoreDisplayProps {
 
 const ScoreDisplay = ({ score, maxScore = 100, showPercentage = true, size = 'md' }: ScoreDisplayProps) => {
   const percentage = Math.round((score / maxScore) * 100);
-  
+
   const getScoreColor = () => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (percentage >= 80) return 'text-emerald-400';
+    if (percentage >= 60) return 'text-amber-400';
+    return 'text-red-400';
   };
 
   const getSizeClasses = () => {

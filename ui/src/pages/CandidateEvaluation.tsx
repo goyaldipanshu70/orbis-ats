@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,13 +19,14 @@ import {
   Download, Eye, Mail, Phone, MapPin, Upload, BarChart3,
   MoreVertical, Trash2, UserPlus, Star, Calendar, Award,
   TrendingUp, Users, Filter, Loader2, Search, ChevronRight, FileText, ClipboardList, Kanban,
-  Sparkles, Shield, Zap, ArrowUpRight, CheckCircle2, Clock, AlertTriangle,
+  Sparkles, Shield, Zap, ArrowUpRight, CheckCircle2, Clock, AlertTriangle, Crown, XCircle,
 } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
 import RecommendationBadge from "@/components/RecommendationBadge";
 import InterviewUploadModal from "@/components/InterviewUploadModal";
 import ImportCandidatesModal from "@/components/ImportCandidatesModal";
 import BulkCandidateModal from "@/components/BulkCandidateModal";
+import AddCandidateModal from "@/components/AddCandidateModal";
 import ResumeViewer from "@/components/ResumeViewer";
 import { apiClient } from "@/utils/api";
 import { Switch } from "@/components/ui/switch";
@@ -36,6 +35,31 @@ import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 import { DataPagination } from "@/components/DataPagination";
 import { scaleIn, fadeInUp } from "@/lib/animations";
 import { StaggerGrid } from "@/components/ui/stagger-grid";
+
+/* ── Glass Design System ───────────────────────────────── */
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-dropdown, var(--orbis-card))',
+  border: '1px solid var(--orbis-border-strong)',
+  color: 'hsl(var(--foreground))',
+};
+const gradientBtn: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #1B8EE5, #1676c0)',
+  boxShadow: '0 8px 24px rgba(27,142,229,0.2)',
+};
+const outlineBtn: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border)',
+};
 
 interface ScorePair { obtained: number; max: number; }
 
@@ -75,8 +99,8 @@ const ScoreBar = ({ label, obtained, max, color, icon: Icon }: {
   const pct = max > 0 ? (obtained / max) * 100 : 0;
   return (
     <div className="group/bar flex items-center gap-2.5 text-xs">
-      <span className="w-[72px] text-muted-foreground/80 shrink-0 text-right font-medium tracking-tight">{label}</span>
-      <div className="flex-1 h-2 bg-muted/60 rounded-full overflow-hidden">
+      <span className="w-[72px] text-muted-foreground shrink-0 text-right font-medium tracking-tight">{label}</span>
+      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--orbis-hover)' }}>
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -84,7 +108,7 @@ const ScoreBar = ({ label, obtained, max, color, icon: Icon }: {
           className={`h-full rounded-full ${color} shadow-sm`}
         />
       </div>
-      <span className="w-12 text-muted-foreground/70 font-semibold text-right tabular-nums text-[11px]">
+      <span className="w-12 text-muted-foreground font-semibold text-right tabular-nums text-[11px]">
         {obtained}/{max}
       </span>
     </div>
@@ -118,37 +142,38 @@ const StatCard = ({ icon: Icon, label, value, sub, gradient, iconBg }: {
 const SkeletonCandidateCard = () => (
   <motion.div
     variants={fadeInUp}
-    className="rounded-xl border border-border/60 bg-card p-6 shadow-sm"
+    className="rounded-xl p-6"
+    style={{ ...glassCard }}
   >
     <div className="flex items-start gap-5 animate-pulse">
       <div className="flex items-start gap-4 flex-1 min-w-0">
-        <div className="h-12 w-12 shrink-0 rounded-xl bg-muted/80" />
+        <div className="h-12 w-12 shrink-0 rounded-xl" style={{ background: 'var(--orbis-hover)' }} />
         <div className="flex-1 min-w-0 space-y-2.5">
-          <div className="h-4 bg-muted/80 rounded-lg w-36" />
+          <div className="h-4 rounded-lg w-36" style={{ background: 'var(--orbis-hover)' }} />
           <div className="flex gap-4">
-            <div className="h-3 bg-muted/60 rounded-lg w-28" />
-            <div className="h-3 bg-muted/60 rounded-lg w-24" />
-            <div className="h-3 bg-muted/60 rounded-lg w-20" />
+            <div className="h-3 rounded-lg w-28" style={{ background: 'var(--orbis-border)' }} />
+            <div className="h-3 rounded-lg w-24" style={{ background: 'var(--orbis-border)' }} />
+            <div className="h-3 rounded-lg w-20" style={{ background: 'var(--orbis-border)' }} />
           </div>
         </div>
       </div>
       <div className="flex flex-col items-center shrink-0 w-20">
-        <div className="h-14 w-14 rounded-full bg-muted/60" />
-        <div className="h-2 bg-muted/40 rounded w-10 mt-2" />
+        <div className="h-14 w-14 rounded-full" style={{ background: 'var(--orbis-border)' }} />
+        <div className="h-2 rounded w-10 mt-2" style={{ background: 'var(--orbis-grid)' }} />
       </div>
       <div className="hidden lg:flex flex-col gap-2 w-52 shrink-0">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="flex items-center gap-2">
-            <div className="w-[72px] h-2 bg-muted/60 rounded" />
-            <div className="flex-1 h-2 bg-muted/40 rounded-full" />
-            <div className="w-12 h-2 bg-muted/60 rounded" />
+            <div className="w-[72px] h-2 rounded" style={{ background: 'var(--orbis-border)' }} />
+            <div className="flex-1 h-2 rounded-full" style={{ background: 'var(--orbis-grid)' }} />
+            <div className="w-12 h-2 rounded" style={{ background: 'var(--orbis-border)' }} />
           </div>
         ))}
       </div>
       <div className="flex flex-col items-center gap-2 shrink-0 w-36">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
-          <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">Analyzing...</span>
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+          <span className="text-[11px] font-semibold text-blue-400">Analyzing...</span>
         </div>
       </div>
     </div>
@@ -161,8 +186,8 @@ const ScoreRing = ({ score, max, size = 56 }: { score: number; max: number; size
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const strokeColor = pct >= 80 ? '#10b981' : pct >= 60 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
-  const scoreColor = pct >= 80 ? 'text-emerald-600 dark:text-emerald-400' : pct >= 60 ? 'text-blue-600 dark:text-blue-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-500 dark:text-red-400';
-  const bgRing = pct >= 80 ? 'stroke-emerald-100 dark:stroke-emerald-950/40' : pct >= 60 ? 'stroke-blue-100 dark:stroke-blue-950/40' : pct >= 40 ? 'stroke-amber-100 dark:stroke-amber-950/40' : 'stroke-red-100 dark:stroke-red-950/40';
+  const scoreColor = pct >= 80 ? 'text-emerald-600 dark:text-emerald-400' : pct >= 60 ? 'text-blue-600 dark:text-blue-400' : pct >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
+  const bgRingColor = pct >= 80 ? 'rgba(16,185,129,0.15)' : pct >= 60 ? 'rgba(59,130,246,0.15)' : pct >= 40 ? 'rgba(245,158,11,0.15)' : 'rgba(239,68,68,0.15)';
 
   return (
     <div className="flex flex-col items-center">
@@ -170,7 +195,7 @@ const ScoreRing = ({ score, max, size = 56 }: { score: number; max: number; size
         <svg className="absolute inset-0 -rotate-90" viewBox={`0 0 ${size} ${size}`}>
           <circle
             cx={size / 2} cy={size / 2} r={radius}
-            fill="none" className={bgRing} strokeWidth="5"
+            fill="none" stroke={bgRingColor} strokeWidth="5"
           />
           <motion.circle
             cx={size / 2} cy={size / 2} r={radius}
@@ -185,7 +210,7 @@ const ScoreRing = ({ score, max, size = 56 }: { score: number; max: number; size
           <span className={`text-sm font-bold ${scoreColor} tabular-nums`}>{score}</span>
         </div>
       </div>
-      <span className="text-[10px] text-muted-foreground/60 mt-1 font-medium">of {max}</span>
+      <span className="text-[10px] text-muted-foreground mt-1 font-medium">of {max}</span>
     </div>
   );
 };
@@ -199,6 +224,7 @@ const CandidateEvaluation = () => {
   const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [showAddCandidateModal, setShowAddCandidateModal] = useState(false);
   const { toast } = useToast();
   const [filters, setFilters] = useState({ recommendation: "All", interviewStatus: "All", pipelineStage: "All" });
   const [searchInput, setSearchInput] = useState("");
@@ -208,6 +234,12 @@ const CandidateEvaluation = () => {
   const [resumeViewerUrl, setResumeViewerUrl] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const [rankings, setRankings] = useState<Record<string, { rank: number; composite: number; breakdown: Record<string, number> }>>({});
+  const [isRanking, setIsRanking] = useState(false);
+  const [rankLoaded, setRankLoaded] = useState(false);
+  const [showBulkReject, setShowBulkReject] = useState(false);
+  const [rejectThreshold, setRejectThreshold] = useState(5);
+  const [isRejecting, setIsRejecting] = useState(false);
 
   // Debounce search input
   useEffect(() => {
@@ -371,6 +403,49 @@ const CandidateEvaluation = () => {
     }
   };
 
+  const handleRankCandidates = async () => {
+    if (!jobId) return;
+    setIsRanking(true);
+    try {
+      const res = await apiClient.rankCandidates({ jd_id: Number(jobId) });
+      const map: typeof rankings = {};
+      for (const r of res.rankings || []) {
+        map[String(r.candidate_id)] = { rank: r.rank, composite: r.composite, breakdown: r.breakdown };
+      }
+      setRankings(map);
+      setRankLoaded(true);
+      setSortConfig(null); // switch to rank-based sort
+      toast({ title: "Ranking Complete", description: `${res.rankings?.length || 0} candidates ranked.` });
+    } catch {
+      toast({ title: "Error", description: "Failed to rank candidates.", variant: "destructive" });
+    } finally {
+      setIsRanking(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    const toReject = sortedCandidates.filter((c) => {
+      const r = rankings[String(c.rawCandidateId)];
+      return r && r.rank > rejectThreshold && c.pipelineStage !== "rejected";
+    });
+    if (toReject.length === 0) {
+      toast({ title: "No candidates to reject", description: "No candidates below this rank threshold." });
+      return;
+    }
+    setIsRejecting(true);
+    try {
+      const ids = toReject.map((c) => Number(c.rawCandidateId));
+      await apiClient.bulkMoveCandidates(ids, "rejected", `Bulk rejected — below rank #${rejectThreshold}`);
+      toast({ title: "Bulk Reject Complete", description: `${ids.length} candidate(s) moved to rejected.` });
+    } catch {
+      toast({ title: "Error", description: "Failed to reject candidates.", variant: "destructive" });
+    } finally {
+      setIsRejecting(false);
+      setShowBulkReject(false);
+      loadCandidates();
+    }
+  };
+
   const filteredCandidates = candidates
     .filter((c) => filters.recommendation === "All" || c.recommendation === filters.recommendation)
     .filter((c) => {
@@ -379,6 +454,17 @@ const CandidateEvaluation = () => {
     });
 
   const sortedCandidates = [...filteredCandidates].sort((a, b) => {
+    // Rejected candidates always at the bottom
+    const aRej = a.pipelineStage === "rejected" ? 1 : 0;
+    const bRej = b.pipelineStage === "rejected" ? 1 : 0;
+    if (aRej !== bRej) return aRej - bRej;
+
+    // When rankings are loaded, default sort by rank (ascending)
+    if (rankLoaded && !sortConfig) {
+      const ra = rankings[String(a.rawCandidateId)]?.rank ?? 9999;
+      const rb = rankings[String(b.rawCandidateId)]?.rank ?? 9999;
+      return ra - rb;
+    }
     if (!sortConfig) return b.totalScore.obtained - a.totalScore.obtained;
     if (sortConfig.key === "totalScore") {
       return sortConfig.direction === "asc"
@@ -423,8 +509,8 @@ const CandidateEvaluation = () => {
       <AppLayout>
         <div className="min-h-screen flex flex-col items-center justify-center gap-4">
           <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-blue-500/20 animate-ping" />
-            <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/25">
+            <div className="absolute inset-0 rounded-full animate-ping" style={{ background: 'rgba(27,142,229,0.2)' }} />
+            <div className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-lg" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 8px 24px rgba(27,142,229,0.25)' }}>
               <Sparkles className="w-6 h-6 text-white animate-pulse" />
             </div>
           </div>
@@ -439,7 +525,7 @@ const CandidateEvaluation = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-b from-slate-50/80 via-white to-slate-50/50 dark:from-slate-950 dark:via-background dark:to-slate-950/50">
+      <div className="min-h-screen" style={{ background: 'var(--orbis-page)' }}>
         <div className="max-w-[1440px] mx-auto px-6 lg:px-8 py-8">
 
           {/* ── Header ────────────────────────────────────────── */}
@@ -451,7 +537,7 @@ const CandidateEvaluation = () => {
           >
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md shadow-blue-500/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 8px 24px rgba(27,142,229,0.2)' }}>
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -466,45 +552,66 @@ const CandidateEvaluation = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button
+              <button
+                onClick={handleRankCandidates}
+                disabled={isRanking}
+                className="inline-flex items-center rounded-xl text-sm font-semibold text-white px-3 h-9 transition-all hover:brightness-110 disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', boxShadow: '0 8px 24px rgba(245,158,11,0.2)' }}
+              >
+                {isRanking ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Crown className="w-3.5 h-3.5 mr-1.5" />}
+                {isRanking ? "Ranking..." : "Rank Candidates"}
+              </button>
+              {rankLoaded && (
+                <button
+                  onClick={() => setShowBulkReject(true)}
+                  className="inline-flex items-center rounded-xl text-sm font-medium text-red-400 hover:text-red-300 px-3 h-9 transition-colors"
+                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }}
+                >
+                  <XCircle className="w-3.5 h-3.5 mr-1.5" /> Bulk Reject
+                </button>
+              )}
+              <button
                 onClick={() => navigate(`/jobs/${jobId}/pipeline`)}
-                size="sm"
-                variant="outline"
-                className="rounded-xl border-border/60 hover:border-purple-300 hover:text-purple-600 dark:hover:border-purple-700 dark:hover:text-purple-400 transition-colors h-9"
+                className="inline-flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground px-3 h-9 transition-colors"
+                style={outlineBtn}
               >
                 <Kanban className="w-3.5 h-3.5 mr-1.5" /> Pipeline
-              </Button>
-              <Button
+              </button>
+              <button
+                onClick={() => setShowAddCandidateModal(true)}
+                className="inline-flex items-center rounded-xl text-sm font-semibold text-white px-3 h-9 transition-all hover:brightness-110"
+                style={gradientBtn}
+              >
+                <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Add Candidate
+              </button>
+              <button
                 onClick={() => setShowBulkUploadModal(true)}
-                size="sm"
-                className="rounded-xl font-semibold text-white shadow-md shadow-blue-600/20 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all h-9"
+                className="inline-flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground px-3 h-9 transition-colors"
+                style={outlineBtn}
               >
                 <Upload className="w-3.5 h-3.5 mr-1.5" /> Bulk Upload
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => setShowImportModal(true)}
-                size="sm"
-                variant="outline"
-                className="rounded-xl border-border/60 hover:border-indigo-300 hover:text-indigo-600 dark:hover:border-indigo-700 dark:hover:text-indigo-400 transition-colors h-9"
+                className="inline-flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground px-3 h-9 transition-colors"
+                style={outlineBtn}
               >
                 <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Import
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => navigate(`/jobs/${jobId}/interview-evaluations`)}
-                size="sm"
-                variant="outline"
-                className="rounded-xl border-border/60 hover:border-violet-300 hover:text-violet-600 dark:hover:border-violet-700 dark:hover:text-violet-400 transition-colors h-9"
+                className="inline-flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground px-3 h-9 transition-colors"
+                style={outlineBtn}
               >
                 <BarChart3 className="w-3.5 h-3.5 mr-1.5" /> Interviews
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={downloadExcel}
-                size="sm"
-                variant="outline"
-                className="rounded-xl border-border/60 hover:border-emerald-300 hover:text-emerald-600 dark:hover:border-emerald-700 dark:hover:text-emerald-400 transition-colors h-9"
+                className="inline-flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground px-3 h-9 transition-colors"
+                style={outlineBtn}
               >
                 <Download className="w-3.5 h-3.5 mr-1.5" /> Export
-              </Button>
+              </button>
             </div>
           </motion.div>
 
@@ -538,7 +645,7 @@ const CandidateEvaluation = () => {
               <StatCard
                 icon={CheckCircle2} label="Interviewed" value={interviewDone}
                 sub="Completed"
-                gradient="bg-gradient-to-br from-violet-500 to-violet-600 text-white"
+                gradient="bg-gradient-to-br from-blue-500 to-blue-600 text-white"
                 iconBg="bg-white/15"
               />
             </motion.div>
@@ -557,26 +664,27 @@ const CandidateEvaluation = () => {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.15 }}
-            className="rounded-xl border border-border/50 bg-card/70 backdrop-blur-md p-4 mb-8 shadow-sm"
+            className="rounded-xl p-4 mb-8"
+            style={glassCard}
           >
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/80">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: 'var(--orbis-hover)' }}>
                   <Filter className="w-3.5 h-3.5" />
                 </div>
                 <span className="text-xs font-semibold uppercase tracking-wider">Filters</span>
                 {activeFilterCount > 0 && (
-                  <Badge className="h-5 w-5 p-0 flex items-center justify-center rounded-full bg-blue-500 text-white text-[10px] font-bold border-0">
+                  <span className="h-5 w-5 flex items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: '#1B8EE5' }}>
                     {activeFilterCount}
-                  </Badge>
+                  </span>
                 )}
               </div>
-              <div className="h-5 w-px bg-border/60 hidden sm:block" />
+              <div className="h-5 w-px hidden sm:block" style={{ background: 'var(--orbis-border)' }} />
               <Select value={filters.recommendation} onValueChange={(v) => { setFilters((p) => ({ ...p, recommendation: v })); setCurrentPage(1); }}>
-                <SelectTrigger className="w-48 h-9 rounded-xl border-border/50 text-xs bg-background/60 hover:bg-background transition-colors">
+                <SelectTrigger className="w-48 h-9 rounded-xl text-xs text-foreground border-0" style={{ ...glassInput }}>
                   <SelectValue placeholder="Recommendation" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={selectDrop} className="border-0">
                   <SelectItem value="All">All Recommendations</SelectItem>
                   <SelectItem value="Interview Immediately">Interview Immediately</SelectItem>
                   <SelectItem value="Interview">Interview</SelectItem>
@@ -585,20 +693,20 @@ const CandidateEvaluation = () => {
                 </SelectContent>
               </Select>
               <Select value={filters.interviewStatus} onValueChange={(v) => { setFilters((p) => ({ ...p, interviewStatus: v })); setCurrentPage(1); }}>
-                <SelectTrigger className="w-40 h-9 rounded-xl border-border/50 text-xs bg-background/60 hover:bg-background transition-colors">
+                <SelectTrigger className="w-40 h-9 rounded-xl text-xs text-foreground border-0" style={{ ...glassInput }}>
                   <SelectValue placeholder="Interview" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={selectDrop} className="border-0">
                   <SelectItem value="All">All Statuses</SelectItem>
                   <SelectItem value="Completed">Completed</SelectItem>
                   <SelectItem value="Pending">Pending</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filters.pipelineStage} onValueChange={(v) => { setFilters((p) => ({ ...p, pipelineStage: v })); setCurrentPage(1); }}>
-                <SelectTrigger className="w-44 h-9 rounded-xl border-border/50 text-xs bg-background/60 hover:bg-background transition-colors">
+                <SelectTrigger className="w-44 h-9 rounded-xl text-xs text-foreground border-0" style={{ ...glassInput }}>
                   <SelectValue placeholder="Pipeline Stage" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent style={selectDrop} className="border-0">
                   <SelectItem value="All">All Stages</SelectItem>
                   <SelectItem value="applied">Applied</SelectItem>
                   <SelectItem value="screening">Screening</SelectItem>
@@ -610,16 +718,19 @@ const CandidateEvaluation = () => {
                 </SelectContent>
               </Select>
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search by name or email..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="h-9 w-52 rounded-xl border border-border/50 bg-background/60 pl-8 pr-3 text-xs placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-ring/40 hover:bg-background transition-colors"
+                  className="h-9 w-52 rounded-xl pl-8 pr-3 text-xs placeholder:text-muted-foreground focus:outline-none transition-colors"
+                  style={glassInput}
+                  onFocus={(e) => { e.target.style.borderColor = '#1B8EE5'; e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)'; }}
+                  onBlur={(e) => { e.target.style.borderColor = 'var(--orbis-border)'; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
-              <span className="ml-auto text-xs text-muted-foreground/70 font-medium tabular-nums">
+              <span className="ml-auto text-xs text-muted-foreground font-medium tabular-nums">
                 {filteredCandidates.length} of {candidates.length} shown
               </span>
             </div>
@@ -642,18 +753,22 @@ const CandidateEvaluation = () => {
                     key={c.id}
                     variants={fadeInUp}
                     whileHover={{ y: -1 }}
-                    className="group rounded-xl border border-border/50 bg-card hover:bg-card/90 p-5 lg:p-6 shadow-sm hover:shadow-lg hover:border-border transition-all duration-300"
+                    className={`group rounded-xl p-5 lg:p-6 transition-all duration-300 hover:brightness-110 ${c.pipelineStage === "rejected" ? "opacity-60" : ""}`}
+                    style={{
+                      ...glassCard,
+                      ...(c.pipelineStage === "rejected" ? { borderColor: 'rgba(239,68,68,0.3)', background: 'var(--orbis-card)' } : {}),
+                    }}
                   >
                     <div className="flex items-start gap-5">
 
                       {/* Avatar + info */}
                       <div className="flex items-start gap-4 flex-1 min-w-0">
                         <div className="relative">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-lg shadow-md shadow-blue-500/15 ring-2 ring-white dark:ring-slate-800">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white font-bold text-lg shadow-md ring-2 ring-white/10" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 16px rgba(27,142,229,0.15)' }}>
                             {c.name.charAt(0).toUpperCase()}
                           </div>
                           {c.screened && (
-                            <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-800">
+                            <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 ring-2" style={{ ringColor: 'var(--orbis-page)' }}>
                               <CheckCircle2 className="w-3 h-3 text-white" />
                             </div>
                           )}
@@ -661,16 +776,21 @@ const CandidateEvaluation = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-sm font-bold text-foreground truncate">{c.name}</h3>
-                            {c.source === "portal" && (
-                              <Badge className="text-[10px] font-semibold rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40 px-1.5 py-0 h-5 shrink-0">
-                                Portal
-                              </Badge>
+                            {c.pipelineStage === "rejected" && (
+                              <span className="text-[10px] font-semibold rounded-md px-1.5 py-0 h-5 inline-flex items-center gap-1 shrink-0" style={{ background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}>
+                                <XCircle className="w-3 h-3" /> Rejected
+                              </span>
                             )}
-                            <Badge variant="outline" className="text-[10px] font-medium rounded-md px-1.5 py-0 h-5 shrink-0 border-border/60">
+                            {c.source === "portal" && (
+                              <span className="text-[10px] font-semibold rounded-md px-1.5 py-0 h-5 inline-flex items-center shrink-0" style={{ background: 'rgba(27,142,229,0.15)', color: '#4db5f0', border: '1px solid rgba(27,142,229,0.3)' }}>
+                                Portal
+                              </span>
+                            )}
+                            <span className="text-[10px] font-medium rounded-md px-1.5 py-0 h-5 inline-flex items-center shrink-0 text-muted-foreground" style={{ border: '1px solid var(--orbis-border)' }}>
                               {c.currentRole} · {c.experience}yr
-                            </Badge>
+                            </span>
                           </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground/70">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1.5 hover:text-foreground transition-colors">
                               <Mail className="w-3 h-3" />{c.email}
                             </span>
@@ -684,6 +804,38 @@ const CandidateEvaluation = () => {
                         </div>
                       </div>
 
+                      {/* Rank badge */}
+                      {rankings[String(c.rawCandidateId)] && (
+                        <div className="shrink-0 w-14 flex flex-col items-center gap-1">
+                          <div
+                            className={`flex h-10 w-10 items-center justify-center rounded-xl font-extrabold text-sm shadow-md ${
+                              rankings[String(c.rawCandidateId)].rank === 1
+                                ? "text-amber-900"
+                                : rankings[String(c.rawCandidateId)].rank === 2
+                                ? "text-slate-700"
+                                : rankings[String(c.rawCandidateId)].rank === 3
+                                ? "text-orange-900"
+                                : "text-muted-foreground"
+                            }`}
+                            style={{
+                              background:
+                                rankings[String(c.rawCandidateId)].rank === 1
+                                  ? "linear-gradient(135deg, #fbbf24, #f59e0b)"
+                                  : rankings[String(c.rawCandidateId)].rank === 2
+                                  ? "linear-gradient(135deg, #e2e8f0, #cbd5e1)"
+                                  : rankings[String(c.rawCandidateId)].rank === 3
+                                  ? "linear-gradient(135deg, #fdba74, #f97316)"
+                                  : "var(--orbis-input)",
+                            }}
+                          >
+                            #{rankings[String(c.rawCandidateId)].rank}
+                          </div>
+                          <span className="text-[10px] text-muted-foreground font-medium tabular-nums">
+                            {rankings[String(c.rawCandidateId)].composite}pts
+                          </span>
+                        </div>
+                      )}
+
                       {/* Score ring */}
                       <div className="shrink-0 w-20">
                         <ScoreRing score={c.totalScore.obtained} max={c.totalScore.max} />
@@ -693,27 +845,30 @@ const CandidateEvaluation = () => {
                       <div className="hidden lg:flex flex-col gap-2 w-56 shrink-0">
                         <ScoreBar label="Core" obtained={c.coreSkills.obtained} max={c.coreSkills.max} color="bg-blue-500" />
                         <ScoreBar label="Preferred" obtained={c.preferredSkills.obtained} max={c.preferredSkills.max} color="bg-teal-500" />
-                        <ScoreBar label="Experience" obtained={c.experienceScore.obtained} max={c.experienceScore.max} color="bg-violet-500" />
+                        <ScoreBar label="Experience" obtained={c.experienceScore.obtained} max={c.experienceScore.max} color="bg-blue-500" />
                         <ScoreBar label="Education" obtained={c.education.obtained} max={c.education.max} color="bg-amber-500" />
                       </div>
 
                       {/* Recommendation + interview status */}
                       <div className="flex flex-col items-center gap-2.5 shrink-0 w-40">
                         <RecommendationBadge recommendation={c.recommendation} />
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] px-2.5 py-0.5 rounded-md font-medium border ${
+                        <span
+                          className={`text-[10px] px-2.5 py-0.5 rounded-md font-medium inline-flex items-center ${
                             c.interviewCompleted
-                              ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/40"
-                              : "bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400 border-slate-200/60 dark:border-slate-700/40"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-muted-foreground"
                           }`}
+                          style={{
+                            background: c.interviewCompleted ? 'rgba(16,185,129,0.1)' : 'var(--orbis-input)',
+                            border: c.interviewCompleted ? '1px solid rgba(16,185,129,0.2)' : '1px solid var(--orbis-border)',
+                          }}
                         >
                           {c.interviewCompleted ? (
                             <><CheckCircle2 className="w-3 h-3 mr-1" />Interviewed</>
                           ) : (
                             <><Clock className="w-3 h-3 mr-1" />Pending</>
                           )}
-                        </Badge>
+                        </span>
                       </div>
 
                       {/* Screen toggle */}
@@ -723,7 +878,7 @@ const CandidateEvaluation = () => {
                           onCheckedChange={(val) => handleScreeningToggle(c.id, val)}
                           className="data-[state=checked]:bg-emerald-500"
                         />
-                        <span className={`text-[10px] font-medium ${c.screened ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"}`}>
+                        <span className={`text-[10px] font-medium ${c.screened ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
                           {c.screened ? "Screened" : "Screen"}
                         </span>
                       </div>
@@ -732,66 +887,64 @@ const CandidateEvaluation = () => {
                       <div className="flex items-center gap-1.5 shrink-0">
                         {c.screened ? (
                           !c.interviewCompleted ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            <button
                               onClick={() => setSelectedCandidate({ id: c.id, name: c.name })}
-                              className="rounded-xl text-xs border-blue-200/60 dark:border-blue-800/40 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 h-8 transition-colors"
+                              className="inline-flex items-center rounded-xl text-xs font-medium h-8 px-3 text-blue-400 transition-colors hover:text-blue-300"
+                              style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}
                             >
                               <Upload className="w-3 h-3 mr-1" /> Upload
-                            </Button>
+                            </button>
                           ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
+                            <button
                               onClick={() => navigate(`/jobs/${jobId}/interview-evaluations/${c.id}/details`)}
-                              className="rounded-xl text-xs border-emerald-200/60 dark:border-emerald-800/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 h-8 transition-colors"
+                              className="inline-flex items-center rounded-xl text-xs font-medium h-8 px-3 text-emerald-400 transition-colors hover:text-emerald-300"
+                              style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
                             >
                               <Eye className="w-3 h-3 mr-1" /> Details
-                            </Button>
+                            </button>
                           )
                         ) : (
-                          <span className="text-[10px] text-muted-foreground/60 italic bg-muted/50 rounded-lg px-2.5 py-1.5 font-medium">Screen first</span>
+                          <span className="text-[10px] text-muted-foreground italic rounded-lg px-2.5 py-1.5 font-medium" style={{ background: 'var(--orbis-input)' }}>Screen first</span>
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-muted/80 transition-colors">
+                            <button className="h-8 w-8 p-0 rounded-lg transition-colors inline-flex items-center justify-center hover:bg-white/5">
                               <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
-                            </Button>
+                            </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-card shadow-xl border border-border/60 rounded-xl w-48 p-1">
+                          <DropdownMenuContent align="end" className="shadow-xl rounded-xl w-48 p-1 border-0" style={selectDrop}>
                             {c.resumeUrl && (
                               <>
                                 <DropdownMenuItem
                                   onClick={() => setResumeViewerUrl(c.resumeUrl)}
-                                  className="rounded-lg text-xs px-3 py-2 cursor-pointer"
+                                  className="rounded-lg text-xs px-3 py-2 cursor-pointer text-muted-foreground hover:text-foreground"
                                 >
-                                  <FileText className="w-3.5 h-3.5 mr-2.5 text-blue-500" /> View Resume
+                                  <FileText className="w-3.5 h-3.5 mr-2.5 text-blue-400" /> View Resume
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => window.open(c.resumeUrl!, '_blank')}
-                                  className="rounded-lg text-xs px-3 py-2 cursor-pointer"
+                                  className="rounded-lg text-xs px-3 py-2 cursor-pointer text-muted-foreground hover:text-foreground"
                                 >
-                                  <Download className="w-3.5 h-3.5 mr-2.5 text-blue-500" /> Download Resume
+                                  <Download className="w-3.5 h-3.5 mr-2.5 text-blue-400" /> Download Resume
                                 </DropdownMenuItem>
                               </>
                             )}
                             <DropdownMenuItem
-                              onClick={() => navigate(`/scorecard/${c.id}`)}
-                              className="rounded-lg text-xs px-3 py-2 cursor-pointer"
+                              onClick={() => navigate(`/scorecard/${c.id}${jobId ? `?jd_id=${jobId}` : ''}`)}
+                              className="rounded-lg text-xs px-3 py-2 cursor-pointer text-muted-foreground hover:text-foreground"
                             >
-                              <ClipboardList className="w-3.5 h-3.5 mr-2.5 text-teal-500" /> View Scorecard
+                              <ClipboardList className="w-3.5 h-3.5 mr-2.5 text-teal-400" /> View Scorecard
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => navigate(`/jobs/${jobId}/candidates/${c.id}/feedback`)}
-                              className="rounded-lg text-xs px-3 py-2 cursor-pointer"
+                              className="rounded-lg text-xs px-3 py-2 cursor-pointer text-muted-foreground hover:text-foreground"
                             >
-                              <ClipboardList className="w-3.5 h-3.5 mr-2.5 text-violet-500" /> View Feedback
+                              <ClipboardList className="w-3.5 h-3.5 mr-2.5 text-blue-400" /> View Feedback
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="my-1" />
+                            <DropdownMenuSeparator className="my-1" style={{ background: 'var(--orbis-border)' }} />
                             <DropdownMenuItem
                               onClick={() => handleDeleteCandidate(c.id, c.name)}
-                              className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 rounded-lg text-xs px-3 py-2 cursor-pointer"
+                              className="text-red-400 hover:text-red-300 rounded-lg text-xs px-3 py-2 cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5 mr-2.5" /> Delete Candidate
                             </DropdownMenuItem>
@@ -808,22 +961,21 @@ const CandidateEvaluation = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 className="flex flex-col items-center justify-center py-24 text-center"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60 mb-5">
-                  <Search className="w-7 h-7 text-muted-foreground/50" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl mb-5" style={{ background: 'var(--orbis-input)' }}>
+                  <Search className="w-7 h-7 text-muted-foreground" />
                 </div>
                 <p className="text-sm font-semibold text-foreground">No candidates match your filters</p>
-                <p className="text-xs text-muted-foreground/70 mt-1.5 max-w-xs">
+                <p className="text-xs text-muted-foreground mt-1.5 max-w-xs">
                   Try adjusting your filter criteria or clear all filters to see all candidates.
                 </p>
                 {activeFilterCount > 0 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 rounded-xl text-xs"
+                  <button
+                    className="mt-4 rounded-xl text-xs px-3 py-2 text-muted-foreground hover:text-foreground transition-colors"
+                    style={outlineBtn}
                     onClick={() => { setFilters({ recommendation: "All", interviewStatus: "All", pipelineStage: "All" }); setSearchInput(""); }}
                   >
                     Clear all filters
-                  </Button>
+                  </button>
                 )}
               </motion.div>
             )}
@@ -863,12 +1015,120 @@ const CandidateEvaluation = () => {
             onSuccess={() => { setShowBulkUploadModal(false); loadCandidates(); toast({ title: "Success", description: "Candidates uploaded and analyzed!" }); }}
           />
         )}
+        {showAddCandidateModal && (
+          <AddCandidateModal
+            jobId={jobId!}
+            isOpen={showAddCandidateModal}
+            onClose={() => setShowAddCandidateModal(false)}
+            onSuccess={() => { setShowAddCandidateModal(false); loadCandidates(); }}
+          />
+        )}
         {resumeViewerUrl && (
           <ResumeViewer
             url={resumeViewerUrl}
             onClose={() => setResumeViewerUrl(null)}
           />
         )}
+
+        {/* Bulk Reject Modal */}
+        <AnimatePresence>
+          {showBulkReject && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center"
+              style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+              onClick={() => setShowBulkReject(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-2xl p-6 w-full max-w-md shadow-2xl"
+                style={{ background: 'var(--orbis-dropdown)', border: '1px solid var(--orbis-border-strong)' }}
+              >
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: 'rgba(239,68,68,0.15)' }}>
+                    <XCircle className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">Bulk Reject by Rank</h3>
+                    <p className="text-xs text-muted-foreground">Reject all candidates ranked below a threshold</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Reject candidates ranked below
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min={1}
+                        max={Math.max(Object.keys(rankings).length, 2)}
+                        value={rejectThreshold}
+                        onChange={(e) => setRejectThreshold(Number(e.target.value))}
+                        className="flex-1 accent-red-500"
+                      />
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold text-muted-foreground">#</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={Object.keys(rankings).length}
+                          value={rejectThreshold}
+                          onChange={(e) => setRejectThreshold(Number(e.target.value) || 0)}
+                          onBlur={() => {
+                            const max = Object.keys(rankings).length;
+                            if (rejectThreshold < 1) setRejectThreshold(1);
+                            else if (rejectThreshold > max) setRejectThreshold(max);
+                          }}
+                          className="h-10 w-16 rounded-xl text-center text-sm font-bold tabular-nums text-red-600 dark:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                          style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: 'inherit' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl p-3" style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}>
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-semibold text-red-400">
+                        {sortedCandidates.filter((c) => {
+                          const r = rankings[String(c.rawCandidateId)];
+                          return r && r.rank > rejectThreshold && c.pipelineStage !== "rejected";
+                        }).length}
+                      </span>
+                      {" "}candidate(s) will be moved to <span className="font-semibold text-foreground">rejected</span> stage.
+                      Candidates already rejected will be skipped.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <button
+                      onClick={() => setShowBulkReject(false)}
+                      className="flex-1 h-10 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      style={outlineBtn}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleBulkReject}
+                      disabled={isRejecting}
+                      className="flex-1 h-10 rounded-xl text-sm font-semibold text-white transition-all hover:brightness-110 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                      style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 8px 24px rgba(239,68,68,0.2)' }}
+                    >
+                      {isRejecting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                      {isRejecting ? "Rejecting..." : "Reject Candidates"}
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </AppLayout>
   );

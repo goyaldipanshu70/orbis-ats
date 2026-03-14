@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { staggerContainer, scaleIn } from '@/lib/animations';
 import { CheckCircle2, XCircle, PlusCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 interface SkillsGapMatrixProps {
   matched: string[];
@@ -17,14 +16,14 @@ export function SkillsGapMatrix({ matched, missing, bonus, matchPercentage }: Sk
   const strokeDashoffset = circumference - (matchPercentage / 100) * circumference;
 
   const percentColor =
-    matchPercentage >= 75 ? 'text-green-600' :
-    matchPercentage >= 50 ? 'text-amber-600' :
-    'text-red-600';
+    matchPercentage >= 75 ? 'text-emerald-400' :
+    matchPercentage >= 50 ? 'text-amber-400' :
+    'text-red-400';
 
   const strokeColor =
-    matchPercentage >= 75 ? '#16a34a' :
-    matchPercentage >= 50 ? '#d97706' :
-    '#dc2626';
+    matchPercentage >= 75 ? '#34d399' :
+    matchPercentage >= 50 ? '#fbbf24' :
+    '#f87171';
 
   return (
     <div className="space-y-6">
@@ -42,9 +41,8 @@ export function SkillsGapMatrix({ matched, missing, bonus, matchPercentage }: Sk
               cy="70"
               r={radius}
               fill="none"
-              stroke="currentColor"
+              stroke="var(--orbis-border)"
               strokeWidth="10"
-              className="text-muted/30"
             />
             <circle
               cx="70"
@@ -63,7 +61,7 @@ export function SkillsGapMatrix({ matched, missing, bonus, matchPercentage }: Sk
             <span className={`text-3xl font-bold ${percentColor}`}>
               {matchPercentage}%
             </span>
-            <span className="text-xs text-muted-foreground">Match</span>
+            <span className="text-xs text-slate-500">Match</span>
           </div>
         </div>
       </motion.div>
@@ -73,27 +71,26 @@ export function SkillsGapMatrix({ matched, missing, bonus, matchPercentage }: Sk
         {/* Matched Skills */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 mb-3">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <h4 className="text-sm font-semibold text-green-700">
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <h4 className="text-sm font-semibold text-emerald-400">
               Matched Skills
             </h4>
-            <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
+            <span className="ml-auto text-[10px] px-1.5 py-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 font-medium">
               {matched.length}
-            </Badge>
+            </span>
           </div>
           <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-wrap gap-1.5">
             {matched.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">None</p>
+              <p className="text-xs text-slate-500 italic">None</p>
             ) : (
               matched.map((skill) => (
-                <motion.span key={skill} variants={scaleIn}>
-                  <Badge
-                    className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 text-xs"
-                    variant="outline"
-                  >
-                    <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" />
-                    {skill}
-                  </Badge>
+                <motion.span
+                  key={skill}
+                  variants={scaleIn}
+                  className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400"
+                >
+                  <CheckCircle2 className="h-3 w-3 mr-1 text-emerald-500" />
+                  {skill}
                 </motion.span>
               ))
             )}
@@ -103,27 +100,26 @@ export function SkillsGapMatrix({ matched, missing, bonus, matchPercentage }: Sk
         {/* Missing Skills */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 mb-3">
-            <XCircle className="h-4 w-4 text-red-600" />
-            <h4 className="text-sm font-semibold text-red-700">
+            <XCircle className="h-4 w-4 text-red-400" />
+            <h4 className="text-sm font-semibold text-red-400">
               Missing Skills
             </h4>
-            <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 bg-red-100 text-red-700 border-red-200">
+            <span className="ml-auto text-[10px] px-1.5 py-0 rounded-full border border-red-500/20 bg-red-500/10 text-red-400 font-medium">
               {missing.length}
-            </Badge>
+            </span>
           </div>
           <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-wrap gap-1.5">
             {missing.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">None</p>
+              <p className="text-xs text-slate-500 italic">None</p>
             ) : (
               missing.map((skill) => (
-                <motion.span key={skill} variants={scaleIn}>
-                  <Badge
-                    className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 text-xs"
-                    variant="outline"
-                  >
-                    <XCircle className="h-3 w-3 mr-1 text-red-500" />
-                    {skill}
-                  </Badge>
+                <motion.span
+                  key={skill}
+                  variants={scaleIn}
+                  className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-xs text-red-400"
+                >
+                  <XCircle className="h-3 w-3 mr-1 text-red-500" />
+                  {skill}
                 </motion.span>
               ))
             )}
@@ -133,27 +129,26 @@ export function SkillsGapMatrix({ matched, missing, bonus, matchPercentage }: Sk
         {/* Bonus Skills */}
         <div className="space-y-2">
           <div className="flex items-center gap-1.5 mb-3">
-            <PlusCircle className="h-4 w-4 text-blue-600" />
-            <h4 className="text-sm font-semibold text-blue-700">
+            <PlusCircle className="h-4 w-4 text-blue-400" />
+            <h4 className="text-sm font-semibold text-blue-400">
               Bonus Skills
             </h4>
-            <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 border-blue-200">
+            <span className="ml-auto text-[10px] px-1.5 py-0 rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-400 font-medium">
               {bonus.length}
-            </Badge>
+            </span>
           </div>
           <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-wrap gap-1.5">
             {bonus.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">None</p>
+              <p className="text-xs text-slate-500 italic">None</p>
             ) : (
               bonus.map((skill) => (
-                <motion.span key={skill} variants={scaleIn}>
-                  <Badge
-                    className="bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 text-xs"
-                    variant="outline"
-                  >
-                    <PlusCircle className="h-3 w-3 mr-1 text-blue-500" />
-                    {skill}
-                  </Badge>
+                <motion.span
+                  key={skill}
+                  variants={scaleIn}
+                  className="inline-flex items-center rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-400"
+                >
+                  <PlusCircle className="h-3 w-3 mr-1 text-blue-500" />
+                  {skill}
                 </motion.span>
               ))
             )}

@@ -71,7 +71,7 @@ async def invite_candidate(
         # Auto-move candidate to ai_interview stage (non-fatal if already there)
         try:
             from app.services.candidate_service import move_candidate_stage
-            await move_candidate_stage(db, body.candidate_id, "ai_interview", changed_by=str(user["sub"]))
+            await move_candidate_stage(db, body.candidate_id, "ai_interview", changed_by=f"{user.get('first_name', '')} {user.get('last_name', '')}".strip() or str(user["sub"]))
         except Exception:
             pass
 
@@ -95,6 +95,17 @@ async def list_sessions(
 ):
     """List all AI interview sessions for a job."""
     return await svc.get_sessions_for_job(db, jd_id)
+
+
+@router.get("/candidate/{candidate_id}/sessions")
+async def list_candidate_sessions(
+    candidate_id: int,
+    jd_id: Optional[int] = Query(None),
+    user: dict = Depends(require_hiring_access),
+    db: AsyncSession = Depends(get_db),
+):
+    """List AI interview sessions for a candidate, optionally scoped to a job."""
+    return await svc.get_sessions_for_candidate(db, candidate_id, jd_id=jd_id)
 
 
 @router.get("/results/{session_id}")

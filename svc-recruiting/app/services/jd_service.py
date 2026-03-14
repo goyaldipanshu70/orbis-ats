@@ -65,6 +65,7 @@ async def submit_jd_to_db(
     salary_visibility: str = "hidden",
     location_type: Optional[str] = None,
     hiring_close_date: Optional[str] = None,
+    auto_ai_interview: Optional[bool] = None,
 ) -> str:
     # If multi-location provided, compute total vacancies and use first location for backward compat
     if location_vacancies:
@@ -100,6 +101,7 @@ async def submit_jd_to_db(
         salary_visibility=salary_visibility or "hidden",
         location_type=location_type,
         hiring_close_date=parsed_close_date,
+        auto_ai_interview=bool(auto_ai_interview) if auto_ai_interview is not None else False,
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )

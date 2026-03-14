@@ -53,7 +53,7 @@ function isValidAccent(v: unknown): v is AccentColor {
 
 /** Evaluate the effective mode when user picks "system". */
 function getSystemMode(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') return 'dark';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -89,12 +89,12 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   // Initialise from localStorage for instant paint, then sync from API
   const [mode, setModeState] = useState<ThemeMode>(() => {
     const stored = localStorage.getItem('theme_mode');
-    return isValidMode(stored) ? stored : 'system';
+    return isValidMode(stored) ? stored : 'dark';
   });
 
   const [accentColor, setAccentState] = useState<AccentColor>(() => {
     const stored = localStorage.getItem('theme_accent');
-    return isValidAccent(stored) ? stored : 'blue';
+    return isValidAccent(stored) ? stored : 'purple';
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -141,8 +141,8 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
         // Start with localStorage values (not hardcoded defaults)
         const storedMode = localStorage.getItem('theme_mode');
         const storedAccent = localStorage.getItem('theme_accent');
-        let effectiveMode: ThemeMode = isValidMode(storedMode) ? storedMode : 'system';
-        let effectiveAccent: AccentColor = isValidAccent(storedAccent) ? storedAccent : 'blue';
+        let effectiveMode: ThemeMode = isValidMode(storedMode) ? storedMode : 'dark';
+        let effectiveAccent: AccentColor = isValidAccent(storedAccent) ? storedAccent : 'purple';
 
         if (orgTheme.status === 'fulfilled') {
           const org = orgTheme.value;
@@ -182,7 +182,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     localStorage.setItem('theme_mode', newMode);
 
     // Persist to API (fire-and-forget)
-    const accentStr = localStorage.getItem('theme_accent') || 'blue';
+    const accentStr = localStorage.getItem('theme_accent') || 'purple';
     apiClient.updateUserTheme(`${newMode}:${accentStr}`).catch(() => {});
   }, []);
 
@@ -191,7 +191,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
     localStorage.setItem('theme_accent', newAccent);
 
     // Persist to API (fire-and-forget)
-    const modeStr = localStorage.getItem('theme_mode') || 'system';
+    const modeStr = localStorage.getItem('theme_mode') || 'dark';
     apiClient.updateUserTheme(`${modeStr}:${newAccent}`).catch(() => {});
   }, []);
 

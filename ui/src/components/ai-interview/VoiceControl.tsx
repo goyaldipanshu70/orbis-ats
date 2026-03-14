@@ -1,6 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+
 interface VoiceControlProps {
   onTranscript: (text: string) => void;
   autoSpeak?: boolean;
@@ -81,14 +87,21 @@ export default function VoiceControl({ onTranscript, autoSpeak = true, disabled 
   }, []);
 
   return (
-    <div className="flex items-center gap-4">
+    <div
+      className="flex items-center gap-4 px-5 py-3 rounded-2xl"
+      style={glassCard}
+    >
       {/* TTS toggle */}
       <button
         onClick={() => {
           if (isSpeaking) stopSpeaking();
           setTtsEnabled(!ttsEnabled);
         }}
-        className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+        className="p-2.5 rounded-xl transition-colors"
+        style={{
+          background: ttsEnabled ? 'rgba(27,142,229,0.15)' : 'var(--orbis-input)',
+          color: ttsEnabled ? '#b68aff' : '#94a3b8',
+        }}
         title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}
       >
         {ttsEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
@@ -98,15 +111,16 @@ export default function VoiceControl({ onTranscript, autoSpeak = true, disabled 
       <button
         onClick={isListening ? stopListening : startListening}
         disabled={disabled}
-        className={`relative h-16 w-16 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+        className="relative h-16 w-16 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        style={
           isListening
-            ? 'bg-red-500 hover:bg-red-600 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
-            : 'bg-blue-600 hover:scale-110 shadow-[0_0_20px_rgba(37,99,235,0.4)]'
-        }`}
+            ? { background: '#ef4444', boxShadow: '0 0 20px rgba(239,68,68,0.4)' }
+            : { background: '#1B8EE5', boxShadow: '0 0 20px rgba(27,142,229,0.4)' }
+        }
       >
         {/* Pulsing ring when listening */}
         {isListening && (
-          <div className="absolute inset-0 rounded-full border-4 border-red-500/50 animate-ping" />
+          <div className="absolute inset-0 rounded-full animate-ping" style={{ border: '4px solid rgba(239,68,68,0.5)' }} />
         )}
         {isListening ? (
           <MicOff className="h-7 w-7 text-white" />
@@ -128,8 +142,8 @@ export default function VoiceControl({ onTranscript, autoSpeak = true, disabled 
         )}
         {isSpeaking && (
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse" />
-            <span className="text-sm text-blue-400 font-medium">Aria speaking...</span>
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: '#1B8EE5' }} />
+            <span className="text-sm font-medium" style={{ color: '#b68aff' }}>Aria speaking...</span>
           </div>
         )}
       </div>

@@ -155,6 +155,7 @@ class ApiClient {
     if (response.status === 401) {
       const refreshed = await this.tryRefreshToken();
       if (refreshed) {
+        // Token refreshed — retry the original request
         response = await fetch(url, {
           ...options,
           headers: {
@@ -162,8 +163,8 @@ class ApiClient {
             ...options.headers,
           },
         });
-      }
-      if (response.status === 401) {
+      } else {
+        // Refresh failed — token is truly invalid, force logout
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
@@ -460,21 +461,38 @@ class ApiClient {
     return await this.uploadFile<any>('/api/candidates/upload', formData);
   }
 
-  async uploadMultipleCandidates(formData: FormData) {
-    const response = await fetch(`${API_BASE_URL}/api/candidates/upload-multiple`, {
+  async uploadMultipleCandidates(formData: FormData, onProgress?: (progress: number) => void) {
+    const url = `${API_BASE_URL}/api/candidates/upload-multiple`;
+
+    let response = await fetch(url, {
       method: 'POST',
       headers: this.getMultipartHeaders(),
       body: formData,
     });
+
+    // Auto-refresh on 401
     if (response.status === 401) {
-      localStorage.removeItem('access_token');
-      window.location.href = '/login';
-      throw new Error('Authentication failed');
+      const refreshed = await this.tryRefreshToken();
+      if (refreshed) {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: this.getMultipartHeaders(),
+          body: formData,
+        });
+      }
+      if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+        throw new Error('Authentication failed');
+      }
     }
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
     }
+
+    if (onProgress) onProgress(100);
     return response.json();
   }
 
@@ -589,6 +607,22 @@ class ApiClient {
 
   async getScreeningResponses(candidateId: number) {
     return await this.request<any[]>(`/api/candidates/${candidateId}/screening-responses`);
+  }
+
+  async getScreeningResponsesDetailed(candidateId: number, jdId?: number) {
+    const params = jdId ? `?jd_id=${jdId}` : '';
+    return await this.request<any[]>(`/api/candidates/${candidateId}/screening-responses/detailed${params}`);
+  }
+
+  async getScreeningTemplates(category?: string) {
+    const params = category ? `?category=${encodeURIComponent(category)}` : '';
+    return await this.request<any[]>(`/api/screening-templates${params}`);
+  }
+
+  async addTemplateToJob(jdId: string, templateId: number) {
+    return await this.request<any>(`/api/job/${jdId}/screening-questions/from-template/${templateId}`, {
+      method: 'POST',
+    });
   }
 
   // ── Interview Scheduling ─────────────────────────────────────────────
@@ -1853,6 +1887,11 @@ class ApiClient {
     return await this.request<AIInterviewResults>(`/api/ai-interview/results/${sessionId}`);
   }
 
+  async getAIInterviewSessionsForCandidate(candidateId: number, jdId?: number) {
+    const params = jdId ? `?jd_id=${jdId}` : '';
+    return await this.request<any[]>(`/api/ai-interview/candidate/${candidateId}/sessions${params}`);
+  }
+
   async cancelAIInterview(sessionId: number) {
     return await this.request<void>(`/api/ai-interview/${sessionId}`, { method: 'DELETE' });
   }
@@ -2347,6 +2386,45 @@ class ApiClient {
     if (params.page) q.set('page', String(params.page));
     if (params.page_size) q.set('page_size', String(params.page_size));
     return await this.request<any>(`/api/workflows/runs/${runId}/leads?${q.toString()}`);
+  }
+
+  // Custom Node Types
+  getCustomNodes() {
+    return this.request<any[]>('/api/workflows/custom-nodes');
+  }
+
+  getCustomNode(id: number) {
+    return this.request<any>(`/api/workflows/custom-nodes/${id}`);
+  }
+
+  createCustomNode(data: any) {
+    return this.request<any>('/api/workflows/custom-nodes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  updateCustomNode(id: number, data: any) {
+    return this.request<any>(`/api/workflows/custom-nodes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  }
+
+  deleteCustomNode(id: number) {
+    return this.request<{ ok: boolean }>(`/api/workflows/custom-nodes/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  testCustomNode(data: any) {
+    return this.request<any>('/api/workflows/custom-nodes/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
   }
 }
 

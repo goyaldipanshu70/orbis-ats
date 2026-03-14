@@ -93,7 +93,7 @@ async def compute_rankings(db: AsyncSession, jd_id: int) -> list[dict]:
                 InterviewSchedule.jd_id == jd_id,
             )
         )
-        sched_ids = [s.id for s in sched_result.scalars().all()]
+        sched_ids = list(sched_result.scalars().all())
         if sched_ids:
             fb_result = await db.execute(
                 select(func.avg(InterviewerFeedback.rating)).where(

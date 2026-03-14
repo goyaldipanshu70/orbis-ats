@@ -1,14 +1,9 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Separator } from '@/components/ui/separator';
-import { Upload, AlertCircle, CheckCircle, XCircle, FileText, User, Trash2, Plus, Clock, Target, GitMerge } from 'lucide-react';
+import { Upload, AlertCircle, AlertTriangle, CheckCircle, XCircle, FileText, Trash2, Plus, Clock, Target, GitMerge, Mail, Phone, Linkedin, Github, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/utils/api';
 import RecommendationBadge from './RecommendationBadge';
-import { Progress } from '@/components/ui/progress';
 
 interface BulkCandidateModalProps {
   jobId: string;
@@ -46,22 +41,18 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
-  // Supported file formats
   const supportedFormats = ['.pdf', '.doc', '.docx', '.txt', '.rtf', '.odt'];
   const maxFiles = 20;
-  const maxFileSize = 10 * 1024 * 1024; // 10MB
+  const maxFileSize = 10 * 1024 * 1024;
 
   const validateFile = (file: File): string | null => {
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    
     if (!supportedFormats.includes(fileExtension)) {
       return `Unsupported file format. Supported: ${supportedFormats.join(', ')}`;
     }
-    
     if (file.size > maxFileSize) {
       return `File too large. Maximum size: 10MB`;
     }
-    
     return null;
   };
 
@@ -71,7 +62,6 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
     const newFiles: FileUploadItem[] = [];
     const errors: string[] = [];
 
-    // Check total file limit
     if (files.length + selectedFiles.length > maxFiles) {
       toast({
         title: 'Too many files',
@@ -83,19 +73,15 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
 
     Array.from(selectedFiles).forEach((file, index) => {
       const validationError = validateFile(file);
-      
       if (validationError) {
         errors.push(`${file.name}: ${validationError}`);
         return;
       }
-
-      // Check for duplicates
       const isDuplicate = files.some(f => f.file.name === file.name && f.file.size === file.size);
       if (isDuplicate) {
         errors.push(`${file.name}: Duplicate file`);
         return;
       }
-
       newFiles.push({
         id: `${Date.now()}-${index}`,
         file,
@@ -147,11 +133,14 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
       });
 
       setUploadResults(result);
-      
-      toast({ 
-        title: 'Upload Complete', 
-        description: `${result.successful_uploads} of ${result.total_files} files processed successfully.`,
-        variant: result.failed_uploads > 0 ? 'destructive' : 'default'
+
+      const dupCount = result.results.filter((r: MultipleCandidateResult) => r.success && r.data?.duplicate_info).length;
+      toast({
+        title: dupCount > 0 ? 'Upload Complete — Duplicates Detected' : 'Upload Complete',
+        description: dupCount > 0
+          ? `${result.successful_uploads} processed. ${dupCount} existing candidate${dupCount > 1 ? 's were' : ' was'} merged with updated data.`
+          : `${result.successful_uploads} of ${result.total_files} files processed successfully.`,
+        variant: result.failed_uploads > 0 ? 'destructive' : dupCount > 0 ? 'default' : 'default'
       });
 
       if (result.successful_uploads > 0) {
@@ -181,27 +170,29 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
   const getStatusIcon = (status: string, success?: boolean) => {
     switch (status) {
       case 'pending':
-        return <Clock className="w-4 h-4 text-muted-foreground" />;
+        return <Clock className="w-4 h-4 text-slate-500" />;
       case 'uploading':
-        return <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />;
+        return <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />;
       case 'success':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-green-400" />;
       case 'error':
-        return <XCircle className="w-4 h-4 text-red-600" />;
+        return <XCircle className="w-4 h-4 text-red-400" />;
       default:
-        return success ? <CheckCircle className="w-4 h-4 text-green-600" /> : <XCircle className="w-4 h-4 text-red-600" />;
+        return success ? <CheckCircle className="w-4 h-4 text-green-400" /> : <XCircle className="w-4 h-4 text-red-400" />;
     }
   };
 
+  const glassCard = 'rounded-2xl p-6 border border-white/10 bg-white/[0.03] backdrop-blur-sm';
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white to-blue-50 border-0 shadow-2xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
         <DialogHeader className="space-y-4 pb-6">
-          <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent flex items-center">
-            <Upload className="w-6 h-6 mr-3 text-blue-600" />
+          <DialogTitle className="text-2xl font-bold text-white flex items-center">
+            <Upload className="w-6 h-6 mr-3 text-blue-400" />
             Bulk Upload Candidates
           </DialogTitle>
-          <DialogDescription className="text-muted-foreground text-base">
+          <DialogDescription className="text-slate-400 text-base">
             Upload multiple candidate resumes at once for AI evaluation. Maximum {maxFiles} files, 10MB each.
           </DialogDescription>
         </DialogHeader>
@@ -209,36 +200,36 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
         {!uploadResults ? (
           <div className="space-y-8">
             {/* File Upload Section */}
-            <div className="bg-card/70 backdrop-blur-sm rounded-2xl p-6 border border-blue-100 shadow-lg">
+            <div className={glassCard}>
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
                     <Upload className="w-5 h-5 text-white" />
                   </div>
-                  <h4 className="text-lg font-semibold text-foreground">Resume Upload</h4>
+                  <h4 className="text-lg font-semibold text-white">Resume Upload</h4>
                 </div>
-                <div className="text-sm text-muted-foreground bg-card/70 px-3 py-1 rounded-full">
+                <div className="text-sm text-slate-400 bg-white/5 px-3 py-1 rounded-full border border-white/10">
                   {files.length} / {maxFiles} files
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="resume-files" className="text-base font-medium text-foreground mb-2 block">
+                  <label htmlFor="resume-files" className="text-base font-medium text-slate-300 mb-2 block">
                     Select Resume Files
-                  </Label>
+                  </label>
                   <div className="relative">
-                    <Input 
-                      id="resume-files" 
-                      type="file" 
+                    <input
+                      id="resume-files"
+                      type="file"
                       multiple
                       accept={supportedFormats.join(',')}
-                      onChange={(e) => handleFileSelect(e.target.files)} 
-                      className="cursor-pointer border-2 border-dashed border-blue-300 hover:border-blue-400 transition-colors duration-300 bg-blue-50/50 hover:bg-blue-50 p-4 text-center rounded-xl" 
+                      onChange={(e) => handleFileSelect(e.target.files)}
+                      className="cursor-pointer w-full border-2 border-dashed border-blue-500/30 hover:border-blue-400/50 transition-colors duration-300 bg-white/[0.03] hover:bg-white/[0.05] p-4 text-center rounded-xl text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-500/20 file:text-blue-300 file:text-sm file:font-medium"
                     />
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Supported formats: {supportedFormats.join(', ')} • Max size: 10MB per file • Max files: {maxFiles}
+                  <p className="text-sm text-slate-500 mt-2">
+                    Supported formats: {supportedFormats.join(', ')} | Max size: 10MB per file | Max files: {maxFiles}
                   </p>
                 </div>
               </div>
@@ -246,41 +237,37 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
 
             {/* File List */}
             {files.length > 0 && (
-              <div className="bg-card/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg">
+              <div className={glassCard}>
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-foreground">Selected Files ({files.length})</h4>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <h4 className="text-lg font-semibold text-white">Selected Files ({files.length})</h4>
+                  <button
                     onClick={() => setFiles([])}
-                    className="text-red-600 border-red-300 hover:bg-red-50"
+                    className="text-sm px-3 py-1.5 rounded-lg text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 transition-colors"
                   >
                     Clear All
-                  </Button>
+                  </button>
                 </div>
-                
+
                 <div className="space-y-3 max-h-60 overflow-y-auto">
                   {files.map((fileItem) => (
-                    <div key={fileItem.id} className="flex items-center justify-between p-3 bg-card border border-border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div key={fileItem.id} className="flex items-center justify-between p-3 border border-white/10 bg-white/[0.03] rounded-lg hover:bg-white/[0.05] transition-colors">
                       <div className="flex items-center space-x-3 flex-1">
-                        <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                        <FileText className="w-5 h-5 text-blue-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground truncate">{fileItem.file.name}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-sm font-medium text-white truncate">{fileItem.file.name}</div>
+                          <div className="text-xs text-slate-500">
                             {(fileItem.file.size / 1024).toFixed(1)} KB
                           </div>
                         </div>
                         {getStatusIcon(fileItem.status)}
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
+                      <button
                         onClick={() => removeFile(fileItem.id)}
                         disabled={isUploading}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 ml-2 p-1.5 rounded-lg transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -289,32 +276,36 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
 
             {/* Upload Progress */}
             {isUploading && (
-              <div className="bg-card/70 backdrop-blur-sm rounded-2xl p-6 border border-blue-200 shadow-lg">
+              <div className="rounded-2xl p-6 border border-blue-500/20 bg-blue-500/10">
                 <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <h4 className="text-lg font-semibold text-foreground">Processing Files...</h4>
+                  <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                  <h4 className="text-lg font-semibold text-white">Processing Files...</h4>
                 </div>
-                <Progress value={uploadProgress} className="w-full h-3" />
-                <p className="text-sm text-muted-foreground mt-2 text-center">{uploadProgress.toFixed(0)}% complete</p>
+                <div className="w-full bg-white/10 rounded-full h-3">
+                  <div
+                    className="h-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-500 transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-sm text-slate-400 mt-2 text-center">{uploadProgress.toFixed(0)}% complete</p>
               </div>
             )}
-            
-            <Separator className="bg-gradient-to-r from-blue-200 to-indigo-200" />
-            
+
+            <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
             <div className="flex justify-end space-x-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleClose} 
+              <button
+                type="button"
+                onClick={handleClose}
                 disabled={isUploading}
-                className="px-6 py-3 rounded-xl border-gray-300 hover:bg-muted/50 transition-all duration-300"
+                className="px-6 py-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 transition-all duration-300 disabled:opacity-50 font-medium"
               >
                 Cancel
-              </Button>
-              <Button 
-                onClick={handleBulkUpload} 
+              </button>
+              <button
+                onClick={handleBulkUpload}
                 disabled={isUploading || files.length === 0}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+                className="bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-500 hover:to-blue-500 text-white px-8 py-3 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none font-medium"
               >
                 {isUploading ? (
                   <div className="flex items-center space-x-2">
@@ -327,61 +318,114 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
                     <span>Upload & Analyze ({files.length})</span>
                   </div>
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         ) : (
           // Results View
           <div className="space-y-8">
             {/* Results Summary */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 shadow-lg">
+            <div className="rounded-2xl p-6 border border-blue-500/20 bg-blue-500/10">
               <div className="flex items-center space-x-3 mb-4">
-                <Target className="w-6 h-6 text-blue-600" />
-                <h4 className="text-lg font-semibold text-foreground">Upload Results</h4>
+                <Target className="w-6 h-6 text-blue-400" />
+                <h4 className="text-lg font-semibold text-white">Upload Results</h4>
               </div>
               <div className="grid grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-card/70 rounded-lg">
-                  <div className="text-2xl font-bold text-foreground">{uploadResults.total_files}</div>
-                  <div className="text-sm text-muted-foreground">Total Files</div>
+                <div className="text-center p-4 bg-white/[0.03] rounded-lg border border-white/10">
+                  <div className="text-2xl font-bold text-white">{uploadResults.total_files}</div>
+                  <div className="text-sm text-slate-400">Total Files</div>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg dark:bg-green-950/40">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-300">{uploadResults.successful_uploads}</div>
-                  <div className="text-sm text-muted-foreground">Successful</div>
+                <div className="text-center p-4 bg-green-900/20 rounded-lg border border-green-700/30">
+                  <div className="text-2xl font-bold text-green-300">{uploadResults.successful_uploads}</div>
+                  <div className="text-sm text-slate-400">Successful</div>
                 </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg dark:bg-red-950/40">
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-300">{uploadResults.failed_uploads}</div>
-                  <div className="text-sm text-muted-foreground">Failed</div>
+                <div className="text-center p-4 bg-red-900/20 rounded-lg border border-red-700/30">
+                  <div className="text-2xl font-bold text-red-300">{uploadResults.failed_uploads}</div>
+                  <div className="text-sm text-slate-400">Failed</div>
                 </div>
-                <div className="text-center p-4 bg-amber-50 rounded-lg dark:bg-amber-950/40">
-                  <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">
+                <div className="text-center p-4 bg-amber-900/20 rounded-lg border border-amber-700/30">
+                  <div className="text-2xl font-bold text-amber-300">
                     {uploadResults.results.filter(r => r.success && r.data?.duplicate_info).length}
                   </div>
-                  <div className="text-sm text-muted-foreground">Duplicates Merged</div>
+                  <div className="text-sm text-slate-400">Duplicates Merged</div>
                 </div>
               </div>
             </div>
 
+            {/* Duplicate Warning Banner */}
+            {uploadResults.results.some(r => r.success && r.data?.duplicate_info) && (
+              <div className="rounded-2xl p-5 border border-amber-600/30 bg-amber-900/15">
+                <div className="flex items-start gap-3 mb-4">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-base font-semibold text-amber-300">Existing Candidates Detected</h4>
+                    <p className="text-sm text-amber-400/80 mt-0.5">
+                      The following candidates already existed in the system. Their profiles have been automatically merged with the latest resume data.
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {uploadResults.results.filter(r => r.success && r.data?.duplicate_info).map((r, i) => {
+                    const dup = r.data.duplicate_info;
+                    const reasonIcons: Record<string, React.ReactNode> = {
+                      email: <Mail className="w-3 h-3" />,
+                      phone: <Phone className="w-3 h-3" />,
+                      linkedin: <Linkedin className="w-3 h-3" />,
+                      github: <Github className="w-3 h-3" />,
+                    };
+                    return (
+                      <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-amber-900/20 border border-amber-700/30">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+                            {(dup.matched_name || '?')[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-white truncate">{dup.matched_name || 'Unknown'}</div>
+                            {dup.matched_email && <div className="text-xs text-amber-400/70 truncate">{dup.matched_email}</div>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                          {(dup.match_reasons || []).map((reason: string) => (
+                            <span key={reason} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-900/40 text-amber-300 border border-amber-700/40">
+                              {reasonIcons[reason] || null}
+                              {reason}
+                            </span>
+                          ))}
+                          {dup.existing_jobs?.length > 0 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-900/30 text-blue-300 border border-blue-700/40">
+                              <Briefcase className="w-3 h-3" />
+                              {dup.existing_jobs.length} job{dup.existing_jobs.length > 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Detailed Results */}
-            <div className="bg-card/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg">
-              <h4 className="text-lg font-semibold text-foreground mb-4">Detailed Results</h4>
+            <div className={glassCard}>
+              <h4 className="text-lg font-semibold text-white mb-4">Detailed Results</h4>
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {uploadResults.results.map((result, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-card border border-border rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-4 border border-white/10 bg-white/[0.03] rounded-lg">
                     <div className="flex items-center space-x-3 flex-1">
                       {getStatusIcon('', result.success)}
                       <div className="flex-1">
-                        <div className="text-sm font-medium text-foreground">
+                        <div className="text-sm font-medium text-white">
                           {result.success ? `Candidate ${result.candidate_id.slice(-8)}` : 'Upload Failed'}
                         </div>
                         {result.success && result.data?.metadata?.full_name && (
-                          <div className="text-sm text-muted-foreground">{result.data.metadata.full_name}</div>
+                          <div className="text-sm text-slate-400">{result.data.metadata.full_name}</div>
                         )}
                         {!result.success && result.error && (
-                          <div className="text-sm text-red-600">{result.error}</div>
+                          <div className="text-sm text-red-400">{result.error}</div>
                         )}
                       </div>
                       {result.success && result.data?.duplicate_info && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-800">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-900/40 text-amber-300 border border-amber-700/50">
                           <GitMerge className="w-3 h-3" />
                           Merged
                         </span>
@@ -399,20 +443,19 @@ const BulkCandidateModal = ({ jobId, isOpen, onClose, onSuccess }: BulkCandidate
             </div>
 
             <div className="flex justify-center space-x-4">
-              <Button 
+              <button
                 onClick={resetForm}
-                variant="outline"
-                className="px-6 py-3 rounded-xl border-gray-300 hover:bg-muted/50 transition-all duration-300"
+                className="px-6 py-3 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 transition-all duration-300 font-medium flex items-center"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Upload More Files
-              </Button>
-              <Button 
+              </button>
+              <button
                 onClick={handleClose}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-500 hover:to-blue-500 text-white px-8 py-3 rounded-xl shadow-lg shadow-blue-500/20 transition-all duration-300 font-medium"
               >
                 Done
-              </Button>
+              </button>
             </div>
           </div>
         )}

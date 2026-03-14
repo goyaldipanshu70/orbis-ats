@@ -8,7 +8,7 @@ import {
   LogOut, Zap, Plus, FileText, UserCheck, Workflow, Calendar, Users, Briefcase,
   Megaphone, ClipboardCheck, Share2, Mail, ShieldCheck,
   GitPullRequest, FileStack, Globe2, Target, Inbox, Activity,
-  Pin, PinOff,
+  Pin, PinOff, Blocks,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,7 @@ const navItems: NavItem[] = [
   // ── AI & Tools ──
   { icon: Bot, label: 'Hiring Assistant', path: '/hiring-assistant', section: 'AI & Tools' },
   { icon: Workflow, label: 'AI Workflows', path: '/workflows', section: 'AI & Tools', hrOnly: true },
+  { icon: Blocks, label: 'Node Library', path: '/workflows/nodes', section: 'AI & Tools', hrOnly: true },
   { icon: FileStack, label: 'JD Templates', path: '/jd-templates', section: 'AI & Tools', hrOnly: true },
   { icon: FileText, label: 'Templates', path: '/templates', section: 'AI & Tools', hrOnly: true },
 
@@ -126,13 +127,14 @@ export default function AppSidebar() {
       initial={false}
       animate={{ width: collapsed ? 68 : 240 }}
       transition={sidebarTransition}
-      className="fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-slate-800 bg-[#0B1120] text-white will-change-[width]"
-      style={{ overflow: 'hidden' }}
+      className="fixed left-0 top-0 z-50 flex h-screen flex-col text-white will-change-[width]"
+      style={{ overflow: 'hidden', background: 'var(--orbis-page)', borderRight: '1px solid var(--orbis-border)' }}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-4">
+      <div className="flex h-16 items-center gap-3 px-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
         <motion.div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+          style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
@@ -150,7 +152,7 @@ export default function AppSidebar() {
               className="overflow-hidden whitespace-nowrap"
             >
               <p className="text-sm font-bold tracking-tight text-white">Orbis</p>
-              <p className="text-[10px] text-slate-400">Applicant Tracking</p>
+              <p className="text-[10px] text-slate-500">Applicant Tracking</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -169,7 +171,10 @@ export default function AppSidebar() {
           >
             <button
               onClick={() => navigate('/jobs/create')}
-              className="flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-700 px-3 py-2 text-xs text-slate-400 transition-colors hover:border-blue-500 hover:text-blue-400"
+              className="flex w-full items-center gap-2 rounded-lg border border-dashed px-3 py-2 text-xs text-slate-400 transition-colors"
+              style={{ borderColor: 'var(--orbis-border)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#1B8EE5'; e.currentTarget.style.color = '#4db5f0'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--orbis-border)'; e.currentTarget.style.color = '#94a3b8'; }}
             >
               <Plus className="h-3.5 w-3.5" /> New Job Posting
             </button>
@@ -189,7 +194,7 @@ export default function AppSidebar() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -4 }}
                   transition={labelTransition}
-                  className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-500 whitespace-nowrap"
+                  className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400 whitespace-nowrap"
                 >
                   {section}
                 </motion.p>
@@ -211,15 +216,19 @@ export default function AppSidebar() {
                       'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 overflow-hidden',
                       active
                         ? 'text-blue-400'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                        : 'text-slate-400 hover:text-white'
                     )}
                   >
                     {active && (
                       <motion.div
                         layoutId="nav-indicator"
-                        className="absolute inset-0 rounded-lg bg-blue-600/15"
+                        className="absolute inset-0 rounded-lg"
+                        style={{ background: 'rgba(27,142,229,0.12)' }}
                         transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                       />
+                    )}
+                    {!active && (
+                      <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: 'var(--orbis-card)' }} />
                     )}
                     <item.icon className={cn('relative z-10 h-4.5 w-4.5 shrink-0 transition-colors duration-150', active ? 'text-blue-400' : 'text-slate-500 group-hover:text-white')} />
                     <AnimatePresence>
@@ -244,7 +253,8 @@ export default function AppSidebar() {
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.6 }}
                           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                          className="relative z-10 ml-auto rounded-full bg-blue-600/20 px-2 py-0.5 text-[10px] font-bold text-blue-400"
+                          className="relative z-10 ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold"
+                          style={{ background: 'rgba(27,142,229,0.15)', color: '#4db5f0' }}
                         >
                           {item.badge}
                         </motion.span>
@@ -256,7 +266,7 @@ export default function AppSidebar() {
                     <Tooltip key={item.path + item.label} delayDuration={300}>
                       <TooltipTrigger asChild>{btn}</TooltipTrigger>
                       {collapsed && (
-                        <TooltipContent side="right" sideOffset={8} className="bg-slate-900 text-white border-slate-700 text-xs px-2 py-1">
+                        <TooltipContent side="right" sideOffset={8} className="text-white text-xs px-2 py-1" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
                           {item.label}
                         </TooltipContent>
                       )}
@@ -268,9 +278,9 @@ export default function AppSidebar() {
       </nav>
 
       {/* User profile */}
-      <div className="border-t border-slate-800 p-3">
+      <div className="p-3" style={{ borderTop: '1px solid var(--orbis-border)' }}>
         <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-xs font-bold text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
             {user?.first_name?.[0]}{user?.last_name?.[0]}
           </div>
           <AnimatePresence>
@@ -299,7 +309,10 @@ export default function AppSidebar() {
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={labelTransition}
                 onClick={logout}
-                className="rounded-md p-1.5 text-slate-500 hover:bg-slate-800 hover:text-red-400 transition-colors"
+                className="rounded-md p-1.5 text-slate-500 hover:text-rose-400 transition-colors"
+                style={{ background: 'transparent' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 <LogOut className="h-3.5 w-3.5" />
               </motion.button>
@@ -326,16 +339,20 @@ export default function AppSidebar() {
             whileTap={{ scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 500, damping: 25 }}
             className={cn(
-              'absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border bg-[#0B1120] transition-colors',
+              'absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border transition-colors',
               pinned
-                ? 'border-blue-500/50 text-blue-400 shadow-[0_0_8px_rgba(59,130,246,0.3)]'
-                : 'border-slate-700 text-slate-400 hover:text-white'
+                ? 'text-blue-400'
+                : 'text-slate-400 hover:text-white'
             )}
+            style={pinned
+              ? { background: 'var(--orbis-page)', borderColor: 'rgba(27,142,229,0.5)', boxShadow: '0 0 8px rgba(27,142,229,0.3)' }
+              : { background: 'var(--orbis-page)', borderColor: 'var(--orbis-border)' }
+            }
           >
             {pinned ? <Pin className="h-3 w-3" /> : <PinOff className="h-3 w-3" />}
           </motion.button>
         </TooltipTrigger>
-        <TooltipContent side="right" className="bg-slate-900 text-white border-slate-700">
+        <TooltipContent side="right" className="text-white text-xs" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           {pinned ? 'Unpin sidebar (enable auto-hide)' : 'Pin sidebar (disable auto-hide)'}
         </TooltipContent>
       </Tooltip>

@@ -1,13 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { Check, ChevronRight, ChevronLeft, Send, Save, FileText, Loader2 } from 'lucide-react';
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
 
 interface OfferModalProps {
   isOpen: boolean;
@@ -88,7 +96,6 @@ export default function OfferModal({
   const fetchTemplates = useCallback(async () => {
     setTemplatesLoading(true);
     try {
-      // Fetch all templates (not just offer_letter) so the user can pick any category
       const data = await apiClient.getDocumentTemplates(1, 100);
       setTemplates(data.items);
     } catch (err: any) {
@@ -122,7 +129,6 @@ export default function OfferModal({
         const detail = await apiClient.getDocumentTemplate(Number(selectedTemplateId));
         if (!cancelled) {
           setSelectedTemplate(detail);
-          // Initialize variable values with empty strings
           const init: Record<string, string> = {};
           (detail.variables || []).forEach((v: string) => {
             init[v] = '';
@@ -230,21 +236,18 @@ export default function OfferModal({
       {[1, 2, 3].map((s, i) => (
         <div key={s} className="flex items-center gap-2">
           <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors ${
-              s < step
-                ? 'bg-primary text-primary-foreground'
-                : s === step
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-            }`}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors"
+            style={{
+              background: s <= step ? 'linear-gradient(135deg, #1B8EE5, #1676c0)' : 'var(--orbis-border)',
+              color: s <= step ? 'white' : '#94a3b8',
+            }}
           >
             {s < step ? <Check className="h-4 w-4" /> : s}
           </div>
           {i < 2 && (
             <div
-              className={`h-0.5 w-8 transition-colors ${
-                s < step ? 'bg-primary' : 'bg-muted'
-              }`}
+              className="h-0.5 w-8 rounded-full transition-colors"
+              style={{ background: s < step ? '#1B8EE5' : 'var(--orbis-hover)' }}
             />
           )}
         </div>
@@ -255,34 +258,38 @@ export default function OfferModal({
   const renderStep1 = () => (
     <div className="space-y-4 py-2">
       <div className="space-y-2">
-        <Label htmlFor="position-title">Position Title</Label>
-        <Input
+        <label htmlFor="position-title" className="text-sm font-medium text-slate-300">Position Title</label>
+        <input
           id="position-title"
           value={positionTitle}
           onChange={(e) => setPositionTitle(e.target.value)}
           placeholder="e.g. Senior Software Engineer"
+          className="w-full h-10 px-3 rounded-lg text-sm outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+          style={glassInput}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="salary">Salary</Label>
-          <Input
+          <label htmlFor="salary" className="text-sm font-medium text-slate-300">Salary</label>
+          <input
             id="salary"
             type="number"
             min={0}
             value={salary}
             onChange={(e) => setSalary(e.target.value === '' ? '' : Number(e.target.value))}
             placeholder="e.g. 120000"
+            className="w-full h-10 px-3 rounded-lg text-sm outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+            style={glassInput}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="currency">Currency</Label>
+          <label htmlFor="currency" className="text-sm font-medium text-slate-300">Currency</label>
           <Select value={currency} onValueChange={(v) => setCurrency(v as Currency)}>
-            <SelectTrigger id="currency">
+            <SelectTrigger id="currency" className="border-white/10 bg-white/5 text-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent style={selectDrop}>
               <SelectItem value="USD">USD ($)</SelectItem>
               <SelectItem value="EUR">EUR (&euro;)</SelectItem>
               <SelectItem value="GBP">GBP (&pound;)</SelectItem>
@@ -293,33 +300,37 @@ export default function OfferModal({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="start-date">Start Date</Label>
-        <Input
+        <label htmlFor="start-date" className="text-sm font-medium text-slate-300">Start Date</label>
+        <input
           id="start-date"
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
+          className="w-full h-10 px-3 rounded-lg text-sm outline-none focus:ring-1 focus:ring-blue-500/50 [color-scheme:dark]"
+          style={glassInput}
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="department">Department (optional)</Label>
-        <Input
+        <label htmlFor="department" className="text-sm font-medium text-slate-300">Department (optional)</label>
+        <input
           id="department"
           value={department}
           onChange={(e) => setDepartment(e.target.value)}
           placeholder="e.g. Engineering"
+          className="w-full h-10 px-3 rounded-lg text-sm outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+          style={glassInput}
         />
       </div>
 
       {/* Template toggle */}
-      <div className="rounded-lg border p-4 space-y-3">
+      <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <Label htmlFor="use-template" className="text-sm font-medium cursor-pointer">
+            <FileText className="h-4 w-4 text-slate-500" />
+            <label htmlFor="use-template" className="text-sm font-medium text-slate-300 cursor-pointer">
               Use Document Template
-            </Label>
+            </label>
           </div>
           <Switch
             id="use-template"
@@ -339,23 +350,23 @@ export default function OfferModal({
           <div className="space-y-3 pt-1">
             {/* Template selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Select Template</Label>
+              <span className="text-xs text-slate-500">Select Template</span>
               {templatesLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading templates...
                 </div>
               ) : (
                 <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-white/10 bg-white/5 text-white">
                     <SelectValue placeholder="Choose a template..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent style={selectDrop}>
                     {templates.map((t) => (
                       <SelectItem key={t.id} value={String(t.id)}>
                         <span className="flex items-center gap-2">
                           <span>{t.name}</span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-slate-500">
                             ({t.category.replace(/_/g, ' ')})
                           </span>
                         </span>
@@ -368,14 +379,14 @@ export default function OfferModal({
 
             {/* Template description */}
             {selectedTemplate && selectedTemplate.description && (
-              <p className="text-xs text-muted-foreground italic">
+              <p className="text-xs text-slate-500 italic">
                 {selectedTemplate.description}
               </p>
             )}
 
             {/* Variable input fields */}
             {templateLoading && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Loading template details...
               </div>
@@ -383,18 +394,19 @@ export default function OfferModal({
 
             {selectedTemplate && selectedTemplate.variables.length > 0 && !templateLoading && (
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Template Variables</Label>
+                <span className="text-xs text-slate-500">Template Variables</span>
                 <div className="grid grid-cols-2 gap-2">
                   {selectedTemplate.variables.map((v) => (
                     <div key={v} className="space-y-1">
-                      <Label className="text-xs">{varLabel(v)}</Label>
-                      <Input
+                      <span className="text-xs text-slate-400">{varLabel(v)}</span>
+                      <input
                         placeholder={varLabel(v)}
                         value={varValues[v] || ''}
                         onChange={(e) =>
                           setVarValues((prev) => ({ ...prev, [v]: e.target.value }))
                         }
-                        className="h-8 text-sm"
+                        className="w-full h-8 px-2 rounded-lg text-sm outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+                        style={glassInput}
                       />
                     </div>
                   ))}
@@ -410,28 +422,28 @@ export default function OfferModal({
   const renderStep2 = () => (
     <div className="py-2 space-y-4">
       {/* Offer details summary */}
-      <div className="rounded-lg border bg-muted/50 p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+      <div className="rounded-xl p-5 space-y-3" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+        <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
           Offer Summary
         </h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Candidate</span>
-            <span className="font-medium">{candidateName}</span>
+            <span className="text-slate-400">Candidate</span>
+            <span className="font-medium text-white">{candidateName}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Position</span>
-            <span className="font-medium">{positionTitle}</span>
+            <span className="text-slate-400">Position</span>
+            <span className="font-medium text-white">{positionTitle}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Salary</span>
-            <span className="font-medium">
+            <span className="text-slate-400">Salary</span>
+            <span className="font-medium text-white">
               {formatSalary(Number(salary), currency)} {currency}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Start Date</span>
-            <span className="font-medium">
+            <span className="text-slate-400">Start Date</span>
+            <span className="font-medium text-white">
               {new Date(startDate + 'T00:00:00').toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
@@ -441,14 +453,14 @@ export default function OfferModal({
           </div>
           {department && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Department</span>
-              <span className="font-medium">{department}</span>
+              <span className="text-slate-400">Department</span>
+              <span className="font-medium text-white">{department}</span>
             </div>
           )}
           {useTemplate && selectedTemplate && (
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Template</span>
-              <span className="font-medium">{selectedTemplate.name}</span>
+              <span className="text-slate-400">Template</span>
+              <span className="font-medium text-white">{selectedTemplate.name}</span>
             </div>
           )}
         </div>
@@ -457,11 +469,11 @@ export default function OfferModal({
       {/* Template content preview */}
       {useTemplate && selectedTemplate && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          <h3 className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
             Document Preview
           </h3>
-          <div className="rounded-lg border bg-card p-4 max-h-60 overflow-y-auto">
-            <div className="text-sm whitespace-pre-wrap leading-relaxed text-foreground font-mono">
+          <div className="rounded-xl p-4 max-h-60 overflow-y-auto" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+            <div className="text-sm whitespace-pre-wrap leading-relaxed text-slate-300 font-mono">
               {renderContent(selectedTemplate.content, varValues)}
             </div>
           </div>
@@ -472,16 +484,16 @@ export default function OfferModal({
 
   const renderStep3 = () => (
     <div className="py-2 text-center space-y-3">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-        <Send className="h-6 w-6 text-primary" />
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full" style={{ background: 'rgba(27,142,229,0.15)' }}>
+        <Send className="h-6 w-6 text-blue-400" />
       </div>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-slate-400">
         You are about to create an offer for{' '}
-        <span className="font-medium text-foreground">{candidateName}</span>.
+        <span className="font-medium text-white">{candidateName}</span>.
         {useTemplate && selectedTemplate && (
           <>
             {' '}
-            Using the <span className="font-medium text-foreground">{selectedTemplate.name}</span> template.
+            Using the <span className="font-medium text-white">{selectedTemplate.name}</span> template.
           </>
         )}
         {' '}You can save it as a draft to review later, or send it immediately.
@@ -492,50 +504,78 @@ export default function OfferModal({
   const renderFooter = () => {
     if (step === 1) {
       return (
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>
+        <div className="flex justify-end gap-2.5 px-6 py-4 rounded-b-2xl" style={{ borderTop: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
+          <button
+            onClick={handleClose}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 transition-colors hover:text-white"
+            style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
+          >
             Cancel
-          </Button>
-          <Button onClick={() => setStep(2)} disabled={!isStep1Valid}>
-            Next
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
-        </DialogFooter>
+          </button>
+          <button
+            onClick={() => setStep(2)}
+            disabled={!isStep1Valid}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+          >
+            Next <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       );
     }
 
     if (step === 2) {
       return (
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setStep(1)}>
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            Back
-          </Button>
-          <Button onClick={() => setStep(3)}>
-            Next
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
-        </DialogFooter>
+        <div className="flex justify-between px-6 py-4 rounded-b-2xl" style={{ borderTop: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
+          <button
+            onClick={() => setStep(1)}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 transition-colors hover:text-white flex items-center gap-1"
+            style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
+          >
+            <ChevronLeft className="h-4 w-4" /> Back
+          </button>
+          <button
+            onClick={() => setStep(3)}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/30 flex items-center gap-1"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+          >
+            Next <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       );
     }
 
     return (
-      <DialogFooter className="flex gap-2 sm:justify-between">
-        <Button variant="outline" onClick={() => setStep(2)} disabled={isLoading}>
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back
-        </Button>
+      <div className="flex justify-between px-6 py-4 rounded-b-2xl" style={{ borderTop: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
+        <button
+          onClick={() => setStep(2)}
+          disabled={isLoading}
+          className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 transition-colors hover:text-white disabled:opacity-50 flex items-center gap-1"
+          style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
+        >
+          <ChevronLeft className="h-4 w-4" /> Back
+        </button>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={handleSaveAsDraft} disabled={isLoading}>
-            <Save className="mr-1 h-4 w-4" />
+          <button
+            onClick={handleSaveAsDraft}
+            disabled={isLoading}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 transition-colors hover:text-white disabled:opacity-50 flex items-center gap-1"
+            style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
+          >
+            <Save className="h-4 w-4" />
             {isLoading ? 'Saving...' : 'Save as Draft'}
-          </Button>
-          <Button onClick={handleSendOffer} disabled={isLoading}>
-            <Send className="mr-1 h-4 w-4" />
+          </button>
+          <button
+            onClick={handleSendOffer}
+            disabled={isLoading}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+          >
+            <Send className="h-4 w-4" />
             {isLoading ? 'Sending...' : 'Send Offer'}
-          </Button>
+          </button>
         </div>
-      </DialogFooter>
+      </div>
     );
   };
 
@@ -547,17 +587,24 @@ export default function OfferModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className={useTemplate && step === 2 ? 'sm:max-w-2xl' : 'sm:max-w-lg'}>
-        <DialogHeader>
-          <DialogTitle>{stepTitles[step]}</DialogTitle>
-          <DialogDescription>Create and send an offer to {candidateName}.</DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className={`${useTemplate && step === 2 ? 'sm:max-w-2xl' : 'sm:max-w-lg'} border-0 rounded-2xl shadow-2xl p-0`}
+        style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
+      >
+        <div className="px-6 pt-6 pb-4 rounded-t-2xl" style={{ borderBottom: '1px solid var(--orbis-border)', background: 'rgba(27,142,229,0.08)' }}>
+          <DialogHeader>
+            <DialogTitle className="text-white">{stepTitles[step]}</DialogTitle>
+            <DialogDescription className="text-slate-400">Create and send an offer to {candidateName}.</DialogDescription>
+          </DialogHeader>
+        </div>
 
-        {renderStepIndicator()}
+        <div className="px-6 pt-4">
+          {renderStepIndicator()}
 
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
+        </div>
 
         {renderFooter()}
       </DialogContent>

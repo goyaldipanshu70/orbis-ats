@@ -14,32 +14,36 @@ interface Props {
 }
 
 const categories = [
-  { key: 'resume' as const, label: 'Resume', color: 'bg-blue-500', trackColor: 'bg-blue-100 dark:bg-blue-950/40' },
-  { key: 'interview' as const, label: 'Interview', color: 'bg-purple-500', trackColor: 'bg-purple-100 dark:bg-purple-950/40' },
-  { key: 'feedback' as const, label: 'Feedback', color: 'bg-emerald-500', trackColor: 'bg-emerald-100 dark:bg-emerald-950/40' },
-  { key: 'screening' as const, label: 'Screening', color: 'bg-amber-500', trackColor: 'bg-amber-100 dark:bg-amber-950/40' },
+  { key: 'resume' as const, label: 'Resume', color: 'bg-blue-500', trackBg: 'rgba(59,130,246,0.15)' },
+  { key: 'interview' as const, label: 'Interview', color: 'bg-blue-500', trackBg: 'rgba(168,85,247,0.15)' },
+  { key: 'feedback' as const, label: 'Feedback', color: 'bg-emerald-500', trackBg: 'rgba(16,185,129,0.15)' },
+  { key: 'screening' as const, label: 'Screening', color: 'bg-amber-500', trackBg: 'rgba(245,158,11,0.15)' },
 ];
 
 export default function RankBreakdownPopover({ breakdown, weights, trigger }: Props) {
   return (
     <Popover>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent className="w-72 p-4 rounded-xl" align="start">
-        <h4 className="text-sm font-semibold text-foreground mb-3">Score Breakdown</h4>
+      <PopoverContent
+        className="w-72 p-4 rounded-xl border-0"
+        style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
+        align="start"
+      >
+        <h4 className="text-sm font-semibold text-white mb-3">Score Breakdown</h4>
         <div className="space-y-3">
-          {categories.map(({ key, label, color, trackColor }) => {
+          {categories.map(({ key, label, color, trackBg }) => {
             const score = breakdown[key] ?? 0;
             const weight = weights[key] ?? 0;
             const weightPct = Math.round(weight * 100);
             return (
               <div key={key}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <span className="text-xs font-medium text-slate-400">
                     {label} <span className="text-[10px] opacity-60">({weightPct}%)</span>
                   </span>
-                  <span className="text-xs font-semibold text-foreground">{Math.round(score)}</span>
+                  <span className="text-xs font-semibold text-white">{Math.round(score)}</span>
                 </div>
-                <div className={`h-2 rounded-full ${trackColor} overflow-hidden`}>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: trackBg }}>
                   <div
                     className={`h-full rounded-full ${color} transition-all duration-500`}
                     style={{ width: `${Math.min(100, score)}%` }}

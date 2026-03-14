@@ -1,6 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DollarSign, RefreshCw, Loader2, TrendingUp, Info } from 'lucide-react';
 import { apiClient } from '@/utils/api';
@@ -17,6 +15,7 @@ interface SalaryEstimate {
 
 interface Props {
   jobTitle: string;
+  jdId?: number;
   location?: string;
   country?: string;
   seniority?: string;
@@ -32,18 +31,14 @@ function formatSalary(value: number, currency: string) {
 
 function getConfidenceColor(confidence: string) {
   switch (confidence) {
-    case 'high':
-      return 'bg-green-50 text-green-700 border-green-200';
-    case 'medium':
-      return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-    case 'low':
-      return 'bg-orange-50 text-orange-700 border-orange-200';
-    default:
-      return 'bg-slate-50 text-slate-700 border-slate-200';
+    case 'high': return { bg: 'rgba(34,197,94,0.1)', text: 'text-green-400', border: '1px solid rgba(34,197,94,0.2)' };
+    case 'medium': return { bg: 'rgba(234,179,8,0.1)', text: 'text-yellow-400', border: '1px solid rgba(234,179,8,0.2)' };
+    case 'low': return { bg: 'rgba(249,115,22,0.1)', text: 'text-orange-400', border: '1px solid rgba(249,115,22,0.2)' };
+    default: return { bg: 'var(--orbis-input)', text: 'text-slate-400', border: '1px solid var(--orbis-border)' };
   }
 }
 
-export default function SalaryInsightsCard({ jobTitle, location, country, seniority }: Props) {
+export default function SalaryInsightsCard({ jobTitle, jdId, location, country, seniority }: Props) {
   const [loading, setLoading] = useState(false);
   const [estimate, setEstimate] = useState<SalaryEstimate | null>(null);
   const [error, setError] = useState(false);
@@ -51,11 +46,11 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
   const lastQueryRef = useRef('');
   const { toast } = useToast();
 
-  const fetchEstimate = async (title: string) => {
+  const fetchEstimate = useCallback(async (title: string) => {
     if (!title.trim()) return;
 
     const queryKey = `${title}|${location}|${country}|${seniority}`;
-    if (queryKey === lastQueryRef.current && estimate) return;
+    if (queryKey === lastQueryRef.current) return;
     lastQueryRef.current = queryKey;
 
     setLoading(true);
@@ -77,13 +72,16 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
         source: res.source,
       };
       setEstimate(data);
+      if (jdId) {
+        try { await apiClient.setAICache('job', jdId, 'salary', data); } catch { /* non-critical */ }
+      }
     } catch (err: any) {
       setError(true);
       setEstimate(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [location, country, seniority, jdId]);
 
   // Auto-trigger with debounce when jobTitle changes
   useEffect(() => {
@@ -102,7 +100,7 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [jobTitle, location, country, seniority]);
+  }, [jobTitle, fetchEstimate]);
 
   const handleRefresh = () => {
     lastQueryRef.current = '';
@@ -113,33 +111,31 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
   if (!jobTitle.trim() && !loading && !estimate) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50">
-            <DollarSign className="w-3.5 h-3.5 text-indigo-600" />
+          <div className="flex h-6 w-6 items-center justify-center rounded-md" style={{ background: 'rgba(22,118,192,0.1)' }}>
+            <DollarSign className="w-3.5 h-3.5 text-blue-400" />
           </div>
-          <span className="text-sm font-semibold text-foreground">Salary Insights</span>
+          <span className="text-sm font-semibold text-white">Salary Insights</span>
         </div>
         <div className="flex items-center gap-2">
-          <Badge
-            variant="outline"
-            className="text-[10px] px-1.5 py-0 h-5 bg-indigo-50 text-indigo-600 border-indigo-200"
+          <span
+            className="inline-flex items-center text-[10px] px-1.5 py-0 h-5 rounded-md font-semibold"
+            style={{ background: 'rgba(22,118,192,0.1)', color: '#818cf8', border: '1px solid rgba(22,118,192,0.2)' }}
           >
             <TrendingUp className="w-2.5 h-2.5 mr-0.5" />
             AI-estimated
-          </Badge>
+          </span>
           {estimate && !loading && (
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
               onClick={handleRefresh}
+              className="h-6 w-6 flex items-center justify-center text-slate-500 hover:text-white transition-colors rounded-md"
             >
               <RefreshCw className="w-3 h-3" />
-            </Button>
+            </button>
           )}
         </div>
       </div>
@@ -149,12 +145,12 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
         {/* Loading state */}
         {loading && (
           <div className="space-y-3">
-            <Skeleton className="h-4 w-28" />
-            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-4 w-28 bg-white/10" />
+            <Skeleton className="h-3 w-full bg-white/10" />
             <div className="flex justify-between">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-20 bg-white/10" />
+              <Skeleton className="h-4 w-24 bg-white/10" />
+              <Skeleton className="h-4 w-20 bg-white/10" />
             </div>
           </div>
         )}
@@ -162,17 +158,16 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
         {/* Error state */}
         {error && !loading && (
           <div className="flex items-center justify-between py-1">
-            <p className="text-xs text-muted-foreground">Unable to estimate salary for this role.</p>
-            <Button
+            <p className="text-xs text-slate-500">Unable to estimate salary for this role.</p>
+            <button
               type="button"
-              variant="outline"
-              size="sm"
-              className="h-6 text-[11px] rounded-md"
               onClick={handleRefresh}
+              className="inline-flex items-center gap-1 h-6 px-2 text-[11px] font-medium rounded-md text-slate-300 transition-colors"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
             >
-              <RefreshCw className="w-3 h-3 mr-1" />
+              <RefreshCw className="w-3 h-3" />
               Retry
-            </Button>
+            </button>
           </div>
         )}
 
@@ -182,11 +177,11 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
             {/* Range bar visualization */}
             <div className="relative">
               {/* Track */}
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
                 <div
                   className="h-full rounded-full"
                   style={{
-                    background: 'linear-gradient(90deg, #c7d2fe 0%, #6366f1 50%, #c7d2fe 100%)',
+                    background: 'linear-gradient(90deg, rgba(27,142,229,0.3) 0%, #1B8EE5 50%, rgba(27,142,229,0.3) 100%)',
                     marginLeft: '10%',
                     width: '80%',
                   }}
@@ -196,20 +191,20 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
               {/* Labels below */}
               <div className="flex justify-between mt-2">
                 <div className="text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">P25</p>
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-[10px] text-slate-400 uppercase font-medium">P25</p>
+                  <p className="text-xs font-semibold text-slate-300">
                     {formatSalary(estimate.p25, estimate.currency)}
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] text-indigo-600 uppercase font-bold">Median</p>
-                  <p className="text-sm font-bold text-indigo-700">
+                  <p className="text-[10px] uppercase font-bold" style={{ color: '#4db5f0' }}>Median</p>
+                  <p className="text-sm font-bold" style={{ color: '#4db5f0' }}>
                     {formatSalary(estimate.p50, estimate.currency)}
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] text-muted-foreground uppercase font-medium">P75</p>
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-[10px] text-slate-400 uppercase font-medium">P75</p>
+                  <p className="text-xs font-semibold text-slate-300">
                     {formatSalary(estimate.p75, estimate.currency)}
                   </p>
                 </div>
@@ -218,13 +213,18 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
 
             {/* Confidence indicator */}
             <div className="flex items-center justify-between">
-              <Badge
-                variant="outline"
-                className={`text-[10px] px-1.5 py-0 h-5 ${getConfidenceColor(estimate.confidence)}`}
-              >
-                {estimate.confidence} confidence
-              </Badge>
-              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+              {(() => {
+                const cc = getConfidenceColor(estimate.confidence);
+                return (
+                  <span
+                    className={`inline-flex items-center text-[10px] px-1.5 py-0 h-5 rounded-md font-semibold ${cc.text}`}
+                    style={{ background: cc.bg, border: cc.border }}
+                  >
+                    {estimate.confidence} confidence
+                  </span>
+                );
+              })()}
+              <span className="flex items-center gap-1 text-[10px] text-slate-400">
                 <Info className="w-2.5 h-2.5" />
                 Estimates may vary by market
               </span>
@@ -234,7 +234,7 @@ export default function SalaryInsightsCard({ jobTitle, location, country, senior
 
         {/* Empty/waiting state */}
         {!loading && !error && !estimate && jobTitle.trim() && (
-          <div className="flex items-center gap-2 py-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 py-1 text-xs text-slate-500">
             <Loader2 className="w-3 h-3 animate-spin" />
             Estimating salary range...
           </div>

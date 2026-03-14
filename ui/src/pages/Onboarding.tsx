@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
@@ -25,6 +19,40 @@ import { DataPagination } from '@/components/DataPagination';
 import { fadeInUp, hoverLift, staggerContainer } from '@/lib/animations';
 import { StaggerGrid } from '@/components/ui/stagger-grid';
 import { CountingNumber } from '@/components/ui/counting-number';
+
+// ---------------------------------------------------------------------------
+// Glass Design System
+// ---------------------------------------------------------------------------
+
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+const gradientBtn: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #1B8EE5, #1676c0)',
+  boxShadow: '0 8px 24px rgba(27,142,229,0.2)',
+};
+const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
+const sItemCls = 'text-slate-200 focus:bg-white/10 focus:text-white';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -233,49 +261,83 @@ export default function Onboarding() {
   }, [templates, sortBy]);
 
   // -----------------------------------------------------------------------
-  // Checklist form
+  // Checklist form (used in Create & Edit dialogs)
   // -----------------------------------------------------------------------
 
   const checklistForm = (
     <div className="space-y-5 py-2">
       <div className="space-y-2">
-        <Label htmlFor="ob-title" className="text-sm font-medium">Template Name</Label>
-        <Input id="ob-title" placeholder="e.g. Engineering New Hire Onboarding" value={formTitle} onChange={(e) => setFormTitle(e.target.value)} className="rounded-xl" />
+        <label htmlFor="ob-title" className="text-sm font-medium text-slate-300">Template Name</label>
+        <input
+          id="ob-title"
+          placeholder="e.g. Engineering New Hire Onboarding"
+          value={formTitle}
+          onChange={(e) => setFormTitle(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          className="w-full h-10 px-3 rounded-xl text-sm outline-none placeholder:text-slate-500 transition-all"
+          style={glassInput}
+        />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="ob-desc" className="text-sm font-medium">Description</Label>
-        <Textarea id="ob-desc" placeholder="Brief description of this onboarding checklist..." value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} className="rounded-xl resize-none" />
+        <label htmlFor="ob-desc" className="text-sm font-medium text-slate-300">Description</label>
+        <textarea
+          id="ob-desc"
+          placeholder="Brief description of this onboarding checklist..."
+          value={formDescription}
+          onChange={(e) => setFormDescription(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          rows={2}
+          className="w-full px-3 py-2 rounded-xl text-sm outline-none resize-none placeholder:text-slate-500 transition-all"
+          style={glassInput}
+        />
       </div>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm font-medium">Checklist Items</Label>
-          <Button type="button" variant="ghost" size="sm" className="gap-1.5 text-xs h-8 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30" onClick={addChecklistItem}>
+          <label className="text-sm font-medium text-slate-300">Checklist Items</label>
+          <button
+            type="button"
+            onClick={addChecklistItem}
+            className="flex items-center gap-1.5 text-xs h-8 px-3 rounded-lg text-emerald-400 hover:text-emerald-300 transition-colors"
+            style={{ background: 'rgba(16,185,129,0.1)' }}
+          >
             <Plus className="h-3.5 w-3.5" />
             Add Step
-          </Button>
+          </button>
         </div>
         <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
           {formChecklist.map((item, index) => (
             <div key={index} className="flex items-center gap-2 group">
-              <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0 group-hover:text-muted-foreground transition-colors" />
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold">
+              <GripVertical className="h-4 w-4 text-slate-400 shrink-0 group-hover:text-slate-400 transition-colors" />
+              <div
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-emerald-300"
+                style={{ background: 'rgba(16,185,129,0.15)' }}
+              >
                 {index + 1}
               </div>
-              <Input
+              <input
                 placeholder={`Step ${index + 1}...`}
                 value={item}
                 onChange={(e) => updateChecklistItem(index, e.target.value)}
-                className="flex-1 rounded-xl"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                className="flex-1 h-9 px-3 rounded-xl text-sm outline-none placeholder:text-slate-500 transition-all"
+                style={glassInput}
               />
               {formChecklist.length > 1 && (
-                <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground/40 hover:text-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeChecklistItem(index)}>
+                <button
+                  type="button"
+                  onClick={() => removeChecklistItem(index)}
+                  className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                >
                   <X className="h-3.5 w-3.5" />
-                </Button>
+                </button>
               )}
             </div>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground/70">Add the steps a new hire should complete during onboarding.</p>
+        <p className="text-xs text-slate-500">Add the steps a new hire should complete during onboarding.</p>
       </div>
     </div>
   );
@@ -299,18 +361,19 @@ export default function Onboarding() {
               <ClipboardCheck className="h-7 w-7" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Onboarding Checklists</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Create and manage structured onboarding programs for new hires</p>
+              <h1 className="text-2xl font-bold tracking-tight text-white">Onboarding Checklists</h1>
+              <p className="text-sm text-slate-400 mt-0.5">Create and manage structured onboarding programs for new hires</p>
             </div>
           </div>
           {canWrite && (
-            <Button
+            <button
               onClick={() => setCreateOpen(true)}
-              className="gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-200 px-5"
+              className="flex items-center gap-2 rounded-xl text-white shadow-md hover:shadow-lg transition-all duration-200 px-5 h-10 text-sm font-medium hover:brightness-110"
+              style={gradientBtn}
             >
               <Plus className="h-4 w-4" />
               New Template
-            </Button>
+            </button>
           )}
         </motion.div>
 
@@ -326,47 +389,44 @@ export default function Onboarding() {
               label: 'Total Templates',
               value: paginationMeta.total,
               icon: LayoutTemplate,
-              color: 'emerald',
               gradient: 'from-emerald-500 to-teal-500',
-              bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-              text: 'text-emerald-700 dark:text-emerald-300',
+              iconColor: 'text-emerald-400',
+              iconBg: 'rgba(16,185,129,0.12)',
             },
             {
               label: 'Total Steps',
               value: totalSteps,
               icon: ListChecks,
-              color: 'blue',
-              gradient: 'from-blue-500 to-indigo-500',
-              bg: 'bg-blue-50 dark:bg-blue-950/30',
-              text: 'text-blue-700 dark:text-blue-300',
+              gradient: 'from-blue-500 to-blue-500',
+              iconColor: 'text-blue-400',
+              iconBg: 'rgba(59,130,246,0.12)',
             },
             {
               label: 'Avg Steps per Template',
               value: avgSteps,
               icon: Sparkles,
-              color: 'violet',
-              gradient: 'from-violet-500 to-purple-500',
-              bg: 'bg-violet-50 dark:bg-violet-950/30',
-              text: 'text-violet-700 dark:text-violet-300',
+              gradient: 'from-blue-500 to-blue-500',
+              iconColor: 'text-blue-400',
+              iconBg: 'rgba(27,142,229,0.12)',
             },
           ].map((stat) => (
             <motion.div key={stat.label} variants={fadeInUp}>
-              <Card className="rounded-xl border-0 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden">
-                <CardContent className="p-5">
+              <div className="rounded-xl overflow-hidden" style={glassCard}>
+                <div className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                      <p className="text-3xl font-bold tracking-tight text-foreground">
+                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">{stat.label}</p>
+                      <p className="text-3xl font-bold tracking-tight text-white">
                         <CountingNumber value={stat.value} />
                       </p>
                     </div>
-                    <div className={`p-3 rounded-xl ${stat.bg}`}>
-                      <stat.icon className={`h-5 w-5 ${stat.text}`} />
+                    <div className="p-3 rounded-xl" style={{ background: stat.iconBg }}>
+                      <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
                     </div>
                   </div>
                   <div className={`mt-3 h-1 rounded-full bg-gradient-to-r ${stat.gradient} opacity-60`} />
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           ))}
         </motion.div>
@@ -379,24 +439,27 @@ export default function Onboarding() {
           className="flex flex-col sm:flex-row items-start sm:items-center gap-3"
         >
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
-            <Input
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <input
               placeholder="Search onboarding templates..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 rounded-xl border-muted-foreground/15 bg-background shadow-sm focus:shadow-md transition-shadow"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="w-full h-10 pl-10 pr-3 rounded-xl text-sm outline-none placeholder:text-slate-500 transition-all"
+              style={glassInput}
             />
           </div>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[170px] h-9 text-xs rounded-xl">
-              <ArrowUpDown className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+            <SelectTrigger className="w-[170px] h-9 text-xs text-white border-0 rounded-xl" style={glassInput}>
+              <ArrowUpDown className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name-asc">Name A-Z</SelectItem>
-              <SelectItem value="name-desc">Name Z-A</SelectItem>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="oldest">Oldest</SelectItem>
+            <SelectContent className="rounded-xl border-0" style={selectDrop}>
+              <SelectItem className={sItemCls} value="name-asc">Name A-Z</SelectItem>
+              <SelectItem className={sItemCls} value="name-desc">Name Z-A</SelectItem>
+              <SelectItem className={sItemCls} value="newest">Newest</SelectItem>
+              <SelectItem className={sItemCls} value="oldest">Oldest</SelectItem>
             </SelectContent>
           </Select>
         </motion.div>
@@ -405,22 +468,22 @@ export default function Onboarding() {
         {loading ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="rounded-xl animate-pulse overflow-hidden">
-                <CardContent className="p-6 space-y-4">
+              <div key={i} className="rounded-xl animate-pulse overflow-hidden" style={glassCard}>
+                <div className="p-6 space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-muted" />
+                    <div className="h-10 w-10 rounded-xl" style={{ background: 'var(--orbis-border)' }} />
                     <div className="space-y-2 flex-1">
-                      <div className="h-4 w-3/4 bg-muted rounded-lg" />
-                      <div className="h-3 w-1/2 bg-muted rounded-lg" />
+                      <div className="h-4 w-3/4 rounded-lg" style={{ background: 'var(--orbis-border)' }} />
+                      <div className="h-3 w-1/2 rounded-lg" style={{ background: 'var(--orbis-border)' }} />
                     </div>
                   </div>
                   <div className="space-y-2 pt-2">
-                    <div className="h-3 w-full bg-muted rounded-lg" />
-                    <div className="h-3 w-5/6 bg-muted rounded-lg" />
-                    <div className="h-3 w-2/3 bg-muted rounded-lg" />
+                    <div className="h-3 w-full rounded-lg" style={{ background: 'var(--orbis-border)' }} />
+                    <div className="h-3 w-5/6 rounded-lg" style={{ background: 'var(--orbis-border)' }} />
+                    <div className="h-3 w-2/3 rounded-lg" style={{ background: 'var(--orbis-border)' }} />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         ) : templates.length === 0 ? (
@@ -430,24 +493,24 @@ export default function Onboarding() {
             transition={{ duration: 0.5 }}
             className="flex flex-col items-center justify-center py-20 text-center"
           >
-            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 mb-5">
-              <ClipboardCheck className="h-10 w-10 text-emerald-500" />
+            <div className="p-5 rounded-2xl mb-5" style={{ background: 'rgba(16,185,129,0.1)' }}>
+              <ClipboardCheck className="h-10 w-10 text-emerald-400" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-1.5">No onboarding templates yet</h3>
-            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
+            <h3 className="text-lg font-semibold text-white mb-1.5">No onboarding templates yet</h3>
+            <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               {searchQuery
                 ? 'Try adjusting your search to find what you are looking for.'
                 : 'Create your first onboarding checklist template to streamline new hire setup.'}
             </p>
             {canWrite && !searchQuery && (
-              <Button
+              <button
                 onClick={() => setCreateOpen(true)}
-                variant="outline"
-                className="gap-2 mt-5 rounded-xl border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                className="flex items-center gap-2 mt-5 rounded-xl text-emerald-400 hover:text-emerald-300 px-4 h-10 text-sm font-medium transition-colors"
+                style={{ background: 'var(--orbis-card)', border: '1px solid rgba(16,185,129,0.3)' }}
               >
                 <Plus className="h-4 w-4" />
                 Create Template
-              </Button>
+              </button>
             )}
           </motion.div>
         ) : (
@@ -457,36 +520,45 @@ export default function Onboarding() {
                 const progressPercent = Math.min(100, (t.checklist.length / 10) * 100);
                 return (
                   <motion.div key={t.id} variants={fadeInUp} whileHover={hoverLift}>
-                    <Card className="group rounded-xl border border-border/50 hover:border-emerald-200 dark:hover:border-emerald-800/60 hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden">
+                    <div
+                      className="group rounded-xl flex flex-col overflow-hidden hover:shadow-lg hover:shadow-emerald-500/5 transition-all duration-300"
+                      style={{ ...glassCard, borderColor: 'var(--orbis-hover)' }}
+                    >
                       {/* Card top accent bar */}
                       <div className="h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                       <div className="p-5 flex flex-col flex-1">
                         {/* Header */}
                         <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 shrink-0 group-hover:bg-emerald-100 dark:group-hover:bg-emerald-900/40 transition-colors">
-                            <ClipboardCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                          <div
+                            className="p-2.5 rounded-xl shrink-0 group-hover:brightness-125 transition-all"
+                            style={{ background: 'rgba(16,185,129,0.1)' }}
+                          >
+                            <ClipboardCheck className="h-5 w-5 text-emerald-400" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
+                            <h3 className="text-sm font-semibold text-white line-clamp-1 group-hover:text-emerald-300 transition-colors">
                               {t.title}
                             </h3>
                             {t.description && (
-                              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 leading-relaxed">{t.description}</p>
+                              <p className="text-xs text-slate-400 line-clamp-2 mt-0.5 leading-relaxed">{t.description}</p>
                             )}
                           </div>
-                          <Badge className="shrink-0 text-[10px] px-2 py-0.5 gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 font-medium">
+                          <span
+                            className="shrink-0 text-[10px] px-2 py-0.5 rounded-lg text-emerald-300 font-medium inline-flex items-center gap-1"
+                            style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.2)' }}
+                          >
                             {t.checklist.length} steps
-                          </Badge>
+                          </span>
                         </div>
 
                         {/* Progress indicator */}
                         <div className="mb-4">
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground">Complexity</span>
-                            <span className="text-[10px] text-muted-foreground">{t.checklist.length} / 10</span>
+                            <span className="text-[10px] uppercase tracking-wider font-medium text-slate-500">Complexity</span>
+                            <span className="text-[10px] text-slate-500">{t.checklist.length} / 10</span>
                           </div>
-                          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
                             <motion.div
                               className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500"
                               initial={{ width: 0 }}
@@ -500,16 +572,19 @@ export default function Onboarding() {
                         <div className="space-y-2 flex-1">
                           {t.checklist.slice(0, 3).map((item, idx) => (
                             <div key={idx} className="flex items-start gap-2.5 text-xs">
-                              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30 mt-0.5">
-                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                              <div
+                                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full mt-0.5"
+                                style={{ background: 'rgba(16,185,129,0.12)' }}
+                              >
+                                <CheckCircle2 className="h-3 w-3 text-emerald-400" />
                               </div>
-                              <span className="text-muted-foreground line-clamp-1 pt-0.5">{itemText(item)}</span>
+                              <span className="text-slate-400 line-clamp-1 pt-0.5">{itemText(item)}</span>
                             </div>
                           ))}
                           {t.checklist.length > 3 && (
                             <button
                               onClick={() => setPreviewTarget(t)}
-                              className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium pl-7 transition-colors"
+                              className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-medium pl-7 transition-colors"
                             >
                               +{t.checklist.length - 3} more steps
                               <ArrowRight className="h-3 w-3" />
@@ -518,47 +593,44 @@ export default function Onboarding() {
                         </div>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/50">
-                          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+                        <div className="flex items-center justify-between pt-4 mt-4" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
                             <Calendar className="h-3 w-3" />
                             {format(new Date(t.created_at), 'MMM d, yyyy')}
                           </div>
                           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                            <button
+                              className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-emerald-400 transition-colors"
+                              style={{ background: 'transparent' }}
                               title="Preview"
                               onClick={() => setPreviewTarget(t)}
                             >
                               <ListChecks className="h-4 w-4" />
-                            </Button>
+                            </button>
                             {canWrite && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                              <button
+                                className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-amber-400 transition-colors"
+                                style={{ background: 'transparent' }}
                                 title="Edit"
                                 onClick={() => openEdit(t)}
                               >
                                 <Pencil className="h-4 w-4" />
-                              </Button>
+                              </button>
                             )}
                             {(isAdmin()) && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                              <button
+                                className="h-8 w-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 transition-colors"
+                                style={{ background: 'transparent' }}
                                 title="Delete"
                                 onClick={() => setDeleteTarget(t)}
                               >
                                 <Trash2 className="h-4 w-4" />
-                              </Button>
+                              </button>
                             )}
                           </div>
                         </div>
                       </div>
-                    </Card>
+                    </div>
                   </motion.div>
                 );
               })}
@@ -570,16 +642,16 @@ export default function Onboarding() {
 
       {/* Preview Dialog */}
       <Dialog open={!!previewTarget} onOpenChange={() => setPreviewTarget(null)}>
-        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col sm:rounded-2xl">
+        <DialogContent className="max-w-lg max-h-[85vh] flex flex-col sm:rounded-2xl border-0" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
             <div className="flex items-center gap-3 mb-1">
-              <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30">
-                <ClipboardCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              <div className="p-2 rounded-xl" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                <ClipboardCheck className="h-5 w-5 text-emerald-400" />
               </div>
               <div>
-                <DialogTitle className="text-lg">{previewTarget?.title}</DialogTitle>
+                <DialogTitle className="text-lg text-white">{previewTarget?.title}</DialogTitle>
                 {previewTarget?.description && (
-                  <DialogDescription className="mt-0.5">{previewTarget.description}</DialogDescription>
+                  <DialogDescription className="mt-0.5 text-slate-400">{previewTarget.description}</DialogDescription>
                 )}
               </div>
             </div>
@@ -587,10 +659,10 @@ export default function Onboarding() {
 
           {/* Progress summary */}
           {previewTarget && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/50">
-              <ListChecks className="h-4 w-4 text-emerald-500" />
-              <span className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">{previewTarget.checklist.length}</span> steps to complete
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'var(--orbis-grid)' }}>
+              <ListChecks className="h-4 w-4 text-emerald-400" />
+              <span className="text-sm text-slate-400">
+                <span className="font-semibold text-white">{previewTarget.checklist.length}</span> steps to complete
               </span>
             </div>
           )}
@@ -600,94 +672,129 @@ export default function Onboarding() {
               <motion.div
                 key={idx}
                 variants={fadeInUp}
-                className="flex items-start gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors group"
+                className="flex items-start gap-3 p-3 rounded-xl transition-colors group"
+                style={{ background: 'transparent' }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'var(--orbis-grid)'; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
               >
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-xs font-bold shadow-sm">
                   {idx + 1}
                 </div>
-                <span className="text-sm text-foreground pt-1 leading-relaxed">{itemText(item)}</span>
+                <span className="text-sm text-slate-300 pt-1 leading-relaxed">{itemText(item)}</span>
               </motion.div>
             ))}
           </StaggerGrid>
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setPreviewTarget(null)} className="rounded-xl">Close</Button>
+            <button
+              onClick={() => setPreviewTarget(null)}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              style={glassInput}
+            >
+              Close
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Create Dialog */}
       <Dialog open={createOpen} onOpenChange={(open) => { setCreateOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:rounded-2xl">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:rounded-2xl border-0" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
             <div className="flex items-center gap-3 mb-1">
-              <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30">
-                <Plus className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              <div className="p-2 rounded-xl" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                <Plus className="h-5 w-5 text-emerald-400" />
               </div>
               <div>
-                <DialogTitle>New Onboarding Template</DialogTitle>
-                <DialogDescription>Create a reusable onboarding checklist for new hires.</DialogDescription>
+                <DialogTitle className="text-white">New Onboarding Template</DialogTitle>
+                <DialogDescription className="text-slate-400">Create a reusable onboarding checklist for new hires.</DialogDescription>
               </div>
             </div>
           </DialogHeader>
           {checklistForm}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)} className="rounded-xl">Cancel</Button>
-            <Button
+            <button
+              onClick={() => setCreateOpen(false)}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              style={glassInput}
+            >
+              Cancel
+            </button>
+            <button
               onClick={handleCreate}
               disabled={saving}
-              className="gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+              className="flex items-center gap-2 h-9 px-5 rounded-xl text-sm font-medium text-white hover:brightness-110 transition-all disabled:opacity-50"
+              style={gradientBtn}
             >
               {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Creating...</> : 'Create Template'}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={!!editTarget} onOpenChange={(open) => { if (!open) { setEditTarget(null); resetForm(); } }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:rounded-2xl">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto sm:rounded-2xl border-0" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
             <div className="flex items-center gap-3 mb-1">
-              <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/30">
-                <Pencil className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+              <div className="p-2 rounded-xl" style={{ background: 'rgba(245,158,11,0.12)' }}>
+                <Pencil className="h-5 w-5 text-amber-400" />
               </div>
               <div>
-                <DialogTitle>Edit Onboarding Template</DialogTitle>
-                <DialogDescription>Update the onboarding checklist.</DialogDescription>
+                <DialogTitle className="text-white">Edit Onboarding Template</DialogTitle>
+                <DialogDescription className="text-slate-400">Update the onboarding checklist.</DialogDescription>
               </div>
             </div>
           </DialogHeader>
           {checklistForm}
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setEditTarget(null); resetForm(); }} className="rounded-xl">Cancel</Button>
-            <Button
+            <button
+              onClick={() => { setEditTarget(null); resetForm(); }}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              style={glassInput}
+            >
+              Cancel
+            </button>
+            <button
               onClick={handleEdit}
               disabled={saving}
-              className="gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+              className="flex items-center gap-2 h-9 px-5 rounded-xl text-sm font-medium text-white hover:brightness-110 transition-all disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)', boxShadow: '0 8px 24px rgba(245,158,11,0.2)' }}
             >
               {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : 'Save Changes'}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <DialogContent className="max-w-sm sm:rounded-2xl">
+        <DialogContent className="max-w-sm sm:rounded-2xl border-0" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
             <div className="flex items-center gap-3 mb-1">
-              <div className="p-2 rounded-xl bg-red-50 dark:bg-red-950/30">
-                <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <div className="p-2 rounded-xl" style={{ background: 'rgba(239,68,68,0.12)' }}>
+                <Trash2 className="h-5 w-5 text-red-400" />
               </div>
               <div>
-                <DialogTitle>Delete Template</DialogTitle>
-                <DialogDescription>Are you sure you want to delete &ldquo;{deleteTarget?.title}&rdquo;? This action cannot be undone.</DialogDescription>
+                <DialogTitle className="text-white">Delete Template</DialogTitle>
+                <DialogDescription className="text-slate-400">Are you sure you want to delete &ldquo;{deleteTarget?.title}&rdquo;? This action cannot be undone.</DialogDescription>
               </div>
             </div>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} className="rounded-xl">Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} className="gap-2 rounded-xl"><Trash2 className="h-4 w-4" />Delete</Button>
+            <button
+              onClick={() => setDeleteTarget(null)}
+              className="h-9 px-4 rounded-xl text-sm font-medium text-slate-300 hover:text-white transition-colors"
+              style={glassInput}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-2 h-9 px-5 rounded-xl text-sm font-medium text-white hover:brightness-110 transition-all"
+              style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 8px 24px rgba(239,68,68,0.2)' }}
+            >
+              <Trash2 className="h-4 w-4" />Delete
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

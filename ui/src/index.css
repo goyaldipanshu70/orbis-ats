@@ -4,51 +4,59 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ── TurboHire-inspired light mode ── */
+    --background: 210 25% 98%;       /* #f7f9fb */
+    --foreground: 0 0% 6%;           /* #101010 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;               /* #ffffff */
+    --card-foreground: 0 0% 6%;      /* #101010 */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 6%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 207 79% 50%;          /* #1B8EE5 — TurboHire blue */
+    --primary-foreground: 0 0% 100%; /* white */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 25% 97%;        /* #f7f9fb */
+    --secondary-foreground: 0 0% 6%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 20% 96%;            /* ~#f0f2f5 */
+    --muted-foreground: 0 0% 32%;    /* #515151 */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 20% 96%;
+    --accent-foreground: 0 0% 6%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 92%;              /* #eaeaea */
+    --input: 240 20% 95%;            /* #f0f0f5 */
+    --ring: 207 79% 50%;             /* #1B8EE5 */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 6%;
+    --sidebar-primary: 207 79% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 20% 96%;
+    --sidebar-accent-foreground: 0 0% 6%;
+    --sidebar-border: 0 0% 92%;
+    --sidebar-ring: 207 79% 50%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* ── Orbis surface tokens (light mode — TurboHire palette) ── */
+    --orbis-page: #f7f9fb;
+    --orbis-card: #ffffff;
+    --orbis-input: #f0f0f5;
+    --orbis-hover: #edf0f4;
+    --orbis-border: #eaeaea;
+    --orbis-border-strong: #d0d0d5;
+    --orbis-subtle: #f7f9fb;
+    --orbis-overlay: rgba(255,255,255,0.92);
+    --orbis-dropdown: rgba(255,255,255,0.99);
+    --orbis-grid: rgba(0,0,0,0.04);
+    --orbis-card-shadow: 0 4px 24px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+    --orbis-dropdown-shadow: 0 10px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
   }
 
   .dark {
@@ -87,6 +95,28 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* ── Orbis surface tokens (dark mode) ── */
+    --orbis-page: #0a0f1e;
+    --orbis-card: #141b2d;
+    --orbis-input: #0d1425;
+    --orbis-hover: #1a2332;
+    --orbis-border: #1e293b;
+    --orbis-border-strong: #334155;
+    --orbis-subtle: #0d1220;
+    --orbis-overlay: rgba(10,15,30,0.85);
+    --orbis-dropdown: rgba(20,27,45,0.98);
+    --orbis-grid: rgba(30,41,59,0.4);
+    --orbis-card-shadow: none;
+    --orbis-dropdown-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+}
+
+/* ── Light-mode card elevation ───────────────────────────────────────── */
+/* Adds subtle shadow + stronger border to card-background elements     */
+@layer base {
+  :root:not(.dark) [style*="--orbis-card"] {
+    box-shadow: var(--orbis-card-shadow);
   }
 }
 
@@ -106,20 +136,20 @@
   /* Each accent class overrides --primary, --primary-foreground, --ring,
      --sidebar-primary, and --sidebar-ring for both light and dark modes. */
 
-  /* Blue (default — matches the default :root values) */
+  /* Blue (TurboHire #1B8EE5) */
   .accent-blue {
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --ring: 221.2 83.2% 53.3%;
-    --sidebar-primary: 221.2 83.2% 53.3%;
-    --sidebar-ring: 221.2 83.2% 53.3%;
+    --primary: 207 79% 50%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 207 79% 50%;
+    --sidebar-primary: 207 79% 50%;
+    --sidebar-ring: 207 79% 50%;
   }
   .dark.accent-blue {
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --ring: 217.2 91.2% 59.8%;
-    --sidebar-primary: 217.2 91.2% 59.8%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --primary: 207 85% 56%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 207 85% 56%;
+    --sidebar-primary: 207 85% 56%;
+    --sidebar-ring: 207 85% 56%;
   }
 
   /* Green */
@@ -203,6 +233,299 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT-MODE OVERRIDES — TurboHire-inspired palette
+   Colors: #101010 headings · #3F3F3F body · #515151 muted
+           #1B8EE5 primary blue · #172153 dark blue
+           #f7f9fb section bg · #eaeaea borders
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Text color overrides ────────────────────────────────────────────── */
+@layer utilities {
+  :root:not(.dark) .text-white {
+    color: #101010;
+  }
+  :root:not(.dark) .text-slate-100 {
+    color: #101010;
+  }
+  :root:not(.dark) .text-slate-200 {
+    color: #1a1a1a;
+  }
+  :root:not(.dark) .text-slate-300 {
+    color: #3F3F3F;
+  }
+  :root:not(.dark) .text-slate-400 {
+    color: #515151;
+  }
+  :root:not(.dark) .text-slate-500 {
+    color: #515151;
+  }
+
+  /* Indigo text → TurboHire blue */
+  :root:not(.dark) .text-indigo-300 {
+    color: #1B8EE5;
+  }
+  :root:not(.dark) .text-indigo-400 {
+    color: #1676c0;
+  }
+  :root:not(.dark) .text-indigo-500 {
+    color: #1B8EE5;
+  }
+
+  /* Purple text → darker for readability */
+  :root:not(.dark) .text-purple-300 {
+    color: #6d28d9;
+  }
+  :root:not(.dark) .text-purple-400 {
+    color: #1676c0;
+  }
+
+  /* Amber/warning text → darker for readability */
+  :root:not(.dark) .text-amber-300 {
+    color: #b45309;
+  }
+
+  /* Green text → darker */
+  :root:not(.dark) .text-green-300 {
+    color: #15803d;
+  }
+  :root:not(.dark) .text-green-400 {
+    color: #16a34a;
+  }
+  :root:not(.dark) .text-emerald-300 {
+    color: #059669;
+  }
+  :root:not(.dark) .text-emerald-400 {
+    color: #059669;
+  }
+
+  /* Red text → keep vibrant but darker */
+  :root:not(.dark) .text-red-300 {
+    color: #dc2626;
+  }
+  :root:not(.dark) .text-red-400 {
+    color: #dc2626;
+  }
+
+  /* Blue text */
+  :root:not(.dark) .text-blue-300 {
+    color: #1B8EE5;
+  }
+  :root:not(.dark) .text-blue-400 {
+    color: #1B8EE5;
+  }
+
+  /* Protect white text on gradient / brand-colored backgrounds */
+  :root:not(.dark) [style*="gradient"] .text-white,
+  :root:not(.dark) [style*="gradient"].text-white,
+  :root:not(.dark) [style*="#1B8EE5"] .text-white,
+  :root:not(.dark) [style*="#1B8EE5"].text-white,
+  :root:not(.dark) [style*="#1676c0"] .text-white,
+  :root:not(.dark) [style*="#1676c0"].text-white,
+  :root:not(.dark) [style*="#1B8EE5"] .text-white,
+  :root:not(.dark) [style*="#1B8EE5"].text-white,
+  :root:not(.dark) [class*="bg-primary"] .text-white,
+  :root:not(.dark) .bg-destructive .text-white,
+  :root:not(.dark) .msg-user.text-white,
+  :root:not(.dark) .msg-user .text-white {
+    color: #ffffff;
+  }
+}
+
+/* ── Background overrides ────────────────────────────────────────────── */
+@layer utilities {
+  /* Slate-800 backgrounds → light surfaces */
+  :root:not(.dark) .bg-slate-800\/30 {
+    background-color: rgba(0,0,0,0.015);
+  }
+  :root:not(.dark) .bg-slate-800\/40 {
+    background-color: rgba(0,0,0,0.02);
+  }
+  :root:not(.dark) .bg-slate-800\/50 {
+    background-color: rgba(0,0,0,0.025);
+  }
+  :root:not(.dark) .bg-slate-800\/60 {
+    background-color: rgba(0,0,0,0.03);
+  }
+  :root:not(.dark) .bg-slate-800\/80 {
+    background-color: #f7f9fb;
+  }
+  :root:not(.dark) .bg-slate-800 {
+    background-color: #f0f0f5;
+  }
+
+  /* Hover variants */
+  :root:not(.dark) .hover\:bg-slate-800\/50:hover,
+  :root:not(.dark) .hover\:bg-slate-800\/60:hover {
+    background-color: rgba(0,0,0,0.04);
+  }
+  :root:not(.dark) .hover\:bg-slate-800:hover {
+    background-color: #eaeaea;
+  }
+
+  /* Slate-900 backgrounds */
+  :root:not(.dark) .bg-slate-900 {
+    background-color: #ffffff;
+  }
+  :root:not(.dark) .bg-slate-900\/50 {
+    background-color: #f7f9fb;
+  }
+  :root:not(.dark) .bg-slate-900\/80 {
+    background-color: #f7f9fb;
+  }
+  :root:not(.dark) .bg-slate-900\/90 {
+    background-color: #f7f9fb;
+  }
+
+  /* Slate-700 backgrounds → separator/hover */
+  :root:not(.dark) .bg-slate-700 {
+    background-color: #eaeaea;
+  }
+  :root:not(.dark) .bg-slate-700\/50 {
+    background-color: rgba(0,0,0,0.04);
+  }
+  :root:not(.dark) .hover\:bg-slate-700\/50:hover {
+    background-color: rgba(0,0,0,0.06);
+  }
+  :root:not(.dark) .hover\:bg-slate-700:hover {
+    background-color: #e0e0e5;
+  }
+
+  /* White-opacity backgrounds (dark-mode highlights → light-mode subtle) */
+  :root:not(.dark) .bg-white\/5,
+  :root:not(.dark) .bg-white\/10,
+  :root:not(.dark) .bg-white\/\[0\.03\],
+  :root:not(.dark) .bg-white\/\[0\.04\],
+  :root:not(.dark) .bg-white\/\[0\.05\],
+  :root:not(.dark) .bg-white\/\[0\.06\] {
+    background-color: rgba(0,0,0,0.02);
+  }
+
+  /* Hover white-opacity backgrounds */
+  :root:not(.dark) .hover\:bg-white\/5:hover,
+  :root:not(.dark) .hover\:bg-white\/10:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.02\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.03\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.04\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.05\]:hover,
+  :root:not(.dark) .hover\:bg-white\/\[0\.06\]:hover {
+    background-color: rgba(0,0,0,0.04);
+  }
+
+  /* Focus backgrounds */
+  :root:not(.dark) .focus\:bg-white\/10:focus,
+  :root:not(.dark) .focus\:bg-white\/\[0\.05\]:focus {
+    background-color: rgba(0,0,0,0.04);
+  }
+
+  /* Data-state active (tabs) */
+  :root:not(.dark) .data-\[state\=active\]\:bg-white\/10[data-state="active"] {
+    background-color: rgba(0,0,0,0.04);
+  }
+
+  /* Indigo backgrounds → TurboHire blue tones */
+  :root:not(.dark) .bg-indigo-500\/10 {
+    background-color: rgba(27,142,229,0.06);
+  }
+  :root:not(.dark) .bg-indigo-500\/20 {
+    background-color: rgba(27,142,229,0.10);
+  }
+  :root:not(.dark) .bg-indigo-500\/30 {
+    background-color: rgba(27,142,229,0.12);
+  }
+
+  /* Purple bg opacity variants */
+  :root:not(.dark) .bg-purple-500\/10,
+  :root:not(.dark) .bg-purple-500\/20 {
+    background-color: rgba(109,40,217,0.06);
+  }
+
+  /* Amber bg opacity variants */
+  :root:not(.dark) .bg-amber-500\/10,
+  :root:not(.dark) .bg-amber-500\/20 {
+    background-color: rgba(180,83,9,0.06);
+  }
+
+  /* Green bg opacity variants */
+  :root:not(.dark) .bg-green-500\/10,
+  :root:not(.dark) .bg-green-500\/20,
+  :root:not(.dark) .bg-emerald-500\/10,
+  :root:not(.dark) .bg-emerald-500\/20 {
+    background-color: rgba(21,128,61,0.06);
+  }
+
+  /* Red bg opacity variants */
+  :root:not(.dark) .bg-red-500\/10,
+  :root:not(.dark) .bg-red-500\/20 {
+    background-color: rgba(220,38,38,0.06);
+  }
+
+  /* Blue bg opacity variants */
+  :root:not(.dark) .bg-blue-500\/10,
+  :root:not(.dark) .bg-blue-500\/20 {
+    background-color: rgba(27,142,229,0.06);
+  }
+}
+
+/* ── Border overrides ────────────────────────────────────────────────── */
+@layer utilities {
+  :root:not(.dark) .border-slate-700\/50,
+  :root:not(.dark) .border-slate-700\/30 {
+    border-color: #eaeaea;
+  }
+  :root:not(.dark) .border-slate-700 {
+    border-color: #e0e0e5;
+  }
+  :root:not(.dark) .border-slate-600 {
+    border-color: #d0d0d5;
+  }
+  :root:not(.dark) .border-slate-600\/50 {
+    border-color: #e0e0e5;
+  }
+
+  /* White-opacity borders */
+  :root:not(.dark) .border-white\/5,
+  :root:not(.dark) .border-white\/10,
+  :root:not(.dark) .border-white\/20,
+  :root:not(.dark) .border-white\/\[0\.06\] {
+    border-color: #eaeaea;
+  }
+  :root:not(.dark) .hover\:border-white\/20:hover {
+    border-color: #d0d0d5;
+  }
+
+  /* Indigo borders → TurboHire blue */
+  :root:not(.dark) .border-indigo-500\/30,
+  :root:not(.dark) .border-indigo-500\/50 {
+    border-color: rgba(27,142,229,0.20);
+  }
+
+  /* Dividers */
+  :root:not(.dark) .divide-white\/5 > * + *,
+  :root:not(.dark) .divide-white\/\[0\.06\] > * + *,
+  :root:not(.dark) .divide-slate-700\/50 > * + * {
+    border-color: #eaeaea;
+  }
+}
+
+/* ── Placeholder overrides ───────────────────────────────────────────── */
+@layer utilities {
+  :root:not(.dark) .placeholder\:text-slate-500::placeholder,
+  :root:not(.dark) .placeholder\:text-slate-400::placeholder {
+    color: #94a3b8;
+  }
+}
+
+/* ── Focus ring overrides ────────────────────────────────────────────── */
+@layer utilities {
+  :root:not(.dark) .focus\:ring-indigo-500\/50:focus {
+    --tw-ring-color: rgba(27,142,229,0.25);
+  }
+  :root:not(.dark) .ring-indigo-500\/30 {
+    --tw-ring-color: rgba(27,142,229,0.15);
+  }
+}
+
 /* ── Custom scrollbar ── */
 @layer utilities {
   .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -245,7 +568,7 @@
   /* Sidebar dark scrollbar */
   .sidebar-dark::-webkit-scrollbar { width: 3px; }
   .sidebar-dark::-webkit-scrollbar-track { background: transparent; }
-  .sidebar-dark::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.08); border-radius: 9999px; }
+  .sidebar-dark::-webkit-scrollbar-thumb { background-color: var(--orbis-hover); border-radius: 9999px; }
 
   /* AI Interview waveform animation */
   @keyframes waveform {

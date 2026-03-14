@@ -10,6 +10,9 @@ class FilterNode(BaseNode):
         "min_score": {"type": "number", "default": 0, "description": "Minimum score threshold"},
         "location": {"type": "string", "description": "Required location substring"},
         "has_email": {"type": "boolean", "default": False, "description": "Require email address"},
+        "min_experience": {"type": "number", "description": "Minimum years of experience"},
+        "max_experience": {"type": "number", "description": "Maximum years of experience"},
+        "required_skills": {"type": "array", "description": "Required skills (at least one must match)"},
         "max_results": {"type": "integer", "description": "Maximum number of results to keep"},
     }
 
@@ -19,6 +22,16 @@ class FilterNode(BaseNode):
         min_score = float(self.config.get("min_score", 0))
         required_location = self.config.get("location", "")
         has_email = self.config.get("has_email", False)
+        min_experience = self.config.get("min_experience")
+        if min_experience is not None:
+            min_experience = float(min_experience)
+        max_experience = self.config.get("max_experience")
+        if max_experience is not None:
+            max_experience = float(max_experience)
+        required_skills = self.config.get("required_skills") or []
+        if isinstance(required_skills, str):
+            required_skills = [s.strip() for s in required_skills.split(",") if s.strip()]
+        required_skills_lower = [s.lower() for s in required_skills]
         max_results = self.config.get("max_results")
         if max_results is not None:
             max_results = int(max_results)
@@ -31,6 +44,17 @@ class FilterNode(BaseNode):
                 continue
             if has_email and not lead.get("email"):
                 continue
+            # Experience filtering
+            exp = lead.get("experience_years")
+            if exp is not None and min_experience is not None and exp < min_experience:
+                continue
+            if exp is not None and max_experience is not None and exp > max_experience:
+                continue
+            # Skills filtering — at least one required skill must match
+            if required_skills_lower:
+                lead_skills = [s.lower() for s in (lead.get("skills") or [])]
+                if not any(rs in ls for rs in required_skills_lower for ls in lead_skills):
+                    continue
             filtered.append(lead)
 
         if max_results:

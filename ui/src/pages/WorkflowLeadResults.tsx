@@ -3,10 +3,6 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table, TableHeader, TableRow, TableHead, TableBody, TableCell
@@ -36,6 +32,11 @@ import {
   MapPin, User, Download, ArrowLeft, Users, BarChart3, AtSign
 } from 'lucide-react';
 
+// ── Design-system constants ───────────────────────────────────────────
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
+
 /** Validate URL is safe (http/https only) to prevent javascript: XSS */
 function isSafeUrl(url: string | null | undefined): url is string {
   if (!url) return false;
@@ -48,15 +49,15 @@ function isSafeUrl(url: string | null | undefined): url is string {
 }
 
 function scoreColor(score: number) {
-  if (score >= 70) return 'bg-green-500';
-  if (score >= 40) return 'bg-yellow-500';
+  if (score >= 70) return 'bg-emerald-500';
+  if (score >= 40) return 'bg-amber-500';
   return 'bg-red-500';
 }
 
 function scoreTextColor(score: number) {
-  if (score >= 70) return 'text-green-700 dark:text-green-400';
-  if (score >= 40) return 'text-yellow-700 dark:text-yellow-400';
-  return 'text-red-700 dark:text-red-400';
+  if (score >= 70) return 'text-emerald-400';
+  if (score >= 40) return 'text-amber-400';
+  return 'text-red-400';
 }
 
 export default function WorkflowLeadResults() {
@@ -100,7 +101,6 @@ export default function WorkflowLeadResults() {
     }
     const min = minScore ? Number(minScore) : null;
     const max = maxScore ? Number(maxScore) : null;
-    // Only apply score filters when valid (min <= max when both set)
     if (min !== null && max !== null && min > max) return result;
     if (min !== null) result = result.filter((l) => (l.score ?? 0) >= min);
     if (max !== null) result = result.filter((l) => (l.score ?? 0) <= max);
@@ -159,28 +159,33 @@ export default function WorkflowLeadResults() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <button
+              onClick={() => navigate(-1)}
+              className="h-9 w-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors"
+              style={glassCard}
+            >
               <ArrowLeft className="h-5 w-5" />
-            </Button>
+            </button>
             <div>
-              <h1 className="text-2xl font-bold">Lead Results</h1>
-              <Badge variant="secondary" className="mt-1 font-mono text-xs">
+              <h1 className="text-2xl font-bold text-white">Lead Results</h1>
+              <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full mt-1 font-mono bg-slate-500/10 text-slate-400 border border-slate-500/20">
                 Run #{run_id}
-              </Badge>
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {selectedIds.size > 0 && (
-              <Button
+              <button
                 onClick={() => setTalentPoolConfirmOpen(true)}
                 disabled={addToTalentPool.isPending}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50 transition-opacity"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
               >
-                <Users className="mr-2 h-4 w-4" />
+                <Users className="h-4 w-4" />
                 Add to Talent Pool ({selectedIds.size})
-              </Button>
+              </button>
             )}
-            <Button
-              variant="outline"
+            <button
               disabled={filtered.length === 0}
               onClick={() => {
                 const headers = ['Name', 'Email', 'Headline', 'Location', 'Skills', 'Score', 'Source', 'LinkedIn', 'GitHub', 'Portfolio'];
@@ -207,129 +212,108 @@ export default function WorkflowLeadResults() {
                 URL.revokeObjectURL(url);
                 toast.success(`Exported ${filtered.length} leads`);
               }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white disabled:opacity-50 transition-colors"
+              style={glassCard}
             >
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="h-4 w-4" />
               Export CSV
-            </Button>
+            </button>
           </div>
         </div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="rounded-lg bg-blue-100 p-2.5 dark:bg-blue-900/40">
-                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          {[
+            { label: 'Total Leads', value: total, icon: Users, iconBg: 'bg-blue-500/10', iconColor: 'text-blue-400' },
+            { label: 'Avg Score', value: avgScore, icon: BarChart3, iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-400' },
+            { label: 'With Email', value: withEmail, icon: AtSign, iconBg: 'bg-blue-500/10', iconColor: 'text-blue-400' },
+            { label: 'With LinkedIn', value: withLinkedIn, icon: Linkedin, iconBg: 'bg-sky-500/10', iconColor: 'text-sky-400' },
+          ].map((kpi) => (
+            <div key={kpi.label} className="rounded-xl" style={glassCard}>
+              <div className="flex items-center gap-4 p-5">
+                <div className={`rounded-lg p-2.5 ${kpi.iconBg}`}>
+                  <kpi.icon className={`h-5 w-5 ${kpi.iconColor}`} />
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">{kpi.label}</p>
+                  <p className="text-2xl font-bold text-white">{kpi.value}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Leads</p>
-                <p className="text-2xl font-bold">{total}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="rounded-lg bg-green-100 p-2.5 dark:bg-green-900/40">
-                <BarChart3 className="h-5 w-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Score</p>
-                <p className="text-2xl font-bold">{avgScore}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="rounded-lg bg-purple-100 p-2.5 dark:bg-purple-900/40">
-                <AtSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">With Email</p>
-                <p className="text-2xl font-bold">{withEmail}</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="rounded-lg bg-sky-100 p-2.5 dark:bg-sky-900/40">
-                <Linkedin className="h-5 w-5 text-sky-600 dark:text-sky-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">With LinkedIn</p>
-                <p className="text-2xl font-bold">{withLinkedIn}</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ))}
         </div>
 
         {/* Search / Filter Bar */}
-        <Card>
-          <CardContent className="flex flex-wrap items-center gap-3 p-4">
+        <div className="rounded-xl" style={glassCard}>
+          <div className="flex flex-wrap items-center gap-3 p-4">
             <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <input
                 placeholder="Search by name or skills..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className="w-full pl-9 pr-3 py-2 rounded-lg text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                style={glassInput}
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground whitespace-nowrap">Score:</span>
-              <Input
+              <span className="text-sm text-slate-500 whitespace-nowrap">Score:</span>
+              <input
                 type="number"
                 placeholder="Min"
                 value={minScore}
                 onChange={(e) => setMinScore(e.target.value)}
-                className={`w-20 ${minScore && maxScore && Number(minScore) > Number(maxScore) ? 'border-red-400' : ''}`}
+                className={`w-20 px-2 py-2 rounded-lg text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${minScore && maxScore && Number(minScore) > Number(maxScore) ? 'ring-1 ring-red-400' : ''}`}
+                style={glassInput}
               />
-              <span className="text-muted-foreground">-</span>
-              <Input
+              <span className="text-slate-500">-</span>
+              <input
                 type="number"
                 placeholder="Max"
                 value={maxScore}
                 onChange={(e) => setMaxScore(e.target.value)}
-                className={`w-20 ${minScore && maxScore && Number(minScore) > Number(maxScore) ? 'border-red-400' : ''}`}
+                className={`w-20 px-2 py-2 rounded-lg text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${minScore && maxScore && Number(minScore) > Number(maxScore) ? 'ring-1 ring-red-400' : ''}`}
+                style={glassInput}
               />
               {minScore && maxScore && Number(minScore) > Number(maxScore) && (
-                <span className="text-xs text-red-500 whitespace-nowrap">Min &gt; Max</span>
+                <span className="text-xs text-red-400 whitespace-nowrap">Min &gt; Max</span>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Leads Table */}
-        <Card>
-          <CardContent className="p-0">
+        <div className="rounded-xl overflow-hidden" style={glassCard}>
+          <div className="p-0">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
+                <TableRow className="border-white/5 hover:bg-transparent" style={{ background: 'var(--orbis-card)' }}>
+                  <TableHead className="w-10 text-slate-400">
                     <Checkbox
                       checked={filtered.length > 0 && selectedIds.size === filtered.length}
                       onCheckedChange={toggleSelectAll}
                     />
                   </TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Headline</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Skills</TableHead>
-                  <TableHead className="w-32">Score</TableHead>
-                  <TableHead>Source</TableHead>
-                  <TableHead>Links</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead className="text-slate-400">Name</TableHead>
+                  <TableHead className="text-slate-400">Headline</TableHead>
+                  <TableHead className="text-slate-400">Location</TableHead>
+                  <TableHead className="text-slate-400">Skills</TableHead>
+                  <TableHead className="w-32 text-slate-400">Score</TableHead>
+                  <TableHead className="text-slate-400">Source</TableHead>
+                  <TableHead className="text-slate-400">Links</TableHead>
+                  <TableHead className="text-slate-400">Email</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-12 text-slate-500">
                       Loading leads...
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-12 text-slate-500">
                       No leads found
                     </TableCell>
                   </TableRow>
@@ -337,7 +321,7 @@ export default function WorkflowLeadResults() {
                   filtered.map((lead) => (
                     <TableRow
                       key={lead.id}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className="cursor-pointer border-white/5 hover:bg-white/[0.02]"
                       onClick={() => setDetailLead(lead)}
                     >
                       <TableCell onClick={(e) => e.stopPropagation()}>
@@ -346,18 +330,18 @@ export default function WorkflowLeadResults() {
                           onCheckedChange={() => toggleSelect(lead.id)}
                         />
                       </TableCell>
-                      <TableCell className="font-medium whitespace-nowrap">
+                      <TableCell className="font-medium whitespace-nowrap text-white">
                         <div className="flex items-center gap-2">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10 text-xs font-semibold text-blue-400">
                             {(lead.name || '?').charAt(0).toUpperCase()}
                           </div>
                           {lead.name || 'Unknown'}
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                      <TableCell className="max-w-[200px] truncate text-slate-400">
                         {lead.headline || '-'}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className="whitespace-nowrap text-slate-300">
                         {lead.location ? (
                           <span className="flex items-center gap-1 text-sm">
                             <MapPin className="h-3 w-3" />
@@ -374,43 +358,43 @@ export default function WorkflowLeadResults() {
                         <ScoreBar score={lead.score} />
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs">
+                        <span className="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20">
                           {lead.source}
-                        </Badge>
+                        </span>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center gap-1">
                           {isSafeUrl(lead.github_url) && (
                             <a href={lead.github_url} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <span className="h-7 w-7 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
                                 <Github className="h-3.5 w-3.5" />
-                              </Button>
+                              </span>
                             </a>
                           )}
                           {isSafeUrl(lead.linkedin_url) && (
                             <a href={lead.linkedin_url} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <span className="h-7 w-7 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
                                 <Linkedin className="h-3.5 w-3.5" />
-                              </Button>
+                              </span>
                             </a>
                           )}
                           {isSafeUrl(lead.portfolio_url) && (
                             <a href={lead.portfolio_url} target="_blank" rel="noopener noreferrer">
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <span className="h-7 w-7 rounded-md flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-colors">
                                 <ExternalLink className="h-3.5 w-3.5" />
-                              </Button>
+                              </span>
                             </a>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">
+                      <TableCell className="text-sm text-slate-300">
                         {lead.email ? (
                           <span className="flex items-center gap-1">
-                            <Mail className="h-3 w-3 text-muted-foreground" />
+                            <Mail className="h-3 w-3 text-slate-500" />
                             {lead.email}
                           </span>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
+                          <span className="text-slate-500">-</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -418,8 +402,8 @@ export default function WorkflowLeadResults() {
                 )}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Pagination */}
         <DataPagination
@@ -432,20 +416,22 @@ export default function WorkflowLeadResults() {
 
         {/* Talent Pool Confirmation */}
         <AlertDialog open={talentPoolConfirmOpen} onOpenChange={setTalentPoolConfirmOpen}>
-          <AlertDialogContent>
+          <AlertDialogContent style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
             <AlertDialogHeader>
-              <AlertDialogTitle>Add to Talent Pool?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="text-white">Add to Talent Pool?</AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-400">
                 This will add {selectedIds.size} selected lead{selectedIds.size !== 1 ? 's' : ''} to the Talent Pool. Duplicates will be automatically skipped.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="border-white/10 text-slate-300 hover:text-white hover:bg-white/5">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
                   addToTalentPool.mutate(Array.from(selectedIds));
                   setTalentPoolConfirmOpen(false);
                 }}
+                className="text-white"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
               >
                 Add to Talent Pool
               </AlertDialogAction>
@@ -455,17 +441,17 @@ export default function WorkflowLeadResults() {
 
         {/* Lead Detail Dialog */}
         <Dialog open={!!detailLead} onOpenChange={(open) => !open && setDetailLead(null)}>
-          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
             {detailLead && (
               <>
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+                  <DialogTitle className="flex items-center gap-3 text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10 text-lg font-bold text-blue-400">
                       {detailLead.name.charAt(0).toUpperCase()}
                     </div>
                     {detailLead.name || 'Unknown'}
                   </DialogTitle>
-                  <DialogDescription>
+                  <DialogDescription className="text-slate-400">
                     {detailLead.headline || 'No headline'}
                   </DialogDescription>
                 </DialogHeader>
@@ -474,8 +460,8 @@ export default function WorkflowLeadResults() {
                   {/* Basic Info */}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Location</p>
-                      <p className="font-medium flex items-center gap-1">
+                      <p className="text-slate-500">Location</p>
+                      <p className="font-medium text-white flex items-center gap-1">
                         {detailLead.location ? (
                           <>
                             <MapPin className="h-3 w-3" />
@@ -487,42 +473,42 @@ export default function WorkflowLeadResults() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Experience</p>
-                      <p className="font-medium">
+                      <p className="text-slate-500">Experience</p>
+                      <p className="font-medium text-white">
                         {detailLead.experience_years != null
                           ? `${detailLead.experience_years} years`
                           : '-'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Email</p>
+                      <p className="text-slate-500">Email</p>
                       <p className="font-medium">
                         {detailLead.email ? (
                           <a
                             href={`mailto:${encodeURIComponent(detailLead.email)}`}
-                            className="text-primary hover:underline flex items-center gap-1"
+                            className="text-blue-400 hover:underline flex items-center gap-1"
                           >
                             <Mail className="h-3 w-3" />
                             {detailLead.email}
                           </a>
                         ) : (
-                          '-'
+                          <span className="text-slate-500">-</span>
                         )}
                       </p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Source</p>
-                      <p className="font-medium">{detailLead.source}</p>
+                      <p className="text-slate-500">Source</p>
+                      <p className="font-medium text-white">{detailLead.source}</p>
                     </div>
                   </div>
 
                   {/* Score */}
                   {detailLead.score !== null && (
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Score</p>
+                      <p className="text-sm text-slate-500 mb-2">Score</p>
                       <div className="flex items-center gap-3">
                         <div className="flex-1">
-                          <div className="h-3 rounded-full bg-muted overflow-hidden">
+                          <div className="h-3 rounded-full overflow-hidden" style={{ background: 'var(--orbis-input)' }}>
                             <div
                               className={`h-full rounded-full transition-all ${scoreColor(detailLead.score)}`}
                               style={{ width: `${detailLead.score}%` }}
@@ -540,20 +526,20 @@ export default function WorkflowLeadResults() {
                   {detailLead.score_breakdown &&
                     Object.keys(detailLead.score_breakdown).length > 0 && (
                       <div>
-                        <p className="text-sm text-muted-foreground mb-2">Score Breakdown</p>
+                        <p className="text-sm text-slate-500 mb-2">Score Breakdown</p>
                         <div className="space-y-2">
                           {Object.entries(detailLead.score_breakdown).map(([key, value]) => (
                             <div key={key} className="flex items-center gap-3 text-sm">
-                              <span className="w-28 capitalize text-muted-foreground">
+                              <span className="w-28 capitalize text-slate-500">
                                 {key.replace(/_/g, ' ')}
                               </span>
-                              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--orbis-input)' }}>
                                 <div
                                   className={`h-full rounded-full ${scoreColor(value)}`}
                                   style={{ width: `${value}%` }}
                                 />
                               </div>
-                              <span className="w-8 text-right font-medium">{value}</span>
+                              <span className="w-8 text-right font-medium text-white">{value}</span>
                             </div>
                           ))}
                         </div>
@@ -563,12 +549,12 @@ export default function WorkflowLeadResults() {
                   {/* Skills */}
                   {(detailLead.skills || []).length > 0 && (
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Skills</p>
+                      <p className="text-sm text-slate-500 mb-2">Skills</p>
                       <div className="flex flex-wrap gap-1.5">
                         {(detailLead.skills || []).map((skill) => (
-                          <Badge key={skill} variant="secondary" className="text-xs">
+                          <span key={skill} className="inline-flex items-center text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                             {skill}
-                          </Badge>
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -576,45 +562,57 @@ export default function WorkflowLeadResults() {
 
                   {/* Links */}
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Links</p>
+                    <p className="text-sm text-slate-500 mb-2">Links</p>
                     <div className="flex flex-wrap gap-2">
                       {isSafeUrl(detailLead.linkedin_url) && (
                         <a href={detailLead.linkedin_url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">
-                            <Linkedin className="mr-1.5 h-3.5 w-3.5" />
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
+                            style={glassCard}
+                          >
+                            <Linkedin className="h-3.5 w-3.5" />
                             LinkedIn
-                          </Button>
+                          </span>
                         </a>
                       )}
                       {isSafeUrl(detailLead.github_url) && (
                         <a href={detailLead.github_url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">
-                            <Github className="mr-1.5 h-3.5 w-3.5" />
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
+                            style={glassCard}
+                          >
+                            <Github className="h-3.5 w-3.5" />
                             GitHub
-                          </Button>
+                          </span>
                         </a>
                       )}
                       {isSafeUrl(detailLead.portfolio_url) && (
                         <a href={detailLead.portfolio_url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">
-                            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
+                            style={glassCard}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
                             Portfolio
-                          </Button>
+                          </span>
                         </a>
                       )}
                       {isSafeUrl(detailLead.source_url) && (
                         <a href={detailLead.source_url} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm">
-                            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors cursor-pointer"
+                            style={glassCard}
+                          >
+                            <ExternalLink className="h-3.5 w-3.5" />
                             Source URL
-                          </Button>
+                          </span>
                         </a>
                       )}
                       {!isSafeUrl(detailLead.linkedin_url) &&
                         !isSafeUrl(detailLead.github_url) &&
                         !isSafeUrl(detailLead.portfolio_url) &&
                         !isSafeUrl(detailLead.source_url) && (
-                          <span className="text-sm text-muted-foreground">No links available</span>
+                          <span className="text-sm text-slate-500">No links available</span>
                         )}
                     </div>
                   </div>
@@ -628,10 +626,10 @@ export default function WorkflowLeadResults() {
   );
 }
 
-/* ── Sub-components ─────────────────────────────────────────────────────── */
+/* -- Sub-components -------------------------------------------------------- */
 
 function SkillBadges({ skills }: { skills: string[] | null }) {
-  if (!skills?.length) return <span className="text-muted-foreground">-</span>;
+  if (!skills?.length) return <span className="text-slate-500">-</span>;
 
   const visible = skills.slice(0, 3);
   const remaining = skills.length - 3;
@@ -640,23 +638,23 @@ function SkillBadges({ skills }: { skills: string[] | null }) {
     <TooltipProvider>
       <div className="flex items-center gap-1 flex-wrap">
         {visible.map((s) => (
-          <Badge key={s} variant="secondary" className="text-[10px] px-1.5 py-0">
+          <span key={s} className="inline-flex items-center text-[10px] px-1.5 py-0 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
             {s}
-          </Badge>
+          </span>
         ))}
         {remaining > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 cursor-default">
+              <span className="inline-flex items-center text-[10px] px-1.5 py-0 rounded-full cursor-default bg-slate-500/10 text-slate-400 border border-slate-500/20">
                 +{remaining} more
-              </Badge>
+              </span>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[250px]">
+            <TooltipContent side="top" className="max-w-[250px]" style={selectDrop}>
               <div className="flex flex-wrap gap-1">
                 {skills.slice(3).map((s) => (
-                  <Badge key={s} variant="secondary" className="text-[10px] px-1.5 py-0">
+                  <span key={s} className="inline-flex items-center text-[10px] px-1.5 py-0 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                     {s}
-                  </Badge>
+                  </span>
                 ))}
               </div>
             </TooltipContent>
@@ -668,11 +666,11 @@ function SkillBadges({ skills }: { skills: string[] | null }) {
 }
 
 function ScoreBar({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-muted-foreground text-sm">-</span>;
+  if (score === null) return <span className="text-slate-500 text-sm">-</span>;
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+      <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--orbis-input)' }}>
         <div
           className={`h-full rounded-full transition-all ${scoreColor(score)}`}
           style={{ width: `${score}%` }}

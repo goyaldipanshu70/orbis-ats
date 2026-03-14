@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -14,7 +8,6 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/utils/api';
@@ -28,6 +21,22 @@ import {
   Send, Download, Upload, RefreshCw, Cable, Sparkles, Terminal,
   Network, ArrowRightLeft,
 } from 'lucide-react';
+
+// ── Design System Constants ──────────────────────────────────────────
+
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
+
+const focusStyle: React.CSSProperties = { background: 'var(--orbis-hover)', borderColor: '#1B8EE5', boxShadow: '0 0 20px rgba(27,142,229,0.15)' };
+const blurStyle: React.CSSProperties = { background: 'var(--orbis-input)', borderColor: 'var(--orbis-border)', boxShadow: 'none' };
+
+function applyFocus(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  Object.assign(e.target.style, focusStyle);
+}
+function applyBlur(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  Object.assign(e.target.style, blurStyle);
+}
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -62,16 +71,16 @@ interface Portal {
 
 const PORTAL_PRESETS: Record<string, { color: string; login_url: string; api_endpoint: string }> = {
   linkedin:     { color: 'bg-blue-600',    login_url: 'https://www.linkedin.com/login', api_endpoint: 'https://api.linkedin.com/v2/jobs' },
-  indeed:       { color: 'bg-indigo-600',  login_url: 'https://secure.indeed.com/auth', api_endpoint: 'https://apis.indeed.com/graphql' },
+  indeed:       { color: 'bg-blue-600',  login_url: 'https://secure.indeed.com/auth', api_endpoint: 'https://apis.indeed.com/graphql' },
   naukri:       { color: 'bg-sky-600',     login_url: 'https://login.naukri.com',       api_endpoint: 'https://api.naukri.com/v1' },
   glassdoor:    { color: 'bg-emerald-600', login_url: 'https://www.glassdoor.com/profile/login', api_endpoint: 'https://api.glassdoor.com/v1' },
-  monster:      { color: 'bg-purple-600',  login_url: 'https://www.monster.com/profile/sign-in', api_endpoint: 'https://api.monster.com/v2' },
+  monster:      { color: 'bg-blue-600',  login_url: 'https://www.monster.com/profile/sign-in', api_endpoint: 'https://api.monster.com/v2' },
   ziprecruiter: { color: 'bg-teal-600',    login_url: 'https://www.ziprecruiter.com/login', api_endpoint: 'https://api.ziprecruiter.com/v2' },
 };
 
 const FALLBACK_COLORS = [
-  'bg-blue-600', 'bg-violet-600', 'bg-emerald-600', 'bg-amber-600',
-  'bg-rose-600', 'bg-cyan-600', 'bg-indigo-600', 'bg-teal-600',
+  'bg-blue-600', 'bg-blue-600', 'bg-emerald-600', 'bg-amber-600',
+  'bg-rose-600', 'bg-cyan-600', 'bg-blue-600', 'bg-teal-600',
 ];
 
 function getPortalPreset(name: string) {
@@ -366,104 +375,114 @@ export default function JobPortals() {
           className="flex items-center justify-between"
         >
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">Job Portals</h1>
-            <p className="text-muted-foreground text-sm">
+            <h1 className="text-2xl font-bold tracking-tight text-white">Job Portals</h1>
+            <p className="text-slate-400 text-sm">
               Connect job boards via API, MCP servers, or web automation — AI agents handle the rest
             </p>
           </div>
-          <Button onClick={openCreate} size="sm" className="gap-1.5 rounded-lg shadow-sm">
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-white rounded-lg shadow-sm transition-all hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+          >
             <Plus className="h-4 w-4" /> Add Portal
-          </Button>
+          </button>
         </motion.div>
 
         {/* ── KPI Cards ───────────────────────────────────────────── */}
         <StaggerGrid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <motion.div variants={scaleIn}>
-            <Card className="rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/80 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400">
+            <div className="rounded-xl shadow-sm hover:shadow-md transition-shadow" style={glassCard}>
+              <div className="p-5 flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
                   <Globe2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold tracking-tight"><CountingNumber value={portals.length} /></p>
-                  <p className="text-xs text-muted-foreground font-medium">Total Portals</p>
+                  <p className="text-2xl font-bold tracking-tight text-white"><CountingNumber value={portals.length} /></p>
+                  <p className="text-xs text-slate-500 font-medium">Total Portals</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
 
           <motion.div variants={scaleIn}>
-            <Card className="rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/80 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
+            <div className="rounded-xl shadow-sm hover:shadow-md transition-shadow" style={glassCard}>
+              <div className="p-5 flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
                   <Wifi className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold tracking-tight"><CountingNumber value={activeCount} /></p>
-                  <p className="text-xs text-muted-foreground font-medium">Connected</p>
+                  <p className="text-2xl font-bold tracking-tight text-white"><CountingNumber value={activeCount} /></p>
+                  <p className="text-xs text-slate-500 font-medium">Connected</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
 
           <motion.div variants={scaleIn}>
-            <Card className="rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/80 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400">
+            <div className="rounded-xl shadow-sm hover:shadow-md transition-shadow" style={glassCard}>
+              <div className="p-5 flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
                   <Cable className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold tracking-tight"><CountingNumber value={mcpCount} /></p>
-                  <p className="text-xs text-muted-foreground font-medium">MCP Servers</p>
+                  <p className="text-2xl font-bold tracking-tight text-white"><CountingNumber value={mcpCount} /></p>
+                  <p className="text-xs text-slate-500 font-medium">MCP Servers</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
 
           <motion.div variants={scaleIn}>
-            <Card className="rounded-xl border border-border/60 bg-gradient-to-br from-card to-card/80 shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-5 flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400">
+            <div className="rounded-xl shadow-sm hover:shadow-md transition-shadow" style={glassCard}>
+              <div className="p-5 flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
                   <Bot className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold tracking-tight"><CountingNumber value={automationCount} /></p>
-                  <p className="text-xs text-muted-foreground font-medium">Automations</p>
+                  <p className="text-2xl font-bold tracking-tight text-white"><CountingNumber value={automationCount} /></p>
+                  <p className="text-xs text-slate-500 font-medium">Automations</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         </StaggerGrid>
 
         {/* ── Section Heading ─────────────────────────────────────── */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="flex items-center gap-2">
-          <Settings2 className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Configured Integrations</h2>
-          <div className="flex-1 border-t border-border/40" />
+          <Settings2 className="h-4 w-4 text-slate-500" />
+          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Configured Integrations</h2>
+          <div className="flex-1 border-t" style={{ borderColor: 'var(--orbis-border)' }} />
         </motion.div>
 
         {/* ── Portals Grid ────────────────────────────────────────── */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full rounded-xl" />)}
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-64 w-full rounded-xl animate-pulse" style={{ background: 'var(--orbis-card)' }} />
+            ))}
           </div>
         ) : portals.length === 0 ? (
           <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.4 }}>
-            <Card className="rounded-xl border-dashed border-2 border-border/60">
-              <CardContent className="py-20 text-center">
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted/60">
-                  <Globe2 className="h-8 w-8 text-muted-foreground" />
+            <div className="rounded-xl border-dashed border-2" style={{ borderColor: 'var(--orbis-border)', ...glassCard }}>
+              <div className="py-20 text-center">
+                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl" style={{ background: 'var(--orbis-input)' }}>
+                  <Globe2 className="h-8 w-8 text-slate-500" />
                 </div>
-                <p className="text-lg font-semibold mb-1.5">No portals configured</p>
-                <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
+                <p className="text-lg font-semibold mb-1.5 text-white">No portals configured</p>
+                <p className="text-sm text-slate-400 mb-6 max-w-md mx-auto">
                   Connect job boards like LinkedIn, Indeed, or Naukri via API, MCP servers, or web automation.
                   AI agents will manage postings and sync applications automatically.
                 </p>
-                <Button onClick={openCreate} className="gap-1.5 rounded-lg">
+                <button
+                  onClick={openCreate}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg transition-all hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+                >
                   <Plus className="h-4 w-4" /> Add Your First Portal
-                </Button>
-              </CardContent>
-            </Card>
+                </button>
+              </div>
+            </div>
           </motion.div>
         ) : (
           <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -486,13 +505,13 @@ export default function JobPortals() {
 
       {/* ── Add / Edit Dialog ─────────────────────────────────────── */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl">
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle className="text-lg flex items-center gap-2">
+            <DialogTitle className="text-lg flex items-center gap-2 text-white">
               {editing ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               {editing ? 'Configure Portal' : 'Add Job Portal'}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-400">
               {editing
                 ? 'Update credentials, MCP connection, or automation settings.'
                 : 'Connect a job board via API, MCP server, or web automation for AI-powered job management.'
@@ -501,17 +520,17 @@ export default function JobPortals() {
           </DialogHeader>
 
           <Tabs value={dialogTab} onValueChange={setDialogTab} className="mt-2">
-            <TabsList className="grid grid-cols-4 h-9">
-              <TabsTrigger value="general" className="text-xs gap-1.5">
+            <TabsList className="grid grid-cols-4 h-9" style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-hover)' }}>
+              <TabsTrigger value="general" className="text-xs gap-1.5 text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">
                 <Globe2 className="h-3 w-3" /> General
               </TabsTrigger>
-              <TabsTrigger value="credentials" className="text-xs gap-1.5">
+              <TabsTrigger value="credentials" className="text-xs gap-1.5 text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">
                 <KeyRound className="h-3 w-3" /> Credentials
               </TabsTrigger>
-              <TabsTrigger value="mcp" className="text-xs gap-1.5">
+              <TabsTrigger value="mcp" className="text-xs gap-1.5 text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">
                 <Cable className="h-3 w-3" /> MCP
               </TabsTrigger>
-              <TabsTrigger value="automation" className="text-xs gap-1.5">
+              <TabsTrigger value="automation" className="text-xs gap-1.5 text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">
                 <Bot className="h-3 w-3" /> Automation
               </TabsTrigger>
             </TabsList>
@@ -519,51 +538,57 @@ export default function JobPortals() {
             {/* ─── General Tab ─── */}
             <TabsContent value="general" className="space-y-4 mt-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Portal Name *</Label>
-                <Input
+                <label className="text-xs font-medium text-slate-300">Portal Name *</label>
+                <input
                   value={form.portal_name}
                   onChange={e => handleNameChange(e.target.value)}
                   placeholder="e.g., LinkedIn, Indeed, Naukri"
-                  className="rounded-lg"
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                  style={glassInput}
+                  onFocus={applyFocus}
+                  onBlur={applyBlur}
                 />
                 {getPortalPreset(form.portal_name) && (
-                  <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <p className="text-[11px] text-emerald-400 flex items-center gap-1">
                     <Sparkles className="h-3 w-3" /> Preset detected — endpoints auto-filled
                   </p>
                 )}
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">API Endpoint</Label>
-                <Input
+                <label className="text-xs font-medium text-slate-300">API Endpoint</label>
+                <input
                   value={form.api_endpoint}
                   onChange={e => setForm((f: Record<string, any>) => ({ ...f, api_endpoint: e.target.value }))}
                   placeholder="https://api.example.com/v1/jobs"
-                  className="rounded-lg font-mono text-sm"
+                  className="w-full px-3 py-2 rounded-lg font-mono text-sm outline-none transition-all"
+                  style={glassInput}
+                  onFocus={applyFocus}
+                  onBlur={applyBlur}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">Auth Type</Label>
+                  <label className="text-xs font-medium text-slate-300">Auth Type</label>
                   <Select value={form.auth_type} onValueChange={v => setForm((f: Record<string, any>) => ({ ...f, auth_type: v }))}>
-                    <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="api_key">API Key</SelectItem>
-                      <SelectItem value="oauth2">OAuth 2.0</SelectItem>
-                      <SelectItem value="basic">Basic Auth</SelectItem>
-                      <SelectItem value="none">None</SelectItem>
+                    <SelectTrigger className="rounded-lg" style={glassInput}><SelectValue /></SelectTrigger>
+                    <SelectContent style={selectDrop}>
+                      <SelectItem value="api_key" className="text-slate-200 focus:bg-white/10 focus:text-white">API Key</SelectItem>
+                      <SelectItem value="oauth2" className="text-slate-200 focus:bg-white/10 focus:text-white">OAuth 2.0</SelectItem>
+                      <SelectItem value="basic" className="text-slate-200 focus:bg-white/10 focus:text-white">Basic Auth</SelectItem>
+                      <SelectItem value="none" className="text-slate-200 focus:bg-white/10 focus:text-white">None</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">Integration Type</Label>
+                  <label className="text-xs font-medium text-slate-300">Integration Type</label>
                   <Select value={form.integration_type} onValueChange={v => setForm((f: Record<string, any>) => ({ ...f, integration_type: v }))}>
-                    <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="api">API</SelectItem>
-                      <SelectItem value="mcp">MCP Server</SelectItem>
-                      <SelectItem value="web_automation">Web Automation</SelectItem>
-                      <SelectItem value="rss">RSS Feed</SelectItem>
-                      <SelectItem value="manual">Manual</SelectItem>
+                    <SelectTrigger className="rounded-lg" style={glassInput}><SelectValue /></SelectTrigger>
+                    <SelectContent style={selectDrop}>
+                      <SelectItem value="api" className="text-slate-200 focus:bg-white/10 focus:text-white">API</SelectItem>
+                      <SelectItem value="mcp" className="text-slate-200 focus:bg-white/10 focus:text-white">MCP Server</SelectItem>
+                      <SelectItem value="web_automation" className="text-slate-200 focus:bg-white/10 focus:text-white">Web Automation</SelectItem>
+                      <SelectItem value="rss" className="text-slate-200 focus:bg-white/10 focus:text-white">RSS Feed</SelectItem>
+                      <SelectItem value="manual" className="text-slate-200 focus:bg-white/10 focus:text-white">Manual</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -571,8 +596,8 @@ export default function JobPortals() {
 
               {/* Capabilities */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium">Capabilities</Label>
-                <p className="text-[11px] text-muted-foreground">Select what this portal supports — AI agents will use these capabilities</p>
+                <label className="text-xs font-medium text-slate-300">Capabilities</label>
+                <p className="text-[11px] text-slate-500">Select what this portal supports — AI agents will use these capabilities</p>
                 <div className="grid grid-cols-2 gap-2">
                   {ALL_CAPABILITIES.map(cap => {
                     const Icon = cap.icon;
@@ -589,8 +614,8 @@ export default function JobPortals() {
                         }))}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
                           isSelected
-                            ? 'border-primary bg-primary/5 text-primary'
-                            : 'border-border/60 text-muted-foreground hover:border-border hover:bg-muted/30'
+                            ? 'border-blue-500/30 bg-blue-500/10 text-blue-400'
+                            : 'border-white/10 text-slate-400 hover:border-white/20 hover:bg-white/[0.03]'
                         }`}
                       >
                         <Icon className="h-3.5 w-3.5" />
@@ -605,8 +630,8 @@ export default function JobPortals() {
 
             {/* ─── Credentials Tab ─── */}
             <TabsContent value="credentials" className="space-y-4 mt-4">
-              <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <div className="rounded-lg p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                <p className="text-xs text-amber-400 flex items-center gap-1.5">
                   <Shield className="h-3.5 w-3.5 shrink-0" />
                   Credentials are stored encrypted. They are used by AI agents to authenticate with the portal.
                 </p>
@@ -614,16 +639,19 @@ export default function JobPortals() {
 
               {form.auth_type === 'api_key' && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">API Key</Label>
+                  <label className="text-xs font-medium text-slate-300">API Key</label>
                   <div className="relative">
-                    <Input
+                    <input
                       type={showPasswords.api_key ? 'text' : 'password'}
                       value={form.cred_api_key}
                       onChange={e => setForm((f: Record<string, any>) => ({ ...f, cred_api_key: e.target.value }))}
                       placeholder="Enter your API key"
-                      className="rounded-lg pr-10 font-mono text-sm"
+                      className="w-full px-3 py-2 rounded-lg pr-10 font-mono text-sm outline-none transition-all"
+                      style={glassInput}
+                      onFocus={applyFocus}
+                      onBlur={applyBlur}
                     />
-                    <button type="button" onClick={() => togglePassword('api_key')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <button type="button" onClick={() => togglePassword('api_key')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
                       {showPasswords.api_key ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                     </button>
                   </div>
@@ -633,36 +661,45 @@ export default function JobPortals() {
               {form.auth_type === 'oauth2' && (
                 <>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Client ID</Label>
-                    <Input
+                    <label className="text-xs font-medium text-slate-300">Client ID</label>
+                    <input
                       value={form.cred_client_id}
                       onChange={e => setForm((f: Record<string, any>) => ({ ...f, cred_client_id: e.target.value }))}
                       placeholder="OAuth Client ID"
-                      className="rounded-lg font-mono text-sm"
+                      className="w-full px-3 py-2 rounded-lg font-mono text-sm outline-none transition-all"
+                      style={glassInput}
+                      onFocus={applyFocus}
+                      onBlur={applyBlur}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Client Secret</Label>
+                    <label className="text-xs font-medium text-slate-300">Client Secret</label>
                     <div className="relative">
-                      <Input
+                      <input
                         type={showPasswords.client_secret ? 'text' : 'password'}
                         value={form.cred_client_secret}
                         onChange={e => setForm((f: Record<string, any>) => ({ ...f, cred_client_secret: e.target.value }))}
                         placeholder="OAuth Client Secret"
-                        className="rounded-lg pr-10 font-mono text-sm"
+                        className="w-full px-3 py-2 rounded-lg pr-10 font-mono text-sm outline-none transition-all"
+                        style={glassInput}
+                        onFocus={applyFocus}
+                        onBlur={applyBlur}
                       />
-                      <button type="button" onClick={() => togglePassword('client_secret')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      <button type="button" onClick={() => togglePassword('client_secret')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
                         {showPasswords.client_secret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                       </button>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Token URL</Label>
-                    <Input
+                    <label className="text-xs font-medium text-slate-300">Token URL</label>
+                    <input
                       value={form.cred_token_url}
                       onChange={e => setForm((f: Record<string, any>) => ({ ...f, cred_token_url: e.target.value }))}
                       placeholder="https://accounts.example.com/oauth2/token"
-                      className="rounded-lg font-mono text-sm"
+                      className="w-full px-3 py-2 rounded-lg font-mono text-sm outline-none transition-all"
+                      style={glassInput}
+                      onFocus={applyFocus}
+                      onBlur={applyBlur}
                     />
                   </div>
                 </>
@@ -671,25 +708,31 @@ export default function JobPortals() {
               {form.auth_type === 'basic' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Username</Label>
-                    <Input
+                    <label className="text-xs font-medium text-slate-300">Username</label>
+                    <input
                       value={form.cred_username}
                       onChange={e => setForm((f: Record<string, any>) => ({ ...f, cred_username: e.target.value }))}
                       placeholder="Username"
-                      className="rounded-lg"
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                      style={glassInput}
+                      onFocus={applyFocus}
+                      onBlur={applyBlur}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium">Password</Label>
+                    <label className="text-xs font-medium text-slate-300">Password</label>
                     <div className="relative">
-                      <Input
+                      <input
                         type={showPasswords.basic_pass ? 'text' : 'password'}
                         value={form.cred_password}
                         onChange={e => setForm((f: Record<string, any>) => ({ ...f, cred_password: e.target.value }))}
                         placeholder="Password"
-                        className="rounded-lg pr-10"
+                        className="w-full px-3 py-2 rounded-lg pr-10 text-sm outline-none transition-all"
+                        style={glassInput}
+                        onFocus={applyFocus}
+                        onBlur={applyBlur}
                       />
-                      <button type="button" onClick={() => togglePassword('basic_pass')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                      <button type="button" onClick={() => togglePassword('basic_pass')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
                         {showPasswords.basic_pass ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                       </button>
                     </div>
@@ -698,7 +741,7 @@ export default function JobPortals() {
               )}
 
               {form.auth_type === 'none' && (
-                <div className="text-center py-6 text-sm text-muted-foreground">
+                <div className="text-center py-6 text-sm text-slate-500">
                   <Unplug className="h-8 w-8 mx-auto mb-2 opacity-30" />
                   No credentials needed for this auth type.
                 </div>
@@ -707,29 +750,32 @@ export default function JobPortals() {
 
             {/* ─── MCP Tab ─── */}
             <TabsContent value="mcp" className="space-y-4 mt-4">
-              <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-950/20 p-3">
-                <p className="text-xs text-violet-700 dark:text-violet-400 flex items-center gap-1.5">
+              <div className="rounded-lg p-3" style={{ background: 'rgba(27,142,229,0.06)', border: '1px solid rgba(27,142,229,0.15)' }}>
+                <p className="text-xs text-blue-400 flex items-center gap-1.5">
                   <Cable className="h-3.5 w-3.5 shrink-0" />
                   MCP (Model Context Protocol) allows AI agents to directly interact with this portal's tools — post jobs, search candidates, and more.
                 </p>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">MCP Server URL</Label>
-                <Input
+                <label className="text-xs font-medium text-slate-300">MCP Server URL</label>
+                <input
                   value={form.mcp_server_url}
                   onChange={e => setForm((f: Record<string, any>) => ({ ...f, mcp_server_url: e.target.value }))}
                   placeholder="http://localhost:3000/mcp or npx @linkedin/mcp-server"
-                  className="rounded-lg font-mono text-sm"
+                  className="w-full px-3 py-2 rounded-lg font-mono text-sm outline-none transition-all"
+                  style={glassInput}
+                  onFocus={applyFocus}
+                  onBlur={applyBlur}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Transport</Label>
+                <label className="text-xs font-medium text-slate-300">Transport</label>
                 <Select value={form.mcp_transport} onValueChange={v => setForm((f: Record<string, any>) => ({ ...f, mcp_transport: v }))}>
-                  <SelectTrigger className="rounded-lg"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="streamable_http">Streamable HTTP</SelectItem>
-                    <SelectItem value="sse">SSE (Server-Sent Events)</SelectItem>
-                    <SelectItem value="stdio">stdio (Local Process)</SelectItem>
+                  <SelectTrigger className="rounded-lg" style={glassInput}><SelectValue /></SelectTrigger>
+                  <SelectContent style={selectDrop}>
+                    <SelectItem value="streamable_http" className="text-slate-200 focus:bg-white/10 focus:text-white">Streamable HTTP</SelectItem>
+                    <SelectItem value="sse" className="text-slate-200 focus:bg-white/10 focus:text-white">SSE (Server-Sent Events)</SelectItem>
+                    <SelectItem value="stdio" className="text-slate-200 focus:bg-white/10 focus:text-white">stdio (Local Process)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -737,16 +783,16 @@ export default function JobPortals() {
               {/* MCP Tools Display */}
               {editing?.mcp_tools && editing.mcp_tools.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium flex items-center gap-1.5">
+                  <label className="text-xs font-medium text-slate-300 flex items-center gap-1.5">
                     <Terminal className="h-3 w-3" /> Discovered Tools
-                  </Label>
+                  </label>
                   <div className="space-y-1.5 max-h-40 overflow-y-auto">
                     {editing.mcp_tools.map((tool, i) => (
-                      <div key={i} className="flex items-start gap-2 rounded-lg border border-border/40 bg-muted/20 px-3 py-2">
-                        <Zap className="h-3 w-3 mt-0.5 text-violet-500 shrink-0" />
+                      <div key={i} className="flex items-start gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                        <Zap className="h-3 w-3 mt-0.5 text-blue-500 shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-xs font-medium font-mono">{tool.name}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">{tool.description}</p>
+                          <p className="text-xs font-medium font-mono text-white">{tool.name}</p>
+                          <p className="text-[11px] text-slate-500 truncate">{tool.description}</p>
                         </div>
                       </div>
                     ))}
@@ -754,87 +800,102 @@ export default function JobPortals() {
                 </div>
               )}
 
-              <div className="rounded-lg bg-muted/30 p-4 space-y-2">
-                <p className="text-xs font-semibold text-foreground">How MCP Integration Works</p>
-                <ul className="text-[11px] text-muted-foreground space-y-1.5">
-                  <li className="flex items-start gap-2"><span className="text-violet-500 font-bold">1.</span> Portal provides an MCP server endpoint (URL or local command)</li>
-                  <li className="flex items-start gap-2"><span className="text-violet-500 font-bold">2.</span> Our AI agent connects and discovers available tools</li>
-                  <li className="flex items-start gap-2"><span className="text-violet-500 font-bold">3.</span> Agent uses tools to post jobs, fetch applications, search candidates</li>
-                  <li className="flex items-start gap-2"><span className="text-violet-500 font-bold">4.</span> All actions are logged in your audit trail for compliance</li>
+              <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--orbis-card)' }}>
+                <p className="text-xs font-semibold text-white">How MCP Integration Works</p>
+                <ul className="text-[11px] text-slate-500 space-y-1.5">
+                  <li className="flex items-start gap-2"><span className="text-blue-500 font-bold">1.</span> Portal provides an MCP server endpoint (URL or local command)</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-500 font-bold">2.</span> Our AI agent connects and discovers available tools</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-500 font-bold">3.</span> Agent uses tools to post jobs, fetch applications, search candidates</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-500 font-bold">4.</span> All actions are logged in your audit trail for compliance</li>
                 </ul>
               </div>
             </TabsContent>
 
             {/* ─── Automation Tab ─── */}
             <TabsContent value="automation" className="space-y-4 mt-4">
-              <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-3">
-                <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <div className="rounded-lg p-3" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                <p className="text-xs text-amber-400 flex items-center gap-1.5">
                   <Bot className="h-3.5 w-3.5 shrink-0" />
                   Web automation lets our AI agent log into the portal with your credentials and perform actions on your behalf — no API needed.
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Portal Login URL</Label>
-                <Input
+                <label className="text-xs font-medium text-slate-300">Portal Login URL</label>
+                <input
                   value={form.wa_login_url}
                   onChange={e => setForm((f: Record<string, any>) => ({ ...f, wa_login_url: e.target.value }))}
                   placeholder="https://www.linkedin.com/login"
-                  className="rounded-lg font-mono text-sm"
+                  className="w-full px-3 py-2 rounded-lg font-mono text-sm outline-none transition-all"
+                  style={glassInput}
+                  onFocus={applyFocus}
+                  onBlur={applyBlur}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">Portal Username / Email</Label>
-                  <Input
+                  <label className="text-xs font-medium text-slate-300">Portal Username / Email</label>
+                  <input
                     value={form.wa_username}
                     onChange={e => setForm((f: Record<string, any>) => ({ ...f, wa_username: e.target.value }))}
                     placeholder="hr@company.com"
-                    className="rounded-lg"
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all"
+                    style={glassInput}
+                    onFocus={applyFocus}
+                    onBlur={applyBlur}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">Portal Password</Label>
+                  <label className="text-xs font-medium text-slate-300">Portal Password</label>
                   <div className="relative">
-                    <Input
+                    <input
                       type={showPasswords.wa_password ? 'text' : 'password'}
                       value={form.wa_password}
                       onChange={e => setForm((f: Record<string, any>) => ({ ...f, wa_password: e.target.value }))}
                       placeholder="••••••••"
-                      className="rounded-lg pr-10"
+                      className="w-full px-3 py-2 rounded-lg pr-10 text-sm outline-none transition-all"
+                      style={glassInput}
+                      onFocus={applyFocus}
+                      onBlur={applyBlur}
                     />
-                    <button type="button" onClick={() => togglePassword('wa_password')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <button type="button" onClick={() => togglePassword('wa_password')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
                       {showPasswords.wa_password ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Post Job URL (optional)</Label>
-                <Input
+                <label className="text-xs font-medium text-slate-300">Post Job URL (optional)</label>
+                <input
                   value={form.wa_post_job_url}
                   onChange={e => setForm((f: Record<string, any>) => ({ ...f, wa_post_job_url: e.target.value }))}
                   placeholder="https://www.linkedin.com/talent/post-a-job"
-                  className="rounded-lg font-mono text-sm"
+                  className="w-full px-3 py-2 rounded-lg font-mono text-sm outline-none transition-all"
+                  style={glassInput}
+                  onFocus={applyFocus}
+                  onBlur={applyBlur}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">AI Instructions (optional)</Label>
-                <Textarea
+                <label className="text-xs font-medium text-slate-300">AI Instructions (optional)</label>
+                <textarea
                   value={form.wa_instructions}
                   onChange={e => setForm((f: Record<string, any>) => ({ ...f, wa_instructions: e.target.value }))}
                   placeholder="Additional instructions for the AI agent when automating this portal, e.g. 'After logging in, navigate to the recruiter dashboard and click Post a Job...'"
                   rows={3}
-                  className="rounded-lg text-sm"
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all resize-none"
+                  style={glassInput}
+                  onFocus={applyFocus}
+                  onBlur={applyBlur}
                 />
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[11px] text-slate-500">
                   Give the AI agent step-by-step hints if the portal has a non-standard workflow
                 </p>
               </div>
 
-              <div className="rounded-lg bg-muted/30 p-4 space-y-2">
-                <p className="text-xs font-semibold text-foreground">How Web Automation Works</p>
-                <ul className="text-[11px] text-muted-foreground space-y-1.5">
+              <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--orbis-card)' }}>
+                <p className="text-xs font-semibold text-white">How Web Automation Works</p>
+                <ul className="text-[11px] text-slate-500 space-y-1.5">
                   <li className="flex items-start gap-2"><span className="text-amber-500 font-bold">1.</span> AI agent opens a secure browser session</li>
                   <li className="flex items-start gap-2"><span className="text-amber-500 font-bold">2.</span> Logs into the portal with your stored credentials</li>
                   <li className="flex items-start gap-2"><span className="text-amber-500 font-bold">3.</span> Navigates to the job posting page and fills in the form</li>
@@ -845,12 +906,22 @@ export default function JobPortals() {
           </Tabs>
 
           <DialogFooter className="gap-2 sm:gap-0 mt-4">
-            <Button variant="outline" onClick={() => setShowDialog(false)} disabled={saving} className="rounded-lg">
+            <button
+              onClick={() => setShowDialog(false)}
+              disabled={saving}
+              className="px-4 py-2 text-sm font-medium text-slate-300 rounded-lg transition-all hover:bg-white/5 disabled:opacity-50"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+            >
               Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={!form.portal_name.trim() || saving} className="rounded-lg gap-1.5">
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!form.portal_name.trim() || saving}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white rounded-lg transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+            >
               {saving ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</> : editing ? 'Update Portal' : 'Add Portal'}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -878,10 +949,10 @@ function PortalCard({
   const hasAutomation = !!portal.web_automation_config?.login_url;
 
   return (
-    <Card className="group rounded-xl border border-border/60 hover:border-border hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <div className="group rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg" style={{ ...glassCard, borderColor: 'var(--orbis-hover)' }}>
       <div className={`h-1 ${portalColor} w-full`} />
 
-      <CardContent className="p-5 pt-4">
+      <div className="p-5 pt-4">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -889,9 +960,9 @@ function PortalCard({
               <span className="text-sm font-bold">{portal.portal_name.charAt(0).toUpperCase()}</span>
             </div>
             <div>
-              <h4 className="font-semibold text-sm leading-tight">{portal.portal_name}</h4>
+              <h4 className="font-semibold text-sm leading-tight text-white">{portal.portal_name}</h4>
               {portal.created_at && (
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-[11px] text-slate-500 mt-0.5">
                   Added {new Date(portal.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </p>
               )}
@@ -904,50 +975,49 @@ function PortalCard({
               onCheckedChange={onToggleActive}
               className="scale-75"
             />
-            <Badge
-              variant="outline"
-              className={`text-[10px] font-medium rounded-full px-2.5 py-0.5 ${
+            <span
+              className={`inline-flex items-center text-[10px] font-medium rounded-full px-2.5 py-0.5 border ${
                 portal.is_active
-                  ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                  : 'bg-muted text-muted-foreground border-border'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : 'bg-white/[0.03] text-slate-500 border-white/10'
               }`}
             >
               <span className={`inline-block h-1.5 w-1.5 rounded-full mr-1.5 ${portal.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
               {portal.is_active ? 'Active' : 'Inactive'}
-            </Badge>
+            </span>
           </div>
         </div>
 
         {/* Endpoint / MCP URL */}
         {(portal.api_endpoint || portal.mcp_server_url) && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2 mb-3">
-            {portal.mcp_server_url ? <Cable className="h-3 w-3 shrink-0 text-violet-500" /> : <Link2 className="h-3 w-3 shrink-0" />}
+          <div className="flex items-center gap-2 text-xs text-slate-400 rounded-lg px-3 py-2 mb-3" style={{ background: 'var(--orbis-card)' }}>
+            {portal.mcp_server_url ? <Cable className="h-3 w-3 shrink-0 text-blue-500" /> : <Link2 className="h-3 w-3 shrink-0" />}
             <span className="truncate font-mono text-[11px]">{portal.mcp_server_url || portal.api_endpoint}</span>
           </div>
         )}
 
         {/* Meta pills */}
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground bg-muted/50 rounded-md px-2 py-1">
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 rounded-md px-2 py-1" style={{ background: 'var(--orbis-input)' }}>
             {getIntegrationIcon(portal.integration_type)}
             {INTEGRATION_LABELS[portal.integration_type || 'api'] || portal.integration_type}
           </div>
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground bg-muted/50 rounded-md px-2 py-1">
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 rounded-md px-2 py-1" style={{ background: 'var(--orbis-input)' }}>
             {getAuthIcon(portal.auth_type)}
             {AUTH_LABELS[portal.auth_type || 'api_key'] || portal.auth_type}
           </div>
           {hasCreds && (
-            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 rounded-md px-2 py-1">
+            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1">
               <CheckCircle className="h-3 w-3" /> Credentials
             </div>
           )}
           {hasMcp && (
-            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/30 rounded-md px-2 py-1">
+            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-md px-2 py-1">
               <Cable className="h-3 w-3" /> MCP
             </div>
           )}
           {hasAutomation && (
-            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 rounded-md px-2 py-1">
+            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-md px-2 py-1">
               <Bot className="h-3 w-3" /> Automation
             </div>
           )}
@@ -959,7 +1029,7 @@ function PortalCard({
             {capabilities.map(cap => {
               const capDef = ALL_CAPABILITIES.find(c => c.value === cap);
               return (
-                <span key={cap} className="text-[10px] font-medium text-primary bg-primary/5 border border-primary/20 rounded px-1.5 py-0.5">
+                <span key={cap} className="text-[10px] font-medium text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5">
                   {capDef?.label || cap}
                 </span>
               );
@@ -969,66 +1039,63 @@ function PortalCard({
 
         {/* Last synced */}
         {portal.last_synced_at && (
-          <p className="text-[10px] text-muted-foreground mb-3 flex items-center gap-1">
+          <p className="text-[10px] text-slate-500 mb-3 flex items-center gap-1">
             <RefreshCw className="h-2.5 w-2.5" />
             Last synced {new Date(portal.last_synced_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </p>
         )}
 
         {/* Actions */}
-        <div className="flex flex-col gap-2 pt-3 border-t border-border/40">
+        <div className="flex flex-col gap-2 pt-3" style={{ borderTop: '1px solid var(--orbis-border)' }}>
           {/* Primary actions row */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 text-xs rounded-lg h-8 gap-1.5"
+            <button
+              className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-slate-300 rounded-lg h-8 transition-all hover:bg-white/5"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
               onClick={onEdit}
             >
               <Pencil className="h-3 w-3" /> Configure
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs rounded-lg h-8 gap-1.5"
+            </button>
+            <button
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-slate-300 rounded-lg h-8 px-3 transition-all hover:bg-white/5 disabled:opacity-50"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
               onClick={onTest}
               disabled={isTesting}
             >
               {isTesting ? <Loader2 className="h-3 w-3 animate-spin" /> : <PlugZap className="h-3 w-3" />}
               Test
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs rounded-lg h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-200 dark:hover:border-red-800"
+            </button>
+            <button
+              className="inline-flex items-center justify-center text-xs rounded-lg h-8 w-8 p-0 text-red-400 transition-all hover:bg-red-500/10 hover:border-red-500/20"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
               onClick={onDelete}
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            </button>
           </div>
 
           {/* AI actions row */}
           {portal.is_active && capabilities.length > 0 && (
             <div className="flex items-center gap-1.5">
               {capabilities.includes('post_job') && (
-                <Button variant="ghost" size="sm" className="flex-1 text-[11px] h-7 rounded-md gap-1 text-primary hover:text-primary hover:bg-primary/5" onClick={() => onSync('post_job')}>
+                <button className="flex-1 inline-flex items-center justify-center gap-1 text-[11px] font-medium h-7 rounded-md text-blue-400 hover:bg-blue-500/10 transition-all" onClick={() => onSync('post_job')}>
                   <Upload className="h-3 w-3" /> Post Job
-                </Button>
+                </button>
               )}
               {capabilities.includes('sync_applications') && (
-                <Button variant="ghost" size="sm" className="flex-1 text-[11px] h-7 rounded-md gap-1 text-primary hover:text-primary hover:bg-primary/5" onClick={() => onSync('sync_applications')}>
+                <button className="flex-1 inline-flex items-center justify-center gap-1 text-[11px] font-medium h-7 rounded-md text-blue-400 hover:bg-blue-500/10 transition-all" onClick={() => onSync('sync_applications')}>
                   <ArrowRightLeft className="h-3 w-3" /> Sync
-                </Button>
+                </button>
               )}
               {capabilities.includes('search_candidates') && (
-                <Button variant="ghost" size="sm" className="flex-1 text-[11px] h-7 rounded-md gap-1 text-primary hover:text-primary hover:bg-primary/5" onClick={() => onSync('search_candidates')}>
+                <button className="flex-1 inline-flex items-center justify-center gap-1 text-[11px] font-medium h-7 rounded-md text-blue-400 hover:bg-blue-500/10 transition-all" onClick={() => onSync('search_candidates')}>
                   <Download className="h-3 w-3" /> Source
-                </Button>
+                </button>
               )}
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

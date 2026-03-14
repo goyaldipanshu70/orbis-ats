@@ -3,24 +3,45 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-  Table, TableHeader, TableRow, TableHead, TableBody, TableCell,
-} from '@/components/ui/table';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { apiClient } from '@/utils/api';
 import {
   ClipboardPaste, Upload, Users, FileUp, X, Check, Search,
   AlertCircle, FileSpreadsheet, Loader2,
 } from 'lucide-react';
+
+/* -------------------------------------------------------------------------- */
+/*  Style constants                                                           */
+/* -------------------------------------------------------------------------- */
+
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+
+const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -72,7 +93,6 @@ function parseEmails(raw: string): ImportedRecipient[] {
 function parseCSVRows(text: string): string[][] {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   return lines.map(line => {
-    // Simple CSV parse: handle quoted fields
     const result: string[] = [];
     let current = '';
     let inQuotes = false;
@@ -103,7 +123,7 @@ export default function AddRecipientsModal({
   const [activeTab, setActiveTab] = useState('paste');
   const [submitting, setSubmitting] = useState(false);
 
-  /* ── Tab 1: Paste Emails ────────────────────────────────────────────── */
+  /* -- Tab 1: Paste Emails ------------------------------------------------ */
   const [pasteText, setPasteText] = useState('');
   const [parsedEmails, setParsedEmails] = useState<ImportedRecipient[]>([]);
 
@@ -140,7 +160,7 @@ export default function AddRecipientsModal({
     }
   };
 
-  /* ── Tab 2: Upload File ─────────────────────────────────────────────── */
+  /* -- Tab 2: Upload File ------------------------------------------------- */
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState('');
@@ -161,7 +181,6 @@ export default function AddRecipientsModal({
     setCsvHeaders(rows[0]);
     setCsvRows(rows.slice(1));
     setFileRecipients([]);
-    // Auto-detect email column
     const headerLower = rows[0].map(h => h.toLowerCase());
     const emailIdx = headerLower.findIndex(h => h.includes('email') || h.includes('e-mail'));
     const nameIdx = headerLower.findIndex(h => h.includes('name') || h.includes('full_name') || h.includes('fullname'));
@@ -182,7 +201,6 @@ export default function AddRecipientsModal({
       const text = e.target?.result as string;
       if (!text) return;
       if (ext === 'vcf') {
-        // Parse VCF: extract EMAIL and FN fields
         const contacts: string[][] = [['Name', 'Email']];
         const cards = text.split('BEGIN:VCARD');
         for (const card of cards) {
@@ -212,7 +230,6 @@ export default function AddRecipientsModal({
     setDragActive(true);
   };
 
-  // Build recipients from column mapping
   useEffect(() => {
     if (!emailColIdx || csvRows.length === 0) {
       setFileRecipients([]);
@@ -270,7 +287,7 @@ export default function AddRecipientsModal({
     setFileRecipients([]);
   };
 
-  /* ── Tab 3: From Talent Pool ────────────────────────────────────────── */
+  /* -- Tab 3: From Talent Pool -------------------------------------------- */
   const [talentSearch, setTalentSearch] = useState('');
   const [talentCandidates, setTalentCandidates] = useState<TalentPoolCandidate[]>([]);
   const [loadingTalent, setLoadingTalent] = useState(false);
@@ -291,7 +308,6 @@ export default function AddRecipientsModal({
     }
   }, [toast]);
 
-  // Load talent pool when tab is activated
   useEffect(() => {
     if (activeTab === 'talent' && !talentLoaded) {
       loadTalentPool();
@@ -347,12 +363,11 @@ export default function AddRecipientsModal({
     }
   };
 
-  /* ── Reset on close ─────────────────────────────────────────────────── */
+  /* -- Reset on close ----------------------------------------------------- */
 
   const handleOpenChange = (v: boolean) => {
     if (!v) {
       onClose();
-      // reset all state after animation
       setTimeout(() => {
         setPasteText('');
         setParsedEmails([]);
@@ -364,86 +379,97 @@ export default function AddRecipientsModal({
     }
   };
 
-  /* ── Render ──────────────────────────────────────────────────────────── */
+  /* -- Render ------------------------------------------------------------- */
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
         <DialogHeader>
-          <DialogTitle>Add Recipients</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-white">Add Recipients</DialogTitle>
+          <DialogDescription className="text-slate-400">
             Add recipients to this campaign by pasting emails, uploading a file, or selecting from the talent pool.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-2">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="paste" className="flex items-center gap-1.5 text-xs">
+          <TabsList className="grid w-full grid-cols-3 rounded-xl" style={{ background: 'var(--orbis-input)' }}>
+            <TabsTrigger value="paste" className="flex items-center gap-1.5 text-xs text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 rounded-lg">
               <ClipboardPaste className="h-3.5 w-3.5" /> Paste Emails
             </TabsTrigger>
-            <TabsTrigger value="upload" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="upload" className="flex items-center gap-1.5 text-xs text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 rounded-lg">
               <Upload className="h-3.5 w-3.5" /> Upload File
             </TabsTrigger>
-            <TabsTrigger value="talent" className="flex items-center gap-1.5 text-xs">
+            <TabsTrigger value="talent" className="flex items-center gap-1.5 text-xs text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 rounded-lg">
               <Users className="h-3.5 w-3.5" /> From Talent Pool
             </TabsTrigger>
           </TabsList>
 
-          {/* ──────────────────────────────────────────────────────────── */}
-          {/* TAB: Paste Emails                                          */}
-          {/* ──────────────────────────────────────────────────────────── */}
+          {/* TAB: Paste Emails */}
           <TabsContent value="paste" className="space-y-4 mt-4">
             <div>
-              <Label className="text-sm font-medium mb-1.5 block">Email Addresses</Label>
-              <Textarea
-                placeholder="Paste email addresses separated by commas, semicolons, or new lines&#10;&#10;e.g.&#10;john@example.com, jane@example.com&#10;bob@company.org"
+              <label className="text-sm font-medium text-slate-300 mb-1.5 block">Email Addresses</label>
+              <textarea
+                placeholder={"Paste email addresses separated by commas, semicolons, or new lines\n\ne.g.\njohn@example.com, jane@example.com\nbob@company.org"}
                 value={pasteText}
                 onChange={e => handlePasteChange(e.target.value)}
                 rows={8}
-                className="font-mono text-sm"
+                className="w-full font-mono text-sm rounded-xl px-3 py-2 placeholder:text-slate-500 focus:outline-none"
+                style={glassInput}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </div>
 
             {parsedEmails.length > 0 && (
               <div className="flex items-center gap-3 text-sm">
-                <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                <div className="flex items-center gap-1.5 text-emerald-400">
                   <Check className="h-4 w-4" />
                   <span className="font-medium">{validPasteCount}</span>
-                  <span className="text-muted-foreground">valid</span>
+                  <span className="text-slate-500">valid</span>
                 </div>
                 {invalidPasteCount > 0 && (
-                  <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                  <div className="flex items-center gap-1.5 text-rose-400">
                     <AlertCircle className="h-4 w-4" />
                     <span className="font-medium">{invalidPasteCount}</span>
-                    <span className="text-muted-foreground">invalid / duplicate</span>
+                    <span className="text-slate-500">invalid / duplicate</span>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Show invalid emails */}
             {invalidPasteCount > 0 && (
-              <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 p-3">
-                <p className="text-xs font-medium text-red-700 dark:text-red-300 mb-1.5">
+              <div className="rounded-xl p-3" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                <p className="text-xs font-medium text-rose-300 mb-1.5">
                   Invalid or duplicate emails:
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {parsedEmails.filter(e => !e.valid).map((e, i) => (
-                    <Badge
+                    <span
                       key={i}
-                      variant="outline"
-                      className="text-[10px] border-red-300 dark:border-red-700 text-red-600 dark:text-red-400"
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20"
                     >
                       {e.email}
-                    </Badge>
+                    </span>
                   ))}
                 </div>
               </div>
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
-              <Button onClick={handleAddPastedEmails} disabled={submitting || validPasteCount === 0}>
+              <button
+                onClick={onClose}
+                disabled={submitting}
+                className="text-slate-300 rounded-xl h-11 px-5 font-semibold"
+                style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddPastedEmails}
+                disabled={submitting || validPasteCount === 0}
+                className="text-white font-semibold rounded-xl h-11 px-5 disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }}
+              >
                 {submitting ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" /> Adding...
@@ -451,34 +477,32 @@ export default function AddRecipientsModal({
                 ) : (
                   `Add All Valid (${validPasteCount})`
                 )}
-              </Button>
+              </button>
             </DialogFooter>
           </TabsContent>
 
-          {/* ──────────────────────────────────────────────────────────── */}
-          {/* TAB: Upload File                                           */}
-          {/* ──────────────────────────────────────────────────────────── */}
+          {/* TAB: Upload File */}
           <TabsContent value="upload" className="space-y-4 mt-4">
             {!uploadedFileName ? (
-              /* Drop zone */
               <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={() => setDragActive(false)}
                 onClick={() => fileInputRef.current?.click()}
                 className={`
-                  border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-                  ${dragActive
-                    ? 'border-primary bg-primary/5'
-                    : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30'
-                  }
+                  rounded-xl p-8 text-center cursor-pointer transition-colors
+                  ${dragActive ? 'border-[#1B8EE5]' : ''}
                 `}
+                style={{
+                  border: dragActive ? '2px dashed #1B8EE5' : '2px dashed var(--orbis-border-strong)',
+                  background: dragActive ? 'rgba(27,142,229,0.05)' : 'var(--orbis-subtle)',
+                }}
               >
-                <FileUp className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm font-medium mb-1">
+                <FileUp className="h-10 w-10 mx-auto text-slate-500 mb-3" />
+                <p className="text-sm font-medium text-white mb-1">
                   Drop your file here or click to browse
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500">
                   Supports CSV, TSV, and VCF files
                 </p>
                 <input
@@ -494,41 +518,38 @@ export default function AddRecipientsModal({
                 />
               </div>
             ) : (
-              /* File loaded - show mapping */
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <FileSpreadsheet className="h-5 w-5 text-green-600" />
-                    <span className="text-sm font-medium">{uploadedFileName}</span>
-                    <Badge variant="secondary" className="text-xs">
+                    <FileSpreadsheet className="h-5 w-5 text-emerald-400" />
+                    <span className="text-sm font-medium text-white">{uploadedFileName}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20">
                       {csvRows.length} rows
-                    </Badge>
+                    </span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
+                  <button
+                    className="h-7 w-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
                     onClick={resetFileState}
                   >
                     <X className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </div>
 
-                <Separator />
+                <div style={{ borderTop: '1px solid var(--orbis-border)' }} />
 
                 {/* Column mapping */}
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <Label className="text-xs font-medium mb-1 block">
-                      Email Column <span className="text-red-500">*</span>
-                    </Label>
+                    <label className="text-xs font-medium text-slate-300 mb-1 block">
+                      Email Column <span className="text-rose-400">*</span>
+                    </label>
                     <Select value={emailColIdx} onValueChange={setEmailColIdx}>
-                      <SelectTrigger className="h-8 text-xs">
+                      <SelectTrigger className="h-9 rounded-xl text-white border-0 text-xs" style={glassInput}>
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl border-0" style={selectDrop}>
                         {csvHeaders.map((h, i) => (
-                          <SelectItem key={i} value={String(i)} className="text-xs">
+                          <SelectItem key={i} value={String(i)} className="text-xs text-slate-200 focus:bg-white/10 focus:text-white">
                             {h || `Column ${i + 1}`}
                           </SelectItem>
                         ))}
@@ -536,15 +557,15 @@ export default function AddRecipientsModal({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs font-medium mb-1 block">Name Column</Label>
+                    <label className="text-xs font-medium text-slate-300 mb-1 block">Name Column</label>
                     <Select value={nameColIdx} onValueChange={setNameColIdx}>
-                      <SelectTrigger className="h-8 text-xs">
+                      <SelectTrigger className="h-9 rounded-xl text-white border-0 text-xs" style={glassInput}>
                         <SelectValue placeholder="(optional)" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none" className="text-xs">None</SelectItem>
+                      <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                        <SelectItem value="none" className="text-xs text-slate-200 focus:bg-white/10 focus:text-white">None</SelectItem>
                         {csvHeaders.map((h, i) => (
-                          <SelectItem key={i} value={String(i)} className="text-xs">
+                          <SelectItem key={i} value={String(i)} className="text-xs text-slate-200 focus:bg-white/10 focus:text-white">
                             {h || `Column ${i + 1}`}
                           </SelectItem>
                         ))}
@@ -552,15 +573,15 @@ export default function AddRecipientsModal({
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs font-medium mb-1 block">Company Column</Label>
+                    <label className="text-xs font-medium text-slate-300 mb-1 block">Company Column</label>
                     <Select value={companyColIdx} onValueChange={setCompanyColIdx}>
-                      <SelectTrigger className="h-8 text-xs">
+                      <SelectTrigger className="h-9 rounded-xl text-white border-0 text-xs" style={glassInput}>
                         <SelectValue placeholder="(optional)" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none" className="text-xs">None</SelectItem>
+                      <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                        <SelectItem value="none" className="text-xs text-slate-200 focus:bg-white/10 focus:text-white">None</SelectItem>
                         {csvHeaders.map((h, i) => (
-                          <SelectItem key={i} value={String(i)} className="text-xs">
+                          <SelectItem key={i} value={String(i)} className="text-xs text-slate-200 focus:bg-white/10 focus:text-white">
                             {h || `Column ${i + 1}`}
                           </SelectItem>
                         ))}
@@ -573,50 +594,48 @@ export default function AddRecipientsModal({
                 {emailColIdx && csvRows.length > 0 && (
                   <>
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground">
-                        Preview (first 5 rows)
-                      </p>
+                      <p className="text-xs text-slate-500">Preview (first 5 rows)</p>
                       <div className="flex items-center gap-1.5 text-sm">
-                        <Check className="h-4 w-4 text-green-600" />
-                        <span className="font-medium text-green-600 dark:text-green-400">{validFileCount}</span>
-                        <span className="text-muted-foreground text-xs">contacts found</span>
+                        <Check className="h-4 w-4 text-emerald-400" />
+                        <span className="font-medium text-emerald-400">{validFileCount}</span>
+                        <span className="text-slate-500 text-xs">contacts found</span>
                       </div>
                     </div>
 
-                    <div className="rounded-lg border overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="text-xs py-1.5">Email</TableHead>
-                            {nameColIdx && nameColIdx !== 'none' && <TableHead className="text-xs py-1.5">Name</TableHead>}
-                            {companyColIdx && companyColIdx !== 'none' && <TableHead className="text-xs py-1.5">Company</TableHead>}
-                            <TableHead className="text-xs py-1.5 w-16">Valid</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--orbis-border)' }}>
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr style={{ background: 'var(--orbis-subtle)' }}>
+                            <th className="text-xs text-slate-500 py-1.5 px-3 font-medium">Email</th>
+                            {nameColIdx && nameColIdx !== 'none' && <th className="text-xs text-slate-500 py-1.5 px-3 font-medium">Name</th>}
+                            {companyColIdx && companyColIdx !== 'none' && <th className="text-xs text-slate-500 py-1.5 px-3 font-medium">Company</th>}
+                            <th className="text-xs text-slate-500 py-1.5 px-3 font-medium w-16">Valid</th>
+                          </tr>
+                        </thead>
+                        <tbody>
                           {fileRecipients.slice(0, 5).map((r, i) => (
-                            <TableRow key={i}>
-                              <TableCell className="text-xs py-1.5 font-mono">{r.email}</TableCell>
+                            <tr key={i} className="hover:bg-white/[0.02]" style={{ borderTop: '1px solid var(--orbis-grid)' }}>
+                              <td className="text-xs py-1.5 px-3 font-mono text-slate-300">{r.email}</td>
                               {nameColIdx && nameColIdx !== 'none' && (
-                                <TableCell className="text-xs py-1.5">{r.name || '-'}</TableCell>
+                                <td className="text-xs py-1.5 px-3 text-slate-300">{r.name || '-'}</td>
                               )}
                               {companyColIdx && companyColIdx !== 'none' && (
-                                <TableCell className="text-xs py-1.5">{r.company || '-'}</TableCell>
+                                <td className="text-xs py-1.5 px-3 text-slate-300">{r.company || '-'}</td>
                               )}
-                              <TableCell className="py-1.5">
+                              <td className="py-1.5 px-3">
                                 {r.valid ? (
-                                  <Check className="h-3.5 w-3.5 text-green-600" />
+                                  <Check className="h-3.5 w-3.5 text-emerald-400" />
                                 ) : (
-                                  <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                                  <AlertCircle className="h-3.5 w-3.5 text-rose-400" />
                                 )}
-                              </TableCell>
-                            </TableRow>
+                              </td>
+                            </tr>
                           ))}
-                        </TableBody>
-                      </Table>
+                        </tbody>
+                      </table>
                     </div>
                     {fileRecipients.length > 5 && (
-                      <p className="text-[11px] text-muted-foreground text-center">
+                      <p className="text-[11px] text-slate-500 text-center">
                         ...and {fileRecipients.length - 5} more rows
                       </p>
                     )}
@@ -626,8 +645,20 @@ export default function AddRecipientsModal({
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
-              <Button onClick={handleImportFile} disabled={submitting || validFileCount === 0}>
+              <button
+                onClick={onClose}
+                disabled={submitting}
+                className="text-slate-300 rounded-xl h-11 px-5 font-semibold"
+                style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleImportFile}
+                disabled={submitting || validFileCount === 0}
+                className="text-white font-semibold rounded-xl h-11 px-5 disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }}
+              >
                 {submitting ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" /> Importing...
@@ -635,39 +666,44 @@ export default function AddRecipientsModal({
                 ) : (
                   `Import All (${validFileCount})`
                 )}
-              </Button>
+              </button>
             </DialogFooter>
           </TabsContent>
 
-          {/* ──────────────────────────────────────────────────────────── */}
-          {/* TAB: From Talent Pool                                      */}
-          {/* ──────────────────────────────────────────────────────────── */}
+          {/* TAB: From Talent Pool */}
           <TabsContent value="talent" className="space-y-4 mt-4">
             {/* Search */}
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                <input
                   placeholder="Search by name or email..."
                   value={talentSearch}
                   onChange={e => setTalentSearch(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleTalentSearch(); }}
-                  className="pl-9 h-9"
+                  className="w-full h-9 pl-9 pr-3 rounded-xl text-sm placeholder:text-slate-500 focus:outline-none"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                 />
               </div>
-              <Button variant="outline" size="sm" className="h-9" onClick={handleTalentSearch}>
+              <button
+                onClick={handleTalentSearch}
+                className="text-slate-300 rounded-xl h-9 px-4 text-sm font-medium"
+                style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+              >
                 Search
-              </Button>
+              </button>
             </div>
 
             {loadingTalent ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
               </div>
             ) : filteredTalent.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
+                <Users className="h-8 w-8 mx-auto text-slate-500 mb-2" />
+                <p className="text-sm text-slate-500">
                   {talentLoaded ? 'No candidates found in talent pool' : 'Loading talent pool...'}
                 </p>
               </div>
@@ -681,28 +717,28 @@ export default function AddRecipientsModal({
                       checked={selectedTalentIds.size === filteredTalent.length && filteredTalent.length > 0}
                       onCheckedChange={toggleAllTalent}
                     />
-                    <Label htmlFor="select-all-talent" className="text-xs text-muted-foreground cursor-pointer">
+                    <label htmlFor="select-all-talent" className="text-xs text-slate-400 cursor-pointer">
                       Select all ({filteredTalent.length})
-                    </Label>
+                    </label>
                   </div>
                   {selectedTalentIds.size > 0 && (
-                    <Badge variant="secondary" className="text-xs">
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                       {selectedTalentIds.size} selected
-                    </Badge>
+                    </span>
                   )}
                 </div>
 
                 {/* Candidate list */}
-                <ScrollArea className="h-[280px] rounded-lg border">
+                <ScrollArea className="h-[280px] rounded-xl" style={{ border: '1px solid var(--orbis-border)' }}>
                   <div className="p-1">
                     {filteredTalent.map(candidate => (
                       <div
                         key={candidate.id || candidate.email}
                         className={`
-                          flex items-center gap-3 px-3 py-2.5 rounded-md cursor-pointer transition-colors
+                          flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors
                           ${selectedTalentIds.has(candidate.id)
-                            ? 'bg-primary/5 border border-primary/20'
-                            : 'hover:bg-muted/50 border border-transparent'
+                            ? 'bg-blue-500/10 border border-blue-500/20'
+                            : 'hover:bg-white/[0.03] border border-transparent'
                           }
                         `}
                         onClick={() => toggleTalentSelection(candidate.id)}
@@ -712,20 +748,20 @@ export default function AddRecipientsModal({
                           onCheckedChange={() => toggleTalentSelection(candidate.id)}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
+                          <p className="text-sm font-medium text-white truncate">
                             {candidate.candidate_name || 'Unknown'}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="text-xs text-slate-500 truncate">
                             {candidate.email}
                           </p>
                         </div>
                         {candidate.current_stage && (
-                          <Badge variant="outline" className="text-[10px] capitalize shrink-0">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20 capitalize shrink-0">
                             {candidate.current_stage}
-                          </Badge>
+                          </span>
                         )}
                         {candidate.overall_score != null && (
-                          <span className="text-xs font-medium text-muted-foreground shrink-0">
+                          <span className="text-xs font-medium text-slate-500 shrink-0">
                             {Math.round(candidate.overall_score)}%
                           </span>
                         )}
@@ -737,10 +773,19 @@ export default function AddRecipientsModal({
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={onClose} disabled={submitting}>Cancel</Button>
-              <Button
+              <button
+                onClick={onClose}
+                disabled={submitting}
+                className="text-slate-300 rounded-xl h-11 px-5 font-semibold"
+                style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+              >
+                Cancel
+              </button>
+              <button
                 onClick={handleAddFromTalentPool}
                 disabled={submitting || selectedTalentIds.size === 0}
+                className="text-white font-semibold rounded-xl h-11 px-5 disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }}
               >
                 {submitting ? (
                   <span className="flex items-center gap-2">
@@ -749,7 +794,7 @@ export default function AddRecipientsModal({
                 ) : (
                   `Add Selected (${selectedTalentIds.size})`
                 )}
-              </Button>
+              </button>
             </DialogFooter>
           </TabsContent>
         </Tabs>

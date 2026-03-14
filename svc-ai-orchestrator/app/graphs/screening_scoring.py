@@ -6,9 +6,9 @@ from app.shared.graph_logging import logged_node
 @logged_node("screening_scoring", "score_responses")
 async def score_responses_node(state: dict) -> dict:
     """Wrapper node that calls score_screening_responses with DB session."""
-    from app.db.postgres import get_recruiting_db
+    from app.db.postgres import recruiting_db_session
     from app.nodes.screening.scorer import score_screening_responses
-    async for db in get_recruiting_db():
+    async with recruiting_db_session() as db:
         result = await score_screening_responses(db, state["candidate_id"], state["jd_id"])
     return result
 

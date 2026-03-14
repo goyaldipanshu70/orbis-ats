@@ -52,6 +52,7 @@ ui/.vite/
 .playwright-mcp/
 test-*.png
 *.screenshot.png
+*.png
 
 # ── Logs ──────────────────────────────────────────────────────────────
 *.log

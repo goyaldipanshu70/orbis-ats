@@ -1,8 +1,3 @@
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
@@ -20,6 +15,32 @@ import type {
 const CATEGORIES = [
   'Engineering', 'HR', 'Finance', 'Marketing', 'Sales', 'IT', 'Product', 'Design', 'Other',
 ];
+
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+
+const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
 
 export interface AddFormState {
   full_name: string;
@@ -148,224 +169,234 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
   return (
     <div className="space-y-4">
       {showSuccess && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-3 flex items-center gap-2">
-          <FileText className="w-4 h-4 text-green-600" />
+        <div
+          className="rounded-xl p-3 flex items-center gap-2"
+          style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}
+        >
+          <FileText className="w-4 h-4 text-emerald-400" />
           <div>
-            <p className="text-sm font-medium text-green-800">Resume parsed successfully</p>
-            <p className="text-xs text-green-600">Review and edit the extracted fields below, then confirm.</p>
+            <p className="text-sm font-medium text-emerald-300">Resume parsed successfully</p>
+            <p className="text-xs text-emerald-400/70">Review and edit the extracted fields below, then confirm.</p>
           </div>
         </div>
       )}
 
       <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
         {/* 1. Personal Information */}
-        <AccordionItem value="personal">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
-            <span className="flex items-center gap-2"><User className="h-4 w-4 text-blue-600" /> Personal Information</span>
+        <AccordionItem value="personal" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
+            <span className="flex items-center gap-2"><User className="h-4 w-4 text-blue-400" /> Personal Information</span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 px-1">
             <div>
-              <Label className="text-xs font-medium">Full Name *</Label>
-              <Input value={form.full_name} onChange={e => set('full_name', e.target.value)} placeholder="John Doe" className="mt-1 h-8 text-sm" />
+              <label className="text-xs font-medium text-slate-300">Full Name *</label>
+              <input value={form.full_name} onChange={e => set('full_name', e.target.value)} placeholder="John Doe" onFocus={handleFocus} onBlur={handleBlur} className="w-full mt-1 h-8 px-3 rounded-lg text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs font-medium flex items-center gap-1"><Mail className="w-3 h-3" /> Email</Label>
-                <Input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="john@example.com" className="mt-1 h-8 text-sm" />
+                <label className="text-xs font-medium flex items-center gap-1 text-slate-300"><Mail className="w-3 h-3" /> Email</label>
+                <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="john@example.com" onFocus={handleFocus} onBlur={handleBlur} className="w-full mt-1 h-8 px-3 rounded-lg text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} />
               </div>
               <div>
-                <Label className="text-xs font-medium flex items-center gap-1"><Phone className="w-3 h-3" /> Phone</Label>
-                <Input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 234 567 890" className="mt-1 h-8 text-sm" />
+                <label className="text-xs font-medium flex items-center gap-1 text-slate-300"><Phone className="w-3 h-3" /> Phone</label>
+                <input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="+1 234 567 890" onFocus={handleFocus} onBlur={handleBlur} className="w-full mt-1 h-8 px-3 rounded-lg text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs font-medium flex items-center gap-1"><Briefcase className="w-3 h-3" /> Current Role</Label>
-                <Input value={form.current_role} onChange={e => set('current_role', e.target.value)} placeholder="Software Engineer" className="mt-1 h-8 text-sm" />
+                <label className="text-xs font-medium flex items-center gap-1 text-slate-300"><Briefcase className="w-3 h-3" /> Current Role</label>
+                <input value={form.current_role} onChange={e => set('current_role', e.target.value)} placeholder="Software Engineer" onFocus={handleFocus} onBlur={handleBlur} className="w-full mt-1 h-8 px-3 rounded-lg text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} />
               </div>
               <div>
-                <Label className="text-xs font-medium flex items-center gap-1"><Tag className="w-3 h-3" /> Category</Label>
+                <label className="text-xs font-medium flex items-center gap-1 text-slate-300"><Tag className="w-3 h-3" /> Category</label>
                 <Select value={form.category} onValueChange={v => set('category', v)}>
-                  <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue placeholder="Auto-detect" /></SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  <SelectTrigger className="mt-1 h-8 text-sm rounded-xl text-white border-0" style={glassInput}><SelectValue placeholder="Auto-detect" /></SelectTrigger>
+                  <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                    {CATEGORIES.map(c => <SelectItem key={c} value={c} className="text-slate-200 focus:bg-white/10 focus:text-white">{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs font-medium">Location</Label>
-                <Input value={form.location} onChange={e => set('location', e.target.value)} placeholder="San Francisco, CA" className="mt-1 h-8 text-sm" />
+                <label className="text-xs font-medium text-slate-300">Location</label>
+                <input value={form.location} onChange={e => set('location', e.target.value)} placeholder="San Francisco, CA" onFocus={handleFocus} onBlur={handleBlur} className="w-full mt-1 h-8 px-3 rounded-lg text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} />
               </div>
               <div>
-                <Label className="text-xs font-medium">Years of Experience</Label>
-                <Input value={form.years_of_experience} onChange={e => set('years_of_experience', e.target.value)} placeholder="5" className="mt-1 h-8 text-sm" />
+                <label className="text-xs font-medium text-slate-300">Years of Experience</label>
+                <input value={form.years_of_experience} onChange={e => set('years_of_experience', e.target.value)} placeholder="5" onFocus={handleFocus} onBlur={handleBlur} className="w-full mt-1 h-8 px-3 rounded-lg text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} />
               </div>
             </div>
           </AccordionContent>
         </AccordionItem>
 
         {/* 2. Summary */}
-        <AccordionItem value="summary">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
-            <span className="flex items-center gap-2"><FileText className="h-4 w-4 text-purple-600" /> Summary & Objective</span>
+        <AccordionItem value="summary" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
+            <span className="flex items-center gap-2"><FileText className="h-4 w-4 text-blue-400" /> Summary & Objective</span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 px-1">
             <div>
-              <Label className="text-xs font-medium">Professional Summary</Label>
-              <Textarea value={form.summary} onChange={e => set('summary', e.target.value)} rows={3} placeholder="Brief professional summary..." className="mt-1 text-sm" />
+              <label className="text-xs font-medium text-slate-300">Professional Summary</label>
+              <textarea value={form.summary} onChange={e => set('summary', e.target.value)} rows={3} placeholder="Brief professional summary..." onFocus={handleFocus} onBlur={handleBlur} className="w-full mt-1 px-3 py-2 rounded-lg text-sm outline-none transition-all resize-y placeholder:text-slate-500" style={glassInput} />
             </div>
             <div>
-              <Label className="text-xs font-medium">Career Objective</Label>
-              <Textarea value={form.objective} onChange={e => set('objective', e.target.value)} rows={2} placeholder="Career objective..." className="mt-1 text-sm" />
+              <label className="text-xs font-medium text-slate-300">Career Objective</label>
+              <textarea value={form.objective} onChange={e => set('objective', e.target.value)} rows={2} placeholder="Career objective..." onFocus={handleFocus} onBlur={handleBlur} className="w-full mt-1 px-3 py-2 rounded-lg text-sm outline-none transition-all resize-y placeholder:text-slate-500" style={glassInput} />
             </div>
           </AccordionContent>
         </AccordionItem>
 
         {/* 3. Education */}
-        <AccordionItem value="education">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+        <AccordionItem value="education" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
             <span className="flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-amber-600" /> Education
-              {form.education.length > 0 && <Badge variant="secondary" className="text-[10px] ml-1">{form.education.length}</Badge>}
+              <GraduationCap className="h-4 w-4 text-amber-400" /> Education
+              {form.education.length > 0 && (
+                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-md font-normal bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  {form.education.length}
+                </span>
+              )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 px-1">
             {form.education.map((edu, i) => (
-              <div key={i} className="relative border rounded-lg p-3 bg-muted/20 space-y-2">
+              <div key={i} className="relative rounded-2xl p-3 space-y-2" style={glassCard}>
                 <button
                   onClick={() => set('education', form.education.filter((_, j) => j !== i))}
-                  className="absolute top-2 right-2 text-muted-foreground hover:text-red-500"
+                  className="absolute top-2 right-2 text-slate-500 hover:text-red-400"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[10px]">Degree</Label>
-                    <Input value={edu.degree || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Degree</label>
+                    <input value={edu.degree || ''} onChange={e => {
                       const updated = [...form.education];
                       updated[i] = { ...edu, degree: e.target.value };
                       set('education', updated);
-                    }} placeholder="B.Tech" className="h-7 text-xs" />
+                    }} placeholder="B.Tech" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">Field of Study</Label>
-                    <Input value={edu.field_of_study || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Field of Study</label>
+                    <input value={edu.field_of_study || ''} onChange={e => {
                       const updated = [...form.education];
                       updated[i] = { ...edu, field_of_study: e.target.value };
                       set('education', updated);
-                    }} placeholder="Computer Science" className="h-7 text-xs" />
+                    }} placeholder="Computer Science" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <Label className="text-[10px]">Institution</Label>
-                    <Input value={edu.institution || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Institution</label>
+                    <input value={edu.institution || ''} onChange={e => {
                       const updated = [...form.education];
                       updated[i] = { ...edu, institution: e.target.value };
                       set('education', updated);
-                    }} placeholder="MIT" className="h-7 text-xs" />
+                    }} placeholder="MIT" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">Year</Label>
-                    <Input value={edu.graduation_year ?? ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Year</label>
+                    <input value={edu.graduation_year ?? ''} onChange={e => {
                       const updated = [...form.education];
                       updated[i] = { ...edu, graduation_year: e.target.value ? parseInt(e.target.value) : null };
                       set('education', updated);
-                    }} placeholder="2020" className="h-7 text-xs" />
+                    }} placeholder="2020" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">GPA</Label>
-                    <Input value={edu.gpa || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">GPA</label>
+                    <input value={edu.gpa || ''} onChange={e => {
                       const updated = [...form.education];
                       updated[i] = { ...edu, gpa: e.target.value };
                       set('education', updated);
-                    }} placeholder="3.8/4.0" className="h-7 text-xs" />
+                    }} placeholder="3.8/4.0" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                 </div>
               </div>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
+            <button
+              className="inline-flex items-center h-7 px-3 text-xs font-medium rounded-lg text-slate-300 transition-all hover:text-white"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
               onClick={() => set('education', [...form.education, { degree: '', field_of_study: '', institution: '', graduation_year: null, gpa: '', honors: '' }])}
             >
               <Plus className="h-3 w-3 mr-1" /> Add Education
-            </Button>
+            </button>
           </AccordionContent>
         </AccordionItem>
 
         {/* 4. Work Experience */}
-        <AccordionItem value="experience">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+        <AccordionItem value="experience" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
             <span className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-green-600" /> Work Experience
-              {form.work_experience.length > 0 && <Badge variant="secondary" className="text-[10px] ml-1">{form.work_experience.length}</Badge>}
+              <Building2 className="h-4 w-4 text-green-400" /> Work Experience
+              {form.work_experience.length > 0 && (
+                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-md font-normal bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  {form.work_experience.length}
+                </span>
+              )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 px-1">
             {form.work_experience.map((exp, i) => (
-              <div key={i} className="relative border rounded-lg p-3 bg-muted/20 space-y-2">
+              <div key={i} className="relative rounded-2xl p-3 space-y-2" style={glassCard}>
                 <button
                   onClick={() => set('work_experience', form.work_experience.filter((_, j) => j !== i))}
-                  className="absolute top-2 right-2 text-muted-foreground hover:text-red-500"
+                  className="absolute top-2 right-2 text-slate-500 hover:text-red-400"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[10px]">Role</Label>
-                    <Input value={exp.role || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Role</label>
+                    <input value={exp.role || ''} onChange={e => {
                       const updated = [...form.work_experience];
                       updated[i] = { ...exp, role: e.target.value };
                       set('work_experience', updated);
-                    }} placeholder="Software Engineer" className="h-7 text-xs" />
+                    }} placeholder="Software Engineer" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">Company</Label>
-                    <Input value={exp.company || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Company</label>
+                    <input value={exp.company || ''} onChange={e => {
                       const updated = [...form.work_experience];
                       updated[i] = { ...exp, company: e.target.value };
                       set('work_experience', updated);
-                    }} placeholder="Google" className="h-7 text-xs" />
+                    }} placeholder="Google" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <Label className="text-[10px]">Start Date</Label>
-                    <Input value={exp.start_date || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Start Date</label>
+                    <input value={exp.start_date || ''} onChange={e => {
                       const updated = [...form.work_experience];
                       updated[i] = { ...exp, start_date: e.target.value };
                       set('work_experience', updated);
-                    }} placeholder="Jan 2020" className="h-7 text-xs" />
+                    }} placeholder="Jan 2020" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">End Date</Label>
-                    <Input value={exp.end_date || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">End Date</label>
+                    <input value={exp.end_date || ''} onChange={e => {
                       const updated = [...form.work_experience];
                       updated[i] = { ...exp, end_date: e.target.value };
                       set('work_experience', updated);
-                    }} placeholder="Present" className="h-7 text-xs" />
+                    }} placeholder="Present" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">Location</Label>
-                    <Input value={exp.location || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Location</label>
+                    <input value={exp.location || ''} onChange={e => {
                       const updated = [...form.work_experience];
                       updated[i] = { ...exp, location: e.target.value };
                       set('work_experience', updated);
-                    }} placeholder="Mountain View, CA" className="h-7 text-xs" />
+                    }} placeholder="Mountain View, CA" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                 </div>
                 {/* Responsibilities */}
                 <div>
-                  <Label className="text-[10px]">Responsibilities</Label>
+                  <label className="text-[10px] text-slate-400">Responsibilities</label>
                   <div className="space-y-1 mt-1">
                     {(exp.responsibilities || []).map((resp, ri) => (
                       <div key={ri} className="flex items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground">-</span>
-                        <Input
+                        <span className="text-[10px] text-slate-500">-</span>
+                        <input
                           value={resp}
                           onChange={e => {
                             const updated = [...form.work_experience];
@@ -374,7 +405,10 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
                             updated[i] = { ...exp, responsibilities: resps };
                             set('work_experience', updated);
                           }}
-                          className="h-6 text-[11px] flex-1"
+                          onFocus={handleFocus}
+                          onBlur={handleBlur}
+                          className="flex-1 h-6 px-2 rounded-lg text-[11px] outline-none transition-all placeholder:text-slate-500"
+                          style={glassInput}
                         />
                         <button
                           onClick={() => {
@@ -382,16 +416,14 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
                             updated[i] = { ...exp, responsibilities: (exp.responsibilities || []).filter((_, j) => j !== ri) };
                             set('work_experience', updated);
                           }}
-                          className="text-muted-foreground hover:text-red-500"
+                          className="text-slate-500 hover:text-red-400"
                         >
                           <X className="h-3 w-3" />
                         </button>
                       </div>
                     ))}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-[10px] px-2"
+                    <button
+                      className="inline-flex items-center h-6 px-2 text-[10px] text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-white/[0.05]"
                       onClick={() => {
                         const updated = [...form.work_experience];
                         updated[i] = { ...exp, responsibilities: [...(exp.responsibilities || []), ''] };
@@ -399,83 +431,89 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
                       }}
                     >
                       <Plus className="h-2.5 w-2.5 mr-0.5" /> Add point
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
+            <button
+              className="inline-flex items-center h-7 px-3 text-xs font-medium rounded-lg text-slate-300 transition-all hover:text-white"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
               onClick={() => set('work_experience', [...form.work_experience, { company: '', role: '', start_date: '', end_date: '', location: '', responsibilities: [] }])}
             >
               <Plus className="h-3 w-3 mr-1" /> Add Experience
-            </Button>
+            </button>
           </AccordionContent>
         </AccordionItem>
 
         {/* 5. Projects */}
-        <AccordionItem value="projects">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+        <AccordionItem value="projects" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
             <span className="flex items-center gap-2">
-              <FolderGit2 className="h-4 w-4 text-orange-600" /> Projects
-              {form.projects.length > 0 && <Badge variant="secondary" className="text-[10px] ml-1">{form.projects.length}</Badge>}
+              <FolderGit2 className="h-4 w-4 text-orange-400" /> Projects
+              {form.projects.length > 0 && (
+                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-md font-normal bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  {form.projects.length}
+                </span>
+              )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 px-1">
             {form.projects.map((proj, i) => (
-              <div key={i} className="relative border rounded-lg p-3 bg-muted/20 space-y-2">
+              <div key={i} className="relative rounded-2xl p-3 space-y-2" style={glassCard}>
                 <button
                   onClick={() => set('projects', form.projects.filter((_, j) => j !== i))}
-                  className="absolute top-2 right-2 text-muted-foreground hover:text-red-500"
+                  className="absolute top-2 right-2 text-slate-500 hover:text-red-400"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[10px]">Title</Label>
-                    <Input value={proj.title || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Title</label>
+                    <input value={proj.title || ''} onChange={e => {
                       const updated = [...form.projects];
                       updated[i] = { ...proj, title: e.target.value };
                       set('projects', updated);
-                    }} placeholder="Project name" className="h-7 text-xs" />
+                    }} placeholder="Project name" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">URL</Label>
-                    <Input value={proj.url || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">URL</label>
+                    <input value={proj.url || ''} onChange={e => {
                       const updated = [...form.projects];
                       updated[i] = { ...proj, url: e.target.value };
                       set('projects', updated);
-                    }} placeholder="https://..." className="h-7 text-xs" />
+                    }} placeholder="https://..." onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                 </div>
                 <div>
-                  <Label className="text-[10px]">Description</Label>
-                  <Textarea value={proj.description || ''} onChange={e => {
+                  <label className="text-[10px] text-slate-400">Description</label>
+                  <textarea value={proj.description || ''} onChange={e => {
                     const updated = [...form.projects];
                     updated[i] = { ...proj, description: e.target.value };
                     set('projects', updated);
-                  }} rows={2} placeholder="Brief description..." className="text-xs" />
+                  }} rows={2} placeholder="Brief description..." onFocus={handleFocus} onBlur={handleBlur} className="w-full px-2 py-1.5 rounded-lg text-xs outline-none transition-all resize-y placeholder:text-slate-500" style={glassInput} />
                 </div>
                 <div>
-                  <Label className="text-[10px]">Tech Stack</Label>
+                  <label className="text-[10px] text-slate-400">Tech Stack</label>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {(proj.tech_stack || []).map((t, ti) => (
-                      <Badge key={ti} variant="secondary" className="text-[10px] gap-1">
+                      <span key={ti} className="inline-flex items-center text-[10px] gap-1 px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20">
                         {t}
                         <button onClick={() => {
                           const updated = [...form.projects];
                           updated[i] = { ...proj, tech_stack: (proj.tech_stack || []).filter((_, j) => j !== ti) };
                           set('projects', updated);
-                        }}>
+                        }} className="hover:text-red-400">
                           <X className="h-2.5 w-2.5" />
                         </button>
-                      </Badge>
+                      </span>
                     ))}
-                    <Input
+                    <input
                       placeholder="Add tech..."
-                      className="h-6 w-24 text-[10px]"
+                      onFocus={handleFocus}
+                      onBlur={handleBlur}
+                      className="h-6 w-24 px-2 rounded-lg text-[10px] outline-none transition-all placeholder:text-slate-500"
+                      style={glassInput}
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -493,39 +531,45 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
                 </div>
               </div>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
+            <button
+              className="inline-flex items-center h-7 px-3 text-xs font-medium rounded-lg text-slate-300 transition-all hover:text-white"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
               onClick={() => set('projects', [...form.projects, { title: '', description: '', tech_stack: [], url: '' }])}
             >
               <Plus className="h-3 w-3 mr-1" /> Add Project
-            </Button>
+            </button>
           </AccordionContent>
         </AccordionItem>
 
         {/* 6. Skills */}
-        <AccordionItem value="skills">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+        <AccordionItem value="skills" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
             <span className="flex items-center gap-2">
-              <Code2 className="h-4 w-4 text-cyan-600" /> Skills
-              {form.skills.length > 0 && <Badge variant="secondary" className="text-[10px] ml-1">{form.skills.length}</Badge>}
+              <Code2 className="h-4 w-4 text-cyan-400" /> Skills
+              {form.skills.length > 0 && (
+                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-md font-normal bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  {form.skills.length}
+                </span>
+              )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="px-1">
             <div className="flex flex-wrap gap-1.5 mb-2">
               {form.skills.map(s => (
-                <Badge key={s} variant="secondary" className="text-xs gap-1 px-2 py-0.5">
+                <span key={s} className="inline-flex items-center text-xs gap-1 px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                   {s}
-                  <button onClick={() => removeSkill(s)} className="hover:text-red-500">
+                  <button onClick={() => removeSkill(s)} className="hover:text-red-400">
                     <X className="h-3 w-3" />
                   </button>
-                </Badge>
+                </span>
               ))}
             </div>
-            <Input
+            <input
               placeholder="Type a skill and press Enter..."
-              className="h-8 text-sm"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="w-full h-8 px-3 rounded-lg text-sm outline-none transition-all placeholder:text-slate-500"
+              style={glassInput}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -538,83 +582,90 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
         </AccordionItem>
 
         {/* 7. Certifications */}
-        <AccordionItem value="certifications">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+        <AccordionItem value="certifications" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
             <span className="flex items-center gap-2">
-              <Award className="h-4 w-4 text-rose-600" /> Certifications
-              {form.certifications.length > 0 && <Badge variant="secondary" className="text-[10px] ml-1">{form.certifications.length}</Badge>}
+              <Award className="h-4 w-4 text-rose-400" /> Certifications
+              {form.certifications.length > 0 && (
+                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-md font-normal bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  {form.certifications.length}
+                </span>
+              )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 px-1">
             {form.certifications.map((cert, i) => (
-              <div key={i} className="relative border rounded-lg p-3 bg-muted/20 space-y-2">
+              <div key={i} className="relative rounded-2xl p-3 space-y-2" style={glassCard}>
                 <button
                   onClick={() => set('certifications', form.certifications.filter((_, j) => j !== i))}
-                  className="absolute top-2 right-2 text-muted-foreground hover:text-red-500"
+                  className="absolute top-2 right-2 text-slate-500 hover:text-red-400"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[10px]">Name</Label>
-                    <Input value={cert.name || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Name</label>
+                    <input value={cert.name || ''} onChange={e => {
                       const updated = [...form.certifications];
                       updated[i] = { ...cert, name: e.target.value };
                       set('certifications', updated);
-                    }} placeholder="AWS Solutions Architect" className="h-7 text-xs" />
+                    }} placeholder="AWS Solutions Architect" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">Issuer</Label>
-                    <Input value={cert.issuer || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Issuer</label>
+                    <input value={cert.issuer || ''} onChange={e => {
                       const updated = [...form.certifications];
                       updated[i] = { ...cert, issuer: e.target.value };
                       set('certifications', updated);
-                    }} placeholder="Amazon" className="h-7 text-xs" />
+                    }} placeholder="Amazon" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label className="text-[10px]">Year</Label>
-                    <Input value={cert.year ?? ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Year</label>
+                    <input value={cert.year ?? ''} onChange={e => {
                       const updated = [...form.certifications];
                       updated[i] = { ...cert, year: e.target.value ? parseInt(e.target.value) : null };
                       set('certifications', updated);
-                    }} placeholder="2023" className="h-7 text-xs" />
+                    }} placeholder="2023" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                   <div>
-                    <Label className="text-[10px]">Credential ID</Label>
-                    <Input value={cert.credential_id || ''} onChange={e => {
+                    <label className="text-[10px] text-slate-400">Credential ID</label>
+                    <input value={cert.credential_id || ''} onChange={e => {
                       const updated = [...form.certifications];
                       updated[i] = { ...cert, credential_id: e.target.value };
                       set('certifications', updated);
-                    }} placeholder="ABC123" className="h-7 text-xs" />
+                    }} placeholder="ABC123" onFocus={handleFocus} onBlur={handleBlur} className="w-full h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500" style={glassInput} />
                   </div>
                 </div>
               </div>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
+            <button
+              className="inline-flex items-center h-7 px-3 text-xs font-medium rounded-lg text-slate-300 transition-all hover:text-white"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
               onClick={() => set('certifications', [...form.certifications, { name: '', issuer: '', year: null, expiry_year: null, credential_id: '' }])}
             >
               <Plus className="h-3 w-3 mr-1" /> Add Certification
-            </Button>
+            </button>
           </AccordionContent>
         </AccordionItem>
 
         {/* 8. Languages */}
-        <AccordionItem value="languages">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
+        <AccordionItem value="languages" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
             <span className="flex items-center gap-2">
-              <Languages className="h-4 w-4 text-teal-600" /> Languages
-              {form.languages.length > 0 && <Badge variant="secondary" className="text-[10px] ml-1">{form.languages.length}</Badge>}
+              <Languages className="h-4 w-4 text-teal-400" /> Languages
+              {form.languages.length > 0 && (
+                <span className="text-[10px] ml-1 px-1.5 py-0.5 rounded-md font-normal bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  {form.languages.length}
+                </span>
+              )}
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-2 px-1">
             {form.languages.map((lang, i) => (
               <div key={i} className="flex items-center gap-2">
-                <Input
+                <input
                   value={lang.language}
                   onChange={e => {
                     const updated = [...form.languages];
@@ -622,9 +673,12 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
                     set('languages', updated);
                   }}
                   placeholder="Language"
-                  className="h-7 text-xs flex-1"
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  className="flex-1 h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
                 />
-                <Input
+                <input
                   value={lang.proficiency || ''}
                   onChange={e => {
                     const updated = [...form.languages];
@@ -632,31 +686,33 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
                     set('languages', updated);
                   }}
                   placeholder="Proficiency"
-                  className="h-7 text-xs flex-1"
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  className="flex-1 h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
                 />
                 <button
                   onClick={() => set('languages', form.languages.filter((_, j) => j !== i))}
-                  className="text-muted-foreground hover:text-red-500"
+                  className="text-slate-500 hover:text-red-400"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
+            <button
+              className="inline-flex items-center h-7 px-3 text-xs font-medium rounded-lg text-slate-300 transition-all hover:text-white"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
               onClick={() => set('languages', [...form.languages, { language: '', proficiency: '' }])}
             >
               <Plus className="h-3 w-3 mr-1" /> Add Language
-            </Button>
+            </button>
           </AccordionContent>
         </AccordionItem>
 
         {/* 9. Links & Social Profiles */}
-        <AccordionItem value="links">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
-            <span className="flex items-center gap-2"><Link2 className="h-4 w-4 text-indigo-600" /> Links & Social Profiles</span>
+        <AccordionItem value="links" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
+            <span className="flex items-center gap-2"><Link2 className="h-4 w-4 text-blue-400" /> Links & Social Profiles</span>
           </AccordionTrigger>
           <AccordionContent className="space-y-2 px-1">
             {([
@@ -670,13 +726,16 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
               { key: 'portfolio_url' as const, label: 'Portfolio', icon: Globe, placeholder: 'portfolio.dev/...' },
             ]).map(link => (
               <div key={link.key} className="flex items-center gap-2">
-                <link.icon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                <Label className="text-[10px] w-24 shrink-0">{link.label}</Label>
-                <Input
+                <link.icon className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                <label className="text-[10px] w-24 shrink-0 text-slate-400">{link.label}</label>
+                <input
                   value={(form.links[link.key] as string) || ''}
                   onChange={e => setLink(link.key, e.target.value)}
                   placeholder={link.placeholder}
-                  className="h-7 text-xs flex-1"
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  className="flex-1 h-7 px-2 rounded-lg text-xs outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
                 />
               </div>
             ))}
@@ -684,17 +743,20 @@ export default function ResumeReviewForm({ form, onChange, showSuccess }: Resume
         </AccordionItem>
 
         {/* 10. Notes */}
-        <AccordionItem value="notes">
-          <AccordionTrigger className="text-sm font-semibold hover:no-underline">
-            <span className="flex items-center gap-2"><FileText className="h-4 w-4 text-muted-foreground" /> Notes</span>
+        <AccordionItem value="notes" className="border-white/10">
+          <AccordionTrigger className="text-sm font-semibold hover:no-underline text-white">
+            <span className="flex items-center gap-2"><FileText className="h-4 w-4 text-slate-400" /> Notes</span>
           </AccordionTrigger>
           <AccordionContent className="px-1">
-            <Textarea
+            <textarea
               value={form.notes}
               onChange={e => set('notes', e.target.value)}
               rows={3}
               placeholder="Additional notes about this candidate..."
-              className="text-sm"
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className="w-full px-3 py-2 rounded-lg text-sm outline-none transition-all resize-y placeholder:text-slate-500"
+              style={glassInput}
             />
           </AccordionContent>
         </AccordionItem>

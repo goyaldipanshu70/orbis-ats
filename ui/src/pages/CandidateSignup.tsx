@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/utils/api';
 import OTPInput from '@/components/OTPInput';
@@ -14,6 +11,22 @@ import {
   Eye, EyeOff, Mail, Lock, User, Zap, Briefcase, FileCheck, BarChart3, Loader2,
   Phone, ArrowLeft, CheckCircle2,
 } from 'lucide-react';
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
 
 type Step = 'register' | 'verify-email' | 'verify-phone';
 
@@ -40,7 +53,6 @@ const CandidateSignup = () => {
     }
   }, [user, navigate]);
 
-  // Resend cooldown timer
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000);
@@ -49,51 +61,26 @@ const CandidateSignup = () => {
 
   const handleInitiate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !lastName || !email || !phone || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
+    if (!firstName || !lastName || !email || !phone || !password) { toast.error('Please fill in all fields'); return; }
+    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
     setIsSubmitting(true);
     try {
-      const result = await apiClient.initiateSignup({
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        phone,
-        password,
-      });
+      const result = await apiClient.initiateSignup({ first_name: firstName, last_name: lastName, email, phone, password });
       setSessionToken(result.session_token);
       setStep('verify-email');
       setResendCooldown(30);
       toast.success('Verification code sent to your email');
     } catch (err: any) {
-      if (err.status === 409 && err.data?.duplicate_info) {
-        setDuplicateInfo(err.data.duplicate_info);
-        setShowDuplicateModal(true);
-      } else {
-        toast.error('Signup failed', { description: err.message || 'Please try again.' });
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+      if (err.status === 409 && err.data?.duplicate_info) { setDuplicateInfo(err.data.duplicate_info); setShowDuplicateModal(true); }
+      else { toast.error('Signup failed', { description: err.message || 'Please try again.' }); }
+    } finally { setIsSubmitting(false); }
   };
 
   const handleVerifyEmail = async (otp: string) => {
     setIsSubmitting(true);
-    try {
-      await apiClient.verifyEmailOTP(sessionToken, otp);
-      setStep('verify-phone');
-      setResendCooldown(30);
-      toast.success('Email verified! Code sent to your phone.');
-    } catch (err: any) {
-      toast.error(err.message || 'Invalid code');
-    } finally {
-      setIsSubmitting(false);
-    }
+    try { await apiClient.verifyEmailOTP(sessionToken, otp); setStep('verify-phone'); setResendCooldown(30); toast.success('Email verified! Code sent to your phone.'); }
+    catch (err: any) { toast.error(err.message || 'Invalid code'); }
+    finally { setIsSubmitting(false); }
   };
 
   const handleVerifyPhone = async (otp: string) => {
@@ -104,11 +91,8 @@ const CandidateSignup = () => {
       if (result.refresh_token) localStorage.setItem('refresh_token', result.refresh_token);
       await setTokenAndFetchUser(result.access_token);
       toast.success('Welcome to Orbis!', { description: 'Your account has been verified.' });
-    } catch (err: any) {
-      toast.error(err.message || 'Invalid code');
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (err: any) { toast.error(err.message || 'Invalid code'); }
+    finally { setIsSubmitting(false); }
   };
 
   const handleResend = async () => {
@@ -118,19 +102,16 @@ const CandidateSignup = () => {
       await apiClient.resendOTP(sessionToken, type);
       setResendCooldown(30);
       toast.success(`Code resent to your ${type}`);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to resend code');
-    }
+    } catch (err: any) { toast.error(err.message || 'Failed to resend code'); }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--orbis-page)' }}>
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#1B8EE5' }} />
       </div>
     );
   }
-
   if (user) return null;
 
   const features = [
@@ -144,63 +125,41 @@ const CandidateSignup = () => {
 
   return (
     <div className="min-h-screen flex font-[Inter,system-ui,sans-serif]">
-      {/* Left Panel - Gradient Hero */}
+      {/* Left Panel */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
         className="hidden lg:flex lg:w-1/2 flex-col justify-center relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(135deg, #0B1120 0%, #0f1d44 40%, #1e3a8a 100%)',
-        }}
+        style={{ background: 'linear-gradient(135deg, #0B0822 0%, var(--orbis-page) 40%, #1a1145 100%)' }}
       >
-        {/* Decorative gradient blobs */}
-        <div className="absolute top-[-100px] right-[-60px] w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute bottom-[-80px] left-[-80px] w-[400px] h-[400px] bg-indigo-500/25 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-1/3 left-1/4 w-[250px] h-[250px] bg-cyan-400/10 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-1/3 right-1/4 w-[200px] h-[200px] bg-violet-500/15 rounded-full blur-[90px] pointer-events-none" />
+        <div className="absolute top-[-100px] right-[-60px] w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none" style={{ background: 'rgba(27,142,229,0.15)' }} />
+        <div className="absolute bottom-[-80px] left-[-80px] w-[400px] h-[400px] rounded-full blur-[120px] pointer-events-none" style={{ background: 'rgba(22,118,192,0.12)' }} />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
-        {/* Subtle grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-          }}
-        />
-
-        {/* Content */}
         <div className="relative z-10 px-12 xl:px-20">
           <div className="flex items-center gap-3 mb-10">
-            <div
-              className="flex h-14 w-14 items-center justify-center rounded-xl shadow-2xl shadow-blue-500/30"
-              style={{
-                background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
-              }}
-            >
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl shadow-2xl" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 20px 40px rgba(27,142,229,0.3)' }}>
               <Zap className="w-7 h-7 text-white" strokeWidth={2} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Orbis</h1>
-              <p className="text-blue-200/70 text-sm font-medium">Careers Portal</p>
+              <h1 className="text-3xl font-black text-white tracking-tight">Orbis</h1>
+              <p className="text-slate-500 text-sm font-medium">Careers Portal</p>
             </div>
           </div>
 
           <h2 className="text-2xl font-bold text-white mb-2">Start your journey with us</h2>
-          <p className="text-blue-200/60 mb-10">Create your candidate account to browse jobs, apply, and track your applications.</p>
+          <p className="text-slate-500 mb-10">Create your candidate account to browse jobs, apply, and track your applications.</p>
 
           <div className="space-y-4">
             {features.map(({ icon: Icon, title, description }) => (
-              <div key={title} className="flex items-start gap-4 p-4 rounded-xl bg-white/[0.06] border border-white/[0.1] backdrop-blur-sm">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 shrink-0">
-                  <Icon className="w-5 h-5 text-blue-200" />
+              <div key={title} className="flex items-start gap-4 p-4 rounded-xl" style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-hover)', backdropFilter: 'blur(8px)' }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0" style={{ background: 'var(--orbis-hover)' }}>
+                  <Icon className="w-5 h-5" style={{ color: '#4db5f0' }} />
                 </div>
                 <div>
                   <p className="text-white font-semibold text-sm">{title}</p>
-                  <p className="text-blue-200/50 text-xs mt-0.5">{description}</p>
+                  <p className="text-slate-500 text-xs mt-0.5">{description}</p>
                 </div>
               </div>
             ))}
@@ -208,8 +167,8 @@ const CandidateSignup = () => {
         </div>
       </motion.div>
 
-      {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center bg-background px-6 sm:px-12 py-12">
+      {/* Right Panel */}
+      <div className="flex-1 flex items-center justify-center px-6 sm:px-12 py-12" style={{ background: 'var(--orbis-page)' }}>
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -218,15 +177,10 @@ const CandidateSignup = () => {
         >
           {/* Mobile Logo */}
           <div className="flex lg:hidden items-center gap-2.5 mb-2">
-            <div
-              className="flex h-9 w-9 items-center justify-center rounded-lg shadow-md"
-              style={{
-                background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
-              }}
-            >
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
               <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-bold text-xl text-foreground tracking-tight">Orbis Careers</span>
+            <span className="font-bold text-xl text-white tracking-tight">Orbis Careers</span>
           </div>
 
           {/* Step indicator */}
@@ -239,123 +193,69 @@ const CandidateSignup = () => {
                 const active = stepIndex === step;
                 return (
                   <div key={label} className="flex items-center gap-2">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                      done ? 'bg-green-500 text-white' :
-                      active ? 'bg-blue-600 text-white' :
-                      'bg-muted text-muted-foreground'
-                    }`}>
+                    <div
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors"
+                      style={
+                        done ? { background: '#059669', color: 'hsl(var(--foreground))' }
+                        : active ? { background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', color: 'hsl(var(--foreground))', boxShadow: '0 0 12px rgba(27,142,229,0.4)' }
+                        : { background: 'var(--orbis-input)', color: 'var(--orbis-border-strong)' }
+                      }
+                    >
                       {done ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
                     </div>
-                    <span className={`text-xs font-medium ${active ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
-                    {i < 2 && <div className={`w-8 h-0.5 ${done ? 'bg-green-500' : 'bg-border'}`} />}
+                    <span className={`text-xs font-medium ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
+                    {i < 2 && <div className="w-8 h-0.5" style={{ background: done ? '#059669' : 'var(--orbis-border)' }} />}
                   </div>
                 );
               })}
             </div>
           )}
 
-          {/* Step: Register */}
           <AnimatePresence mode="wait">
+          {/* Step: Register */}
           {step === 'register' && (
-            <motion.div
-              key="register"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.3 }}
-            >
+            <motion.div key="register" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
               <div className="space-y-8">
               <div>
-                <h2 className="text-2xl font-bold text-foreground tracking-tight">Create your account</h2>
-                <p className="mt-2 text-muted-foreground text-[15px]">Sign up as a candidate to start applying</p>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Create your account</h2>
+                <p className="mt-2 text-slate-400 text-[15px]">Sign up as a candidate to start applying</p>
               </div>
 
               <form onSubmit={handleInitiate} className="space-y-5">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-sm font-medium text-foreground">First name</Label>
+                  {[
+                    { id: 'firstName', icon: User, value: firstName, set: setFirstName, label: 'First name' },
+                    { id: 'lastName', icon: User, value: lastName, set: setLastName, label: 'Last name' },
+                  ].map(f => (
+                    <div key={f.id} className="space-y-2">
+                      <label htmlFor={f.id} className="text-sm font-medium text-slate-300">{f.label}</label>
+                      <div className="relative">
+                        <f.icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
+                        <input id={f.id} value={f.value} onChange={e => f.set(e.target.value)} required placeholder={f.label} className="w-full pl-11 h-12 rounded-xl text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} onFocus={handleFocus} onBlur={handleBlur} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {[
+                  { id: 'email', icon: Mail, type: 'email', value: email, set: setEmail, label: 'Email address', placeholder: 'you@example.com', autoComplete: 'email' },
+                  { id: 'phone', icon: Phone, type: 'tel', value: phone, set: setPhone, label: 'Phone number', placeholder: '+1 (555) 000-0000' },
+                ].map(f => (
+                  <div key={f.id} className="space-y-2">
+                    <label htmlFor={f.id} className="text-sm font-medium text-slate-300">{f.label}</label>
                     <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-[18px] h-[18px] pointer-events-none" />
-                      <Input
-                        id="firstName"
-                        value={firstName}
-                        onChange={e => setFirstName(e.target.value)}
-                        required
-                        placeholder="First name"
-                        className="pl-11 h-12 border-border rounded-xl bg-muted/80 text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                      />
+                      <f.icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
+                      <input id={f.id} type={f.type} value={f.value} onChange={e => f.set(e.target.value)} required placeholder={f.placeholder} autoComplete={f.autoComplete} className="w-full pl-11 h-12 rounded-xl text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} onFocus={handleFocus} onBlur={handleBlur} />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-sm font-medium text-foreground">Last name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-[18px] h-[18px] pointer-events-none" />
-                      <Input
-                        id="lastName"
-                        value={lastName}
-                        onChange={e => setLastName(e.target.value)}
-                        required
-                        placeholder="Last name"
-                        className="pl-11 h-12 border-border rounded-xl bg-muted/80 text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-                </div>
+                ))}
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-foreground">Email address</Label>
+                  <label htmlFor="password" className="text-sm font-medium text-slate-300">Password</label>
                   <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-[18px] h-[18px] pointer-events-none" />
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      required
-                      placeholder="you@example.com"
-                      autoComplete="email"
-                      className="pl-11 h-12 border-border rounded-xl bg-muted/80 text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-sm font-medium text-foreground">Phone number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-[18px] h-[18px] pointer-events-none" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value)}
-                      required
-                      placeholder="+1 (555) 000-0000"
-                      className="pl-11 h-12 border-border rounded-xl bg-muted/80 text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium text-foreground">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-[18px] h-[18px] pointer-events-none" />
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      required
-                      placeholder="At least 6 characters"
-                      autoComplete="new-password"
-                      className="pl-11 pr-11 h-12 border-border rounded-xl bg-muted/80 text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors duration-150"
-                      tabIndex={-1}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    >
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
+                    <input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required placeholder="At least 6 characters" autoComplete="new-password" className="w-full pl-11 pr-11 h-12 rounded-xl text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} onFocus={handleFocus} onBlur={handleBlur} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors" tabIndex={-1}>
                       {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                     </button>
                   </div>
@@ -364,87 +264,64 @@ const CandidateSignup = () => {
                 <RippleButton
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full h-12 rounded-lg text-[15px] font-semibold text-white shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)' }}
+                  className="w-full h-12 rounded-xl text-[15px] font-bold text-white transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 8px 24px rgba(27,142,229,0.25)' }}
                 >
                   {isSubmitting ? (
-                    <span className="flex items-center gap-2.5">
-                      <Loader2 className="w-[18px] h-[18px] animate-spin" /> Sending verification code...
-                    </span>
-                  ) : (
-                    'Create Candidate Account'
-                  )}
+                    <span className="flex items-center gap-2.5"><Loader2 className="w-[18px] h-[18px] animate-spin" /> Sending verification code...</span>
+                  ) : 'Create Candidate Account'}
                 </RippleButton>
               </form>
 
               {/* Divider */}
               <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="px-4 bg-background text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                    or continue with
-                  </span>
-                </div>
+                <div className="absolute inset-0 flex items-center"><div className="w-full" style={{ borderTop: '1px solid var(--orbis-hover)' }} /></div>
+                <div className="relative flex justify-center"><span className="px-4 text-xs text-slate-500 font-medium uppercase tracking-wider" style={{ background: 'var(--orbis-page)' }}>or continue with</span></div>
               </div>
 
-              {/* LinkedIn Button */}
-              <Button
+              {/* LinkedIn */}
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => loginWithLinkedIn()}
-                className="w-full h-12 rounded-lg border-border text-foreground font-medium hover:bg-muted/50 hover:border-border hover:shadow-sm transition-all duration-200"
+                className="w-full h-12 rounded-xl font-medium text-slate-300 transition-all hover:text-white flex items-center justify-center gap-3"
+                style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
               >
-                <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
-                  <path
-                    fill="#0A66C2"
-                    d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
-                  />
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="#0A66C2" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                 </svg>
                 Continue with LinkedIn
-              </Button>
+              </button>
               </div>
             </motion.div>
           )}
 
           {/* Step: Verify Email */}
           {step === 'verify-email' && (
-            <motion.div
-              key="verify-email"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.3 }}
-            >
+            <motion.div key="verify-email" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
             <div className="space-y-6">
-              <button onClick={() => setStep('register')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors duration-150">
+              <button onClick={() => setStep('register')} className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white font-medium transition-colors">
                 <ArrowLeft className="h-4 w-4" /> Back
               </button>
               <div className="text-center space-y-3">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/40 mx-auto">
-                  <Mail className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl mx-auto" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                  <Mail className="h-8 w-8 text-blue-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-foreground tracking-tight">Verify your email</h2>
-                <p className="text-muted-foreground text-[15px]">
-                  We sent a 6-digit code to <span className="font-medium text-foreground">{maskedEmail}</span>
-                </p>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Verify your email</h2>
+                <p className="text-slate-400 text-[15px]">We sent a 6-digit code to <span className="font-medium text-white">{maskedEmail}</span></p>
               </div>
 
               <OTPInput onComplete={handleVerifyEmail} disabled={isSubmitting} />
 
               {isSubmitting && (
-                <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
+                <div className="flex items-center justify-center gap-2 text-sm text-blue-400">
                   <Loader2 className="h-4 w-4 animate-spin" /> Verifying...
                 </div>
               )}
 
               <div className="text-center">
-                <button
-                  onClick={handleResend}
-                  disabled={resendCooldown > 0}
-                  className={`text-sm transition-colors duration-150 ${resendCooldown > 0 ? 'text-muted-foreground' : 'text-blue-600 hover:text-blue-700 font-medium'}`}
-                >
+                <button onClick={handleResend} disabled={resendCooldown > 0} className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-slate-500' : 'font-medium hover:text-white'}`} style={resendCooldown > 0 ? {} : { color: '#4db5f0' }}>
                   {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                 </button>
               </div>
@@ -454,38 +331,26 @@ const CandidateSignup = () => {
 
           {/* Step: Verify Phone */}
           {step === 'verify-phone' && (
-            <motion.div
-              key="verify-phone"
-              initial={{ opacity: 0, x: 30 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -30 }}
-              transition={{ duration: 0.3 }}
-            >
+            <motion.div key="verify-phone" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
             <div className="space-y-6">
               <div className="text-center space-y-3">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50 dark:bg-green-950/40 mx-auto">
-                  <Phone className="h-8 w-8 text-green-600 dark:text-green-400" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl mx-auto" style={{ background: 'rgba(52,211,153,0.1)' }}>
+                  <Phone className="h-8 w-8 text-emerald-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-foreground tracking-tight">Verify your phone</h2>
-                <p className="text-muted-foreground text-[15px]">
-                  We sent a 6-digit code to <span className="font-medium text-foreground">{maskedPhone}</span>
-                </p>
+                <h2 className="text-2xl font-bold text-white tracking-tight">Verify your phone</h2>
+                <p className="text-slate-400 text-[15px]">We sent a 6-digit code to <span className="font-medium text-white">{maskedPhone}</span></p>
               </div>
 
               <OTPInput onComplete={handleVerifyPhone} disabled={isSubmitting} />
 
               {isSubmitting && (
-                <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+                <div className="flex items-center justify-center gap-2 text-sm text-emerald-400">
                   <Loader2 className="h-4 w-4 animate-spin" /> Verifying & creating your account...
                 </div>
               )}
 
               <div className="text-center">
-                <button
-                  onClick={handleResend}
-                  disabled={resendCooldown > 0}
-                  className={`text-sm transition-colors duration-150 ${resendCooldown > 0 ? 'text-muted-foreground' : 'text-blue-600 hover:text-blue-700 font-medium'}`}
-                >
+                <button onClick={handleResend} disabled={resendCooldown > 0} className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-slate-500' : 'font-medium hover:text-white'}`} style={resendCooldown > 0 ? {} : { color: '#4db5f0' }}>
                   {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                 </button>
               </div>
@@ -495,19 +360,18 @@ const CandidateSignup = () => {
           </AnimatePresence>
 
           <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-400">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-150">Sign In</Link>
+              <Link to="/login" className="font-semibold transition-colors" style={{ color: '#4db5f0' }}>Sign In</Link>
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-400">
               Are you an employee?{' '}
-              <Link to="/signup" className="text-blue-600 font-medium hover:text-blue-700 transition-colors duration-150">Employee Sign Up</Link>
+              <Link to="/signup" className="font-medium transition-colors" style={{ color: '#4db5f0' }}>Employee Sign Up</Link>
             </p>
           </div>
         </motion.div>
       </div>
 
-      {/* Duplicate Modal */}
       {duplicateInfo && (
         <DuplicateDetectedModal
           isOpen={showDuplicateModal}

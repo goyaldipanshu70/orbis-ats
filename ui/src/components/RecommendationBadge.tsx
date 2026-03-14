@@ -1,72 +1,52 @@
-
-import { Badge } from '@/components/ui/badge';
-
 interface RecommendationBadgeProps {
   recommendation: 'Interview Immediately' | 'Interview' | 'Consider' | 'Reject' | 'Do Not Recommend' | 'Manual Review Required';
   className?: string;
 }
 
 const RecommendationBadge = ({ recommendation, className = '' }: RecommendationBadgeProps) => {
-  const getVariant = () => {
+  const getColors = () => {
     switch (recommendation) {
       case 'Interview Immediately':
+        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'Interview':
-        return 'default';
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'Consider':
+        return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
       case 'Manual Review Required':
-        return 'secondary';
+        return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
       case 'Reject':
       case 'Do Not Recommend':
-        return 'destructive';
+        return 'bg-red-500/10 text-red-400 border-red-500/20';
       default:
-        return 'outline';
-    }
-  };
-
-  const getBgColor = () => {
-    switch (recommendation) {
-      case 'Interview Immediately':
-        return 'bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border-emerald-200 hover:from-emerald-200 hover:to-green-200 shadow-sm';
-      case 'Interview':
-        return 'bg-gradient-to-r from-green-100 to-lime-100 text-green-800 border-green-200 hover:from-green-200 hover:to-lime-200 shadow-sm';
-      case 'Consider':
-        return 'bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border-amber-200 hover:from-amber-200 hover:to-yellow-200 shadow-sm';
-      case 'Manual Review Required':
-        return 'bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-800 border-purple-200 hover:from-purple-200 hover:to-indigo-200 shadow-sm';
-      case 'Reject':
-      case 'Do Not Recommend':
-        return 'bg-gradient-to-r from-red-100 to-rose-100 text-red-800 border-red-200 hover:from-red-200 hover:to-rose-200 shadow-sm';
-      default:
-        return 'bg-gradient-to-r from-gray-100 to-slate-100 text-foreground border-border shadow-sm';
+        return 'bg-white/5 text-slate-400 border-white/10';
     }
   };
 
   const getIcon = () => {
     switch (recommendation) {
       case 'Interview Immediately':
-        return '⚡';
+        return '\u26A1';
       case 'Interview':
-        return '✅';
+        return '\u2705';
       case 'Consider':
-        return '⚠️';
+        return '\u26A0\uFE0F';
       case 'Manual Review Required':
-        return '🔍';
+        return '\uD83D\uDD0D';
       case 'Reject':
       case 'Do Not Recommend':
-        return '❌';
+        return '\u274C';
       default:
-        return '❓';
+        return '\u2753';
     }
   };
 
   return (
-    <Badge 
-      variant={getVariant()} 
-      className={`${getBgColor()} ${className} px-3 py-1.5 rounded-full font-medium text-xs transition-all duration-300 transform hover:scale-105`}
+    <span
+      className={`${getColors()} ${className} inline-flex items-center border px-3 py-1.5 rounded-full font-medium text-xs transition-all duration-300 transform hover:scale-105`}
     >
       <span className="mr-1.5">{getIcon()}</span>
       {recommendation}
-    </Badge>
+    </span>
   );
 };
 

@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from app.core.config import settings
 from app.db.models import Base
@@ -34,6 +35,17 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_recruiting_db() -> AsyncGenerator[AsyncSession, None]:
+    if _RecruitingSessionLocal is None:
+        _init_recruiting_engine()
+    if _RecruitingSessionLocal is None:
+        raise RuntimeError("RECRUITING_DB_URL not configured")
+    async with _RecruitingSessionLocal() as session:
+        yield session
+
+
+@asynccontextmanager
+async def recruiting_db_session() -> AsyncGenerator[AsyncSession, None]:
+    """Context manager for recruiting DB — use in non-FastAPI code (graphs, nodes)."""
     if _RecruitingSessionLocal is None:
         _init_recruiting_engine()
     if _RecruitingSessionLocal is None:

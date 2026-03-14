@@ -10,9 +10,23 @@ import {
   LogOut, Zap, Plus, FileText, UserCheck, Workflow, Calendar, Users, Briefcase,
   Megaphone, ClipboardCheck, Share2, Mail, ShieldCheck,
   GitPullRequest, FileStack, Globe2, Target, Inbox, Activity,
-  ChevronDown,
+  ChevronDown, Blocks,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+/* ── dropdown glass styles ── */
+const dropdownStyle: React.CSSProperties = {
+  background: 'var(--orbis-dropdown)',
+  backdropFilter: 'blur(16px)',
+  border: '1px solid var(--orbis-border)',
+  boxShadow: 'var(--orbis-dropdown-shadow)',
+};
+const iconBoxStyle: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+};
+const iconBoxHoverStyle: React.CSSProperties = {
+  background: 'rgba(27,142,229,0.12)',
+};
 
 /* ── Types ── */
 interface NavItem {
@@ -70,6 +84,7 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Bot, label: 'Hiring Assistant', path: '/hiring-assistant', description: 'AI-powered help' },
       { icon: Workflow, label: 'AI Workflows', path: '/workflows', description: 'Automation pipelines', hrOnly: true },
+      { icon: Blocks, label: 'Node Library', path: '/workflows/nodes', description: 'Custom workflow nodes', hrOnly: true },
       { icon: FileStack, label: 'JD Templates', path: '/jd-templates', description: 'Job description library', hrOnly: true },
       { icon: FileText, label: 'Templates', path: '/templates', description: 'Document templates', hrOnly: true },
     ],
@@ -212,7 +227,8 @@ function NavDropdown({ group, isActive, onNavigate }: {
             transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
             role="menu"
             aria-label={group.label}
-            className="absolute top-full left-0 mt-1 w-72 rounded-xl border border-border bg-card shadow-xl shadow-black/10 overflow-hidden z-50"
+            className="absolute top-full left-0 mt-1 w-72 rounded-xl overflow-hidden z-50"
+            style={dropdownStyle}
           >
             <div className="p-2">
               {group.items.map((item, i) => (
@@ -222,28 +238,27 @@ function NavDropdown({ group, isActive, onNavigate }: {
                   role="menuitem"
                   tabIndex={-1}
                   onClick={() => { onNavigate(item.path); setOpen(false); }}
-                  className={cn(
-                    'flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-colors duration-150 group',
-                    'hover:bg-accent focus:bg-accent focus:outline-none'
-                  )}
+                  className="flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-colors duration-150 group hover:bg-white/5 focus:bg-white/5 focus:outline-none"
                 >
-                  <div className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors',
-                    'bg-muted group-hover:bg-primary/10'
-                  )}>
-                    <item.icon aria-hidden="true" className="h-[18px] w-[18px] text-muted-foreground group-hover:text-primary" />
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors"
+                    style={iconBoxStyle}
+                    onMouseEnter={e => Object.assign(e.currentTarget.style, iconBoxHoverStyle)}
+                    onMouseLeave={e => Object.assign(e.currentTarget.style, iconBoxStyle)}
+                  >
+                    <item.icon aria-hidden="true" className="h-[18px] w-[18px] text-slate-400 group-hover:text-blue-500 transition-colors" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-foreground">{item.label}</span>
+                      <span className="text-sm font-medium text-white">{item.label}</span>
                       {item.badge !== undefined && item.badge > 0 && (
-                        <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                        <span className="rounded-full px-1.5 py-0.5 text-[10px] font-bold" style={{ background: 'rgba(27,142,229,0.12)', color: '#1B8EE5' }}>
                           {item.badge}
                         </span>
                       )}
                     </div>
                     {item.description && (
-                      <span className="text-xs text-muted-foreground line-clamp-1">{item.description}</span>
+                      <span className="text-xs text-slate-500 line-clamp-1">{item.description}</span>
                     )}
                   </div>
                 </button>
@@ -359,7 +374,7 @@ function UserMenu() {
         aria-label="User menu"
         className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/10"
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
           {user?.first_name?.[0]}{user?.last_name?.[0]}
         </div>
         <ChevronDown aria-hidden="true" className={cn(
@@ -377,13 +392,14 @@ function UserMenu() {
             transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
             role="menu"
             aria-label="User menu"
-            className="absolute top-full right-0 mt-1 w-56 rounded-xl border border-border bg-card shadow-xl shadow-black/10 overflow-hidden z-50"
+            className="absolute top-full right-0 mt-1 w-56 rounded-xl overflow-hidden z-50"
+            style={dropdownStyle}
           >
-            <div className="px-4 py-3 border-b border-border">
-              <p className="text-sm font-semibold text-foreground">
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--orbis-hover)' }}>
+              <p className="text-sm font-semibold text-white">
                 {user?.first_name} {user?.last_name}
               </p>
-              <p className="text-xs text-muted-foreground capitalize">
+              <p className="text-xs text-slate-500 capitalize">
                 {user?.role?.replace(/_/g, ' ')}
               </p>
             </div>
@@ -393,9 +409,9 @@ function UserMenu() {
                 role="menuitem"
                 tabIndex={-1}
                 onClick={() => { navigate('/account-settings'); setOpen(false); }}
-                className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm text-foreground hover:bg-accent focus:bg-accent focus:outline-none transition-colors"
+                className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-white/5 focus:bg-white/5 focus:outline-none transition-colors"
               >
-                <Settings aria-hidden="true" className="h-4 w-4 text-muted-foreground" />
+                <Settings aria-hidden="true" className="h-4 w-4 text-slate-400" />
                 Settings
               </button>
               <button
@@ -403,7 +419,7 @@ function UserMenu() {
                 role="menuitem"
                 tabIndex={-1}
                 onClick={() => { logout(); setOpen(false); }}
-                className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 focus:bg-red-50 dark:focus:bg-red-950/20 focus:outline-none transition-colors"
+                className="flex items-center gap-2.5 w-full rounded-lg px-3 py-2 text-sm text-rose-400 hover:bg-rose-500/10 focus:bg-rose-500/10 focus:outline-none transition-colors"
               >
                 <LogOut aria-hidden="true" className="h-4 w-4" />
                 Sign out
@@ -445,9 +461,7 @@ export default function TopNavbar() {
 
   const isActive = (path: string) => {
     if (location.pathname === path) return true;
-    // Only match prefix if no other nav path is a more specific match
     if (location.pathname.startsWith(path + '/')) {
-      // Check if a more specific path exists and matches
       const allPaths = navGroups.flatMap(g => g.items.map(i => i.path));
       const moreSpecific = allPaths.some(p => p !== path && p.startsWith(path + '/') && (location.pathname === p || location.pathname.startsWith(p + '/')));
       return !moreSpecific;
@@ -485,7 +499,10 @@ export default function TopNavbar() {
     group.items.some(item => isActive(item.path));
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[#0B1120] border-b border-slate-800/80">
+    <header
+      className="fixed top-0 left-0 right-0 z-50 h-14"
+      style={{ background: 'var(--orbis-overlay)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--orbis-border)' }}
+    >
       <div className="flex items-center h-full px-4 gap-1">
         {/* Logo */}
         <button
@@ -494,13 +511,14 @@ export default function TopNavbar() {
           className="flex items-center gap-2.5 mr-6 shrink-0 group"
         >
           <motion.div
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600"
+            className="flex h-8 w-8 items-center justify-center rounded-lg"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             <Zap aria-hidden="true" className="h-[18px] w-[18px] text-white" />
           </motion.div>
-          <span className="text-base font-bold text-white tracking-tight group-hover:text-blue-400 transition-colors">
+          <span className="text-base font-bold text-white tracking-tight transition-colors" style={{ transitionProperty: 'color' }}>
             Orbis
           </span>
         </button>
@@ -526,7 +544,8 @@ export default function TopNavbar() {
           {user?.role !== 'interviewer' && (
             <button
               onClick={() => navigate('/jobs/create')}
-              className="flex items-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all hover:scale-105"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 16px rgba(27,142,229,0.25)' }}
             >
               <Plus aria-hidden="true" className="h-3.5 w-3.5" />
               New Job

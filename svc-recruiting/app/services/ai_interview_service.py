@@ -328,7 +328,7 @@ async def process_candidate_message(
 
     if is_closing or is_last_question:
         # Auto-end interview
-        asyncio.create_task(_async_end_interview(db, token))
+        asyncio.create_task(_async_end_interview(token))
 
     return result
 
@@ -564,7 +564,7 @@ async def end_interview(db: AsyncSession, token: str) -> dict:
     }
 
 
-async def _async_end_interview(db_factory, token: str):
+async def _async_end_interview(token: str):
     """Fire-and-forget wrapper for end_interview (needs its own session)."""
     # This is called as a background task after the last question
     # In practice, the candidate will call /end explicitly, but this is a safety net
@@ -693,6 +693,33 @@ async def get_sessions_for_job(
             "expires_at": s.expires_at.isoformat() if s.expires_at else None,
         })
     return result
+
+
+async def get_sessions_for_candidate(db: AsyncSession, candidate_id: int, jd_id: Optional[int] = None) -> list:
+    """Get AI interview sessions for a candidate, optionally scoped to a job."""
+    query = (
+        select(AIInterviewSession)
+        .where(AIInterviewSession.candidate_id == candidate_id)
+    )
+    if jd_id is not None:
+        query = query.where(AIInterviewSession.jd_id == jd_id)
+    sessions = (await db.execute(
+        query.order_by(AIInterviewSession.created_at.desc())
+    )).scalars().all()
+
+    return [
+        {
+            "id": s.id,
+            "status": s.status,
+            "interview_type": s.interview_type,
+            "overall_score": s.overall_score,
+            "ai_recommendation": s.ai_recommendation,
+            "started_at": s.started_at.isoformat() if s.started_at else None,
+            "completed_at": s.completed_at.isoformat() if s.completed_at else None,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+        for s in sessions
+    ]
 
 
 async def cancel_session(db: AsyncSession, session_id: int) -> bool:

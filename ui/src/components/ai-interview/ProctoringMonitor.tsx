@@ -1,5 +1,11 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+
 interface ProctoringEvent {
   event_type: string;
   timestamp: string;
@@ -132,15 +138,18 @@ export default function ProctoringMonitor({ sessionToken, onIntegrityUpdate, api
   }, [addEvent, flushEvents, updateIntegrity]);
 
   const statusColors = {
-    positive: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
-    neutral: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
-    negative: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
+    positive: { bg: 'rgba(16,185,129,0.1)', text: '#34d399', border: 'rgba(16,185,129,0.2)', dot: '#34d399' },
+    neutral: { bg: 'rgba(245,158,11,0.1)', text: '#fbbf24', border: 'rgba(245,158,11,0.2)', dot: '#fbbf24' },
+    negative: { bg: 'rgba(239,68,68,0.1)', text: '#f87171', border: 'rgba(239,68,68,0.2)', dot: '#f87171' },
   };
 
   return (
     <div className="flex flex-col gap-6 h-full">
       {/* Webcam feed */}
-      <div className="relative rounded-xl overflow-hidden border-2 border-blue-600/20 aspect-video bg-slate-900">
+      <div
+        className="relative rounded-xl overflow-hidden aspect-video"
+        style={{ background: '#0d0a1f', border: '2px solid rgba(27,142,229,0.2)' }}
+      >
         <video
           ref={videoRef}
           autoPlay
@@ -149,21 +158,33 @@ export default function ProctoringMonitor({ sessionToken, onIntegrityUpdate, api
           className="w-full h-full object-cover"
         />
         {/* Scanning line */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.5)]" />
+        <div
+          className="absolute top-0 left-0 w-full h-1"
+          style={{ background: 'rgba(27,142,229,0.4)', boxShadow: '0 0 15px rgba(27,142,229,0.5)' }}
+        />
         {/* Name tag */}
-        <div className="absolute bottom-4 left-4 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 flex items-center gap-2">
+        <div
+          className="absolute bottom-4 left-4 px-3 py-1.5 rounded-lg flex items-center gap-2"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' }}
+        >
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
           <span className="text-xs font-medium text-white">You</span>
         </div>
         {/* REC indicator */}
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2 py-1 rounded-lg">
+        <div
+          className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-1 rounded-lg"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)' }}
+        >
           <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
           <span className="text-[10px] font-bold text-red-400 uppercase">Rec</span>
         </div>
       </div>
 
       {/* Sentiment analysis panel */}
-      <div className="backdrop-blur-xl bg-white/[0.03] border border-white/10 rounded-xl p-6 flex-1 flex flex-col gap-5">
+      <div
+        className="rounded-2xl p-6 flex-1 flex flex-col gap-5"
+        style={glassCard}
+      >
         <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500">
           Real-time Soft Skills Analysis
         </h4>
@@ -173,8 +194,12 @@ export default function ProctoringMonitor({ sessionToken, onIntegrityUpdate, api
           {sentiments.map(s => {
             const colors = statusColors[s.status];
             return (
-              <div key={s.label} className={`flex items-center gap-2 ${colors.bg} ${colors.text} border ${colors.border} px-4 py-2 rounded-xl text-sm font-semibold`}>
-                <span className={`h-2 w-2 rounded-full ${s.status === 'positive' ? 'bg-emerald-400' : s.status === 'neutral' ? 'bg-amber-400' : 'bg-red-400'}`} />
+              <div
+                key={s.label}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+                style={{ background: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ background: colors.dot }} />
                 {s.label}
               </div>
             );
@@ -187,10 +212,14 @@ export default function ProctoringMonitor({ sessionToken, onIntegrityUpdate, api
             <span className="text-xs font-medium text-slate-500">Speaking Confidence</span>
             <span className="text-xs font-bold text-blue-400">{confidence}%</span>
           </div>
-          <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+          <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
             <div
-              className="bg-blue-600 h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(37,99,235,0.5)]"
-              style={{ width: `${confidence}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${confidence}%`,
+                background: 'linear-gradient(90deg, #1B8EE5, #a855f7)',
+                boxShadow: '0 0 10px rgba(27,142,229,0.5)',
+              }}
             />
           </div>
         </div>
@@ -202,11 +231,12 @@ export default function ProctoringMonitor({ sessionToken, onIntegrityUpdate, api
             {Array.from({ length: 20 }).map((_, i) => (
               <div
                 key={i}
-                className="w-[3px] bg-blue-600 rounded-full animate-waveform"
+                className="w-[3px] rounded-full animate-waveform"
                 style={{
                   height: '80%',
                   animationDelay: `${i * 60}ms`,
                   opacity: 0.6,
+                  background: '#1B8EE5',
                 }}
               />
             ))}

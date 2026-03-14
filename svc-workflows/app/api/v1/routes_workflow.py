@@ -8,7 +8,7 @@ from app.core.security import require_employee, require_hr_or_admin
 from app.services import workflow_service
 from app.services.execution_engine import ExecutionEngine
 from app.services.template_service import get_templates, get_template_by_id
-from app.services.node_registry_service import get_node_types
+from app.services.node_registry_service import get_node_types, get_all_node_types
 
 logger = logging.getLogger("svc-workflows")
 
@@ -34,9 +34,12 @@ class WorkflowUpdate(BaseModel):
 
 
 @router.get("/node-types")
-async def list_node_types(user: dict = Depends(require_employee)):
+async def list_node_types(
+    user: dict = Depends(require_employee),
+    db: AsyncSession = Depends(get_db),
+):
     """Return all available node types with metadata."""
-    return get_node_types()
+    return await get_all_node_types(db)
 
 
 @router.get("/templates")

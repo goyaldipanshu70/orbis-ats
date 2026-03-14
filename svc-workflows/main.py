@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import update, text
 from app.db.postgres import init_db, AsyncSessionLocal
 from app.db.models import WorkflowRun
-from app.api.v1 import routes_workflow, routes_execution
+from app.api.v1 import routes_workflow, routes_execution, routes_custom_nodes
 from app.core.config import settings
 
 logger = logging.getLogger("svc-workflows")
@@ -91,6 +91,7 @@ async def limit_request_size(request: Request, call_next):
     return await call_next(request)
 
 
+app.include_router(routes_custom_nodes.router, prefix="/api/workflows/custom-nodes", tags=["Custom Nodes"])
 app.include_router(routes_workflow.router, prefix="/api/workflows", tags=["Workflows"])
 app.include_router(routes_execution.router, prefix="/api/workflows", tags=["Execution"])
 

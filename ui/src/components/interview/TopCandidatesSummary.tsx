@@ -1,6 +1,4 @@
-
 import { Award } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { InterviewEvaluation } from '@/types/api';
 import ScoreDisplay from '@/components/ScoreDisplay';
 import RecommendationBadge from '@/components/RecommendationBadge';
@@ -23,29 +21,43 @@ const TopCandidatesSummary = ({ evaluations }: TopCandidatesSummaryProps) => {
   }
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center text-lg">
-          <Award className="w-5 h-5 mr-2 text-amber-500" />
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{
+        background: 'var(--orbis-card)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid var(--orbis-border)',
+      }}
+    >
+      <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+        <h3 className="flex items-center text-lg font-semibold text-white">
+          <Award className="w-5 h-5 mr-2 text-amber-400" />
           Top Candidates Spotlight
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+        </h3>
+      </div>
+      <div className="px-6 py-4">
         <ul className="space-y-4">
           {topCandidates.map((evaluation) => (
-            <li key={evaluation.evaluation_id} className="p-3 bg-muted/30 rounded-lg">
+            <li
+              key={evaluation.evaluation_id}
+              className="p-3 rounded-lg"
+              style={{
+                background: 'var(--orbis-card)',
+                border: '1px solid var(--orbis-border)',
+              }}
+            >
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="font-semibold">{evaluation.candidate_name}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    <span className="font-medium text-green-600">Strongest:</span> {evaluation.strongest_competency}
+                  <h4 className="font-semibold text-white">{evaluation.candidate_name}</h4>
+                  <p className="text-sm text-slate-400 mt-1">
+                    <span className="font-medium text-emerald-400">Strongest:</span> {evaluation.strongest_competency}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0 ml-4">
-                  <ScoreDisplay 
-                    score={evaluation.score_breakdown?.total_score?.obtained_score ?? 0} 
-                    maxScore={evaluation.score_breakdown?.total_score?.max_score ?? 100} 
-                    size="md" 
+                  <ScoreDisplay
+                    score={evaluation.score_breakdown?.total_score?.obtained_score ?? 0}
+                    maxScore={evaluation.score_breakdown?.total_score?.max_score ?? 100}
+                    size="md"
                   />
                   <div className="mt-1">
                     <RecommendationBadge recommendation={evaluation.ai_recommendation} />
@@ -55,8 +67,8 @@ const TopCandidatesSummary = ({ evaluations }: TopCandidatesSummaryProps) => {
             </li>
           ))}
         </ul>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

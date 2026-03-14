@@ -34,7 +34,14 @@ async def generate_questions(state: dict) -> dict:
     """Generate interview questions tailored to candidate and job."""
     job = state.get("job_context", {})
     candidate = state.get("candidate_context", {})
-    skills_gap = state.get("skills_gap", [])
+    skills_gap_raw = state.get("skills_gap", [])
+    # Ensure skills_gap is a list of strings (may arrive as dict from other workflows)
+    if isinstance(skills_gap_raw, dict):
+        skills_gap = skills_gap_raw.get("missing", [])
+    elif isinstance(skills_gap_raw, list):
+        skills_gap = [str(s) for s in skills_gap_raw]
+    else:
+        skills_gap = []
     interview_type = state.get("interview_type", "general")
 
     user_prompt = f"""Generate interview questions:

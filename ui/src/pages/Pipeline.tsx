@@ -11,9 +11,6 @@ import { PipelineConfigModal } from '@/components/PipelineConfigModal';
 import EmailComposerModal from '@/components/EmailComposerModal';
 import AIInterviewModal from '@/components/pipeline/AIInterviewModal';
 import AIInterviewResultsSheet from '@/components/pipeline/AIInterviewResultsSheet';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -26,8 +23,34 @@ import { useToast } from '@/hooks/use-toast';
 import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
 import { ArrowLeft, RefreshCw, Search, X, SlidersHorizontal, Settings2, Users, FileText, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { slideInLeft, fadeInUp } from '@/lib/animations';
-import { StaggerGrid } from '@/components/ui/stagger-grid';
+
+/* ── Glass Design System ───────────────────────────────── */
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
+const sItemCls = 'text-slate-200 focus:bg-white/10 focus:text-white';
+
+const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
 
 function useDebounce(value: string, delay: number) {
   const [debounced, setDebounced] = useState(value);
@@ -109,35 +132,27 @@ export default function Pipeline() {
     Object.values(data).reduce((sum, arr) => sum + arr.length, 0),
   [data]);
 
-  // Keyboard shortcuts: r=rejected, s=screening, i=interview, o=offer
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!selectedCandidate) return;
-      // Don't trigger when typing in inputs/textareas
       const tag = (e.target as HTMLElement).tagName.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
       const keyMap: Record<string, PipelineStage> = {
-        r: 'rejected',
-        s: 'screening',
-        a: 'ai_interview',
-        i: 'interview',
-        o: 'offer',
+        r: 'rejected', s: 'screening', a: 'ai_interview', i: 'interview', o: 'offer',
       };
       const targetStage = keyMap[e.key.toLowerCase()];
       if (!targetStage || selectedCandidate.pipeline_stage === targetStage) return;
 
       e.preventDefault();
 
-      // AI Interview stage opens config modal instead of direct move
       if (targetStage === 'ai_interview') {
         setAiInterviewCandidate(selectedCandidate);
         return;
       }
 
       const fromStage = selectedCandidate.pipeline_stage;
-
-      // Optimistic update
       const newData = { ...data };
       newData[fromStage] = data[fromStage].filter(c => c.id !== selectedCandidate.id);
       newData[targetStage] = [...data[targetStage], { ...selectedCandidate, pipeline_stage: targetStage }];
@@ -149,7 +164,6 @@ export default function Pipeline() {
           setSelectedCandidate({ ...selectedCandidate, pipeline_stage: targetStage });
         })
         .catch(() => {
-          // Rollback
           setData(data);
           toast({ title: 'Error', description: 'Failed to move candidate', variant: 'destructive' });
         });
@@ -218,7 +232,6 @@ export default function Pipeline() {
   };
 
   const handleGenerateDocument = (candidate: PipelineCandidate) => {
-    // Navigate to templates page with candidate context
     navigate(`/templates?candidate=${candidate.id}&job=${jobId}`);
   };
 
@@ -239,7 +252,6 @@ export default function Pipeline() {
     try {
       await apiClient.updateDocumentStatus(doc.candidate_id, doc.id, newStatus);
       toast({ title: 'Updated', description: `Document status changed to ${newStatus}` });
-      // Refresh docs
       if (docsCandidate) {
         const res = await apiClient.getCandidateDocuments(docsCandidate.id, jobId ? Number(jobId) : undefined);
         setCandidateDocs(res.documents || []);
@@ -259,166 +271,167 @@ export default function Pipeline() {
     }
   };
 
+  const statusCfg: Record<string, { bg: string; text: string; dot: string }> = {
+    pending:   { bg: 'rgba(251,191,36,0.08)', text: 'text-amber-400', dot: 'bg-amber-500' },
+    generated: { bg: 'rgba(59,130,246,0.08)', text: 'text-blue-400', dot: 'bg-blue-500' },
+    sent:      { bg: 'rgba(22,118,192,0.08)', text: 'text-blue-400', dot: 'bg-blue-500' },
+    signed:    { bg: 'rgba(34,197,94,0.08)', text: 'text-emerald-400', dot: 'bg-emerald-500' },
+  };
+  const nextStatus: Record<string, string> = {
+    pending: 'generated', generated: 'sent', sent: 'signed',
+  };
+
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-muted/40 via-background to-muted/30">
+      <div className="min-h-screen relative" style={{ background: 'var(--orbis-page)' }}>
+        {/* Ambient glow */}
+        <div className="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full pointer-events-none -z-10" style={{ background: 'rgba(27,142,229,0.04)', filter: 'blur(120px)' }} />
+        <div className="fixed bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full pointer-events-none -z-10" style={{ background: 'rgba(59,130,246,0.04)', filter: 'blur(120px)' }} />
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
           className="max-w-[1600px] mx-auto px-6 py-6 space-y-6"
         >
-          {/* Header Section */}
+          {/* ── Header ──────────────────────────────────────────── */}
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-2xl bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm"
+            className="rounded-2xl p-5"
+            style={glassCard}
           >
-            <div className="px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                {/* Left: Back button + title */}
-                <motion.div
-                  variants={slideInLeft}
-                  initial="hidden"
-                  animate="visible"
-                  className="flex items-start gap-4"
+            <div className="flex items-start justify-between gap-4">
+              {/* Left */}
+              <div className="flex items-start gap-4">
+                <button
+                  onClick={() => navigate(`/jobs/${jobId}`)}
+                  aria-label="Go back"
+                  className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all hover:scale-105"
+                  style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-hover)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-border)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-input)'; }}
                 >
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label="Go back"
-                    onClick={() => navigate(`/jobs/${jobId}`)}
-                    className="rounded-xl h-10 w-10 shrink-0 border-border/60 hover:bg-muted/80 transition-all duration-200"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                        Pipeline
-                      </h1>
-                      <Badge
-                        variant="secondary"
-                        className="rounded-lg px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary border-0"
-                      >
-                        {totalCandidates} candidates
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {jobTitle || 'Loading...'}
-                    </p>
+                  <ArrowLeft className="h-4 w-4 text-slate-300" />
+                </button>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-black tracking-tight text-white">Pipeline</h1>
+                    <span className="rounded-lg px-2.5 py-0.5 text-xs font-bold" style={{ background: 'rgba(27,142,229,0.15)', color: '#4db5f0' }}>
+                      {totalCandidates} candidates
+                    </span>
                   </div>
-                </motion.div>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    {jobTitle || 'Loading...'}
+                  </p>
+                </div>
+              </div>
 
-                {/* Right: Action buttons */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex items-center gap-2 shrink-0"
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate(`/jobs/${jobId}/candidates`)}
-                    className="rounded-xl h-9 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
+              {/* Right */}
+              <div className="flex items-center gap-2 shrink-0">
+                {[
+                  { label: 'Candidates', icon: Users, onClick: () => navigate(`/jobs/${jobId}/candidates`) },
+                  { label: 'Stages', icon: Settings2, onClick: () => setShowConfigModal(true) },
+                  { label: 'Refresh', icon: RefreshCw, onClick: fetchPipeline, spin: isLoading },
+                ].map(btn => (
+                  <button
+                    key={btn.label}
+                    onClick={btn.onClick}
+                    disabled={btn.label === 'Refresh' && isLoading}
+                    className="inline-flex items-center gap-2 h-9 px-3 rounded-xl text-xs font-bold text-slate-300 transition-all hover:text-white disabled:opacity-50"
+                    style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-hover)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-grid)'; }}
                   >
-                    <Users className="h-4 w-4 mr-2" />
-                    Candidates
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowConfigModal(true)}
-                    className="rounded-xl h-9 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
-                  >
-                    <Settings2 className="h-4 w-4 mr-2" />
-                    Stages
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchPipeline}
-                    disabled={isLoading}
-                    className="rounded-xl h-9 border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all duration-200"
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                    Refresh
-                  </Button>
-                </motion.div>
+                    <btn.icon className={`h-4 w-4 ${btn.spin ? 'animate-spin' : ''}`} />
+                    {btn.label}
+                  </button>
+                ))}
               </div>
             </div>
           </motion.div>
 
-          {/* Stats Section */}
+          {/* ── Stats ───────────────────────────────────────────── */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           >
-            <StaggerGrid>
-              <PipelineStats data={data} locationVacancies={locationVacancies} />
-            </StaggerGrid>
+            <PipelineStats data={data} locationVacancies={locationVacancies} />
           </motion.div>
 
-          {/* Filter Bar */}
+          {/* ── Filter Bar ──────────────────────────────────────── */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-2xl bg-card/80 backdrop-blur-sm border border-border/60 shadow-sm p-4"
+            className="rounded-2xl p-4"
+            style={glassCard}
           >
             <div className="flex flex-wrap items-center gap-3">
+              {/* Search */}
               <div className="relative flex-1 min-w-[200px] max-w-sm">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/60" />
-                <Input
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
                   placeholder="Search candidates..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-10 text-sm rounded-xl border-border/60 bg-muted/30 focus:bg-card transition-colors"
+                  className="w-full h-10 pl-10 pr-4 text-sm rounded-xl outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                 />
               </div>
 
-              <div className="h-6 w-px bg-border/60 hidden sm:block" />
+              <div className="h-6 w-px hidden sm:block" style={{ background: 'var(--orbis-border)' }} />
 
+              {/* Recommendation filter */}
               <Select value={recFilter} onValueChange={setRecFilter}>
-                <SelectTrigger className="w-[200px] h-10 text-sm rounded-xl border-border/60 bg-muted/30">
-                  <SlidersHorizontal className="w-3.5 h-3.5 mr-2 text-muted-foreground/60" />
+                <SelectTrigger className="w-[200px] h-10 text-sm rounded-xl text-white border-0" style={glassInput}>
+                  <SlidersHorizontal className="w-3.5 h-3.5 mr-2 text-slate-500" />
                   <SelectValue placeholder="Recommendation" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Recommendations</SelectItem>
-                  <SelectItem value="Interview Immediately">Interview Immediately</SelectItem>
-                  <SelectItem value="Interview">Interview</SelectItem>
-                  <SelectItem value="Maybe">Maybe</SelectItem>
-                  <SelectItem value="Reject">Reject</SelectItem>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                  <SelectItem className={sItemCls} value="all">All Recommendations</SelectItem>
+                  <SelectItem className={sItemCls} value="Interview Immediately">Interview Immediately</SelectItem>
+                  <SelectItem className={sItemCls} value="Interview">Interview</SelectItem>
+                  <SelectItem className={sItemCls} value="Maybe">Maybe</SelectItem>
+                  <SelectItem className={sItemCls} value="Reject">Reject</SelectItem>
                 </SelectContent>
               </Select>
 
+              {/* Score range */}
               <div className="flex items-center gap-2">
-                <Input
+                <input
                   type="number"
                   placeholder="Min score"
                   value={scoreMin}
                   onChange={(e) => setScoreMin(e.target.value)}
-                  className="w-28 h-10 text-sm rounded-xl border-border/60 bg-muted/30"
+                  className="w-28 h-10 px-3 text-sm rounded-xl outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                 />
-                <span className="text-xs text-muted-foreground/60 font-medium">to</span>
-                <Input
+                <span className="text-xs text-slate-500 font-medium">to</span>
+                <input
                   type="number"
                   placeholder="Max score"
                   value={scoreMax}
                   onChange={(e) => setScoreMax(e.target.value)}
-                  className="w-28 h-10 text-sm rounded-xl border-border/60 bg-muted/30"
+                  className="w-28 h-10 px-3 text-sm rounded-xl outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                 />
               </div>
 
               {activeFilterCount > 0 && (
-                  <Badge className="h-6 px-2 rounded-full bg-blue-500 text-white text-[10px] font-bold border-0">
-                      {activeFilterCount} active
-                  </Badge>
+                <span className="h-6 px-2 rounded-full text-[10px] font-bold inline-flex items-center" style={{ background: 'rgba(59,130,246,0.2)', color: '#60a5fa' }}>
+                  {activeFilterCount} active
+                </span>
               )}
+
               <AnimatePresence>
                 {hasActiveFilters && (
                   <motion.div
@@ -427,22 +440,23 @@ export default function Pipeline() {
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                    <button
                       onClick={clearFilters}
-                      className="h-10 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-destructive/10 transition-all duration-200"
+                      className="h-10 px-3 rounded-xl text-xs font-bold text-slate-400 hover:text-rose-400 transition-all"
+                      style={{ background: 'var(--orbis-card)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(244,63,94,0.08)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
                     >
-                      <X className="w-3.5 h-3.5 mr-1.5" />
+                      <X className="w-3.5 h-3.5 mr-1.5 inline" />
                       Clear filters
-                    </Button>
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </motion.div>
 
-          {/* Kanban Board */}
+          {/* ── Kanban Board ─────────────────────────────────────── */}
           {isLoading ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -450,10 +464,10 @@ export default function Pipeline() {
               className="flex flex-col items-center justify-center h-72 gap-4"
             >
               <div className="relative">
-                <div className="h-10 w-10 rounded-full border-2 border-primary/20" />
-                <div className="absolute inset-0 h-10 w-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <div className="h-10 w-10 rounded-full" style={{ border: '2px solid rgba(27,142,229,0.2)' }} />
+                <div className="absolute inset-0 h-10 w-10 rounded-full border-2 border-transparent animate-spin" style={{ borderTopColor: '#1B8EE5' }} />
               </div>
-              <p className="text-sm text-muted-foreground animate-pulse">Loading pipeline...</p>
+              <p className="text-sm text-slate-400 animate-pulse">Loading pipeline...</p>
             </motion.div>
           ) : (
             <motion.div
@@ -482,7 +496,7 @@ export default function Pipeline() {
             </motion.div>
           )}
 
-          {/* Table View */}
+          {/* ── Table View ───────────────────────────────────────── */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -491,7 +505,7 @@ export default function Pipeline() {
             <PipelineTable data={filteredData} onRefresh={fetchPipeline} />
           </motion.div>
 
-          {/* Keyboard shortcut hint */}
+          {/* ── Keyboard Shortcut Hint ───────────────────────────── */}
           <AnimatePresence>
             {selectedCandidate && (
               <motion.div
@@ -501,36 +515,33 @@ export default function Pipeline() {
                 transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
               >
-                <div className="flex items-center gap-3 bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-lg text-white text-xs px-5 py-3 rounded-2xl shadow-2xl shadow-black/20 border border-white/10">
+                <div
+                  className="flex items-center gap-3 text-xs px-5 py-3 rounded-2xl"
+                  style={{ background: 'var(--orbis-dropdown)', backdropFilter: 'blur(16px)', border: '1px solid var(--orbis-border)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
+                >
                   <span className="font-semibold text-white/90">{selectedCandidate.full_name}</span>
                   <div className="h-4 w-px bg-white/20" />
                   <div className="flex items-center gap-2.5">
-                    <span className="flex items-center gap-1">
-                      <kbd className="bg-white/15 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold border border-white/10">S</kbd>
-                      <span className="text-white/60">Screen</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <kbd className="bg-white/15 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold border border-white/10">A</kbd>
-                      <span className="text-white/60">AI</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <kbd className="bg-white/15 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold border border-white/10">I</kbd>
-                      <span className="text-white/60">Interview</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <kbd className="bg-white/15 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold border border-white/10">O</kbd>
-                      <span className="text-white/60">Offer</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <kbd className="bg-white/15 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold border border-white/10">R</kbd>
-                      <span className="text-white/60">Reject</span>
-                    </span>
+                    {[
+                      { key: 'S', label: 'Screen' },
+                      { key: 'A', label: 'AI' },
+                      { key: 'I', label: 'Interview' },
+                      { key: 'O', label: 'Offer' },
+                      { key: 'R', label: 'Reject' },
+                    ].map(k => (
+                      <span key={k.key} className="flex items-center gap-1">
+                        <kbd className="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold" style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}>{k.key}</kbd>
+                        <span className="text-white/50">{k.label}</span>
+                      </span>
+                    ))}
                   </div>
                   <div className="h-4 w-px bg-white/20" />
                   <button
                     onClick={() => setSelectedCandidate(null)}
                     aria-label="Deselect candidate"
-                    className="text-white/40 hover:text-white hover:bg-white/10 rounded-lg h-6 w-6 flex items-center justify-center transition-all duration-200"
+                    className="text-white/40 hover:text-white rounded-lg h-6 w-6 flex items-center justify-center transition-all"
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-border)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -541,7 +552,7 @@ export default function Pipeline() {
         </motion.div>
       </div>
 
-      {/* Feedback Modal */}
+      {/* ── Modals ──────────────────────────────────────────── */}
       {feedbackCandidate && feedbackScheduleId && (
         <FeedbackModal
           scheduleId={feedbackScheduleId}
@@ -552,7 +563,6 @@ export default function Pipeline() {
         />
       )}
 
-      {/* Interview Schedule Modal */}
       {scheduleCandidate && jobId && (
         <InterviewScheduleModal
           isOpen={!!scheduleCandidate}
@@ -564,7 +574,6 @@ export default function Pipeline() {
         />
       )}
 
-      {/* Offer Modal */}
       {offerCandidate && jobId && (
         <OfferModal
           isOpen={!!offerCandidate}
@@ -577,7 +586,6 @@ export default function Pipeline() {
         />
       )}
 
-      {/* Pipeline Config Modal */}
       {jobId && (
         <PipelineConfigModal
           open={showConfigModal}
@@ -587,7 +595,6 @@ export default function Pipeline() {
         />
       )}
 
-      {/* Email Composer Modal */}
       <EmailComposerModal
         open={!!emailTarget}
         onClose={() => setEmailTarget(null)}
@@ -596,7 +603,6 @@ export default function Pipeline() {
         candidateId={emailTarget?.id}
       />
 
-      {/* AI Interview Config Modal */}
       {aiInterviewCandidate && jobId && (
         <AIInterviewModal
           isOpen={!!aiInterviewCandidate}
@@ -609,90 +615,81 @@ export default function Pipeline() {
         />
       )}
 
-      {/* AI Interview Results Sheet */}
       <AIInterviewResultsSheet
         sessionId={aiResultsSessionId}
         open={aiResultsSessionId !== null}
         onOpenChange={(open) => { if (!open) setAiResultsSessionId(null); }}
       />
 
-      {/* Documents Panel */}
+      {/* ── Documents Panel ─────────────────────────────────── */}
       <Sheet open={!!docsCandidate} onOpenChange={(open) => { if (!open) { setDocsCandidate(null); setCandidateDocs([]); } }}>
-        <SheetContent className="w-[420px] sm:w-[480px] overflow-y-auto">
+        <SheetContent className="w-[420px] sm:w-[480px] overflow-y-auto border-0" style={{ background: 'var(--orbis-card)', borderLeft: '1px solid var(--orbis-border)' }}>
           <SheetHeader>
-            <SheetTitle className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center h-8 w-8 rounded-xl bg-indigo-100 dark:bg-indigo-950/40">
-                <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            <SheetTitle className="flex items-center gap-2.5 text-white">
+              <div className="flex items-center justify-center h-8 w-8 rounded-xl" style={{ background: 'rgba(22,118,192,0.15)' }}>
+                <FileText className="h-4 w-4 text-blue-400" />
               </div>
               Documents
             </SheetTitle>
-            <SheetDescription>
+            <SheetDescription className="text-slate-400">
               {docsCandidate?.name ? `Documents for ${docsCandidate.name}` : 'Candidate documents'}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-3">
             {docsLoading ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">Loading documents...</p>
+                <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                <p className="text-xs text-slate-500">Loading documents...</p>
               </div>
             ) : candidateDocs.length === 0 ? (
               <div className="text-center py-12">
-                <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-muted/80 mx-auto mb-3">
-                  <FileText className="h-5 w-5 text-muted-foreground/50" />
+                <div className="flex items-center justify-center h-12 w-12 rounded-2xl mx-auto mb-3" style={{ background: 'var(--orbis-input)' }}>
+                  <FileText className="h-5 w-5 text-slate-500" />
                 </div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">No documents yet</p>
-                <p className="text-xs text-muted-foreground/70 max-w-[280px] mx-auto">
+                <p className="text-sm font-medium text-slate-400 mb-1">No documents yet</p>
+                <p className="text-xs text-slate-500 max-w-[280px] mx-auto">
                   Documents are auto-assigned when candidates move through pipeline stages with configured stage rules.
                 </p>
               </div>
             ) : (
               candidateDocs.map((doc) => {
-                const statusConfig: Record<string, { bg: string; text: string; dot: string }> = {
-                  pending:   { bg: 'bg-amber-50 dark:bg-amber-950/30', text: 'text-amber-700 dark:text-amber-300', dot: 'bg-amber-500' },
-                  generated: { bg: 'bg-blue-50 dark:bg-blue-950/30', text: 'text-blue-700 dark:text-blue-300', dot: 'bg-blue-500' },
-                  sent:      { bg: 'bg-indigo-50 dark:bg-indigo-950/30', text: 'text-indigo-700 dark:text-indigo-300', dot: 'bg-indigo-500' },
-                  signed:    { bg: 'bg-green-50 dark:bg-green-950/30', text: 'text-green-700 dark:text-green-300', dot: 'bg-green-500' },
-                };
-                const nextStatus: Record<string, string> = {
-                  pending: 'generated',
-                  generated: 'sent',
-                  sent: 'signed',
-                };
-                const cfg = statusConfig[doc.status] || { bg: 'bg-muted', text: 'text-muted-foreground', dot: 'bg-muted-foreground' };
+                const cfg = statusCfg[doc.status] || { bg: 'var(--orbis-card)', text: 'text-slate-400', dot: 'bg-slate-500' };
                 return (
                   <motion.div
                     key={doc.id}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl border border-border/60 bg-card/80 p-4 space-y-3 hover:shadow-md transition-shadow duration-200"
+                    className="rounded-xl p-4 space-y-3 transition-all"
+                    style={glassCard}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{doc.template_name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Stage: {doc.stage}</p>
+                        <p className="text-sm font-semibold text-white truncate">{doc.template_name}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">Stage: {doc.stage}</p>
                       </div>
-                      <Badge
-                        className={`shrink-0 text-[10px] font-semibold rounded-lg px-2 py-0.5 border-0 inline-flex items-center gap-1.5 ${cfg.bg} ${cfg.text}`}
+                      <span
+                        className={`shrink-0 text-[10px] font-bold rounded-lg px-2 py-0.5 inline-flex items-center gap-1.5 ${cfg.text}`}
+                        style={{ background: cfg.bg }}
                       >
                         <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
                         {doc.status}
-                      </Badge>
+                      </span>
                     </div>
                     {doc.generated_by && (
-                      <p className="text-xs text-muted-foreground/70">
+                      <p className="text-xs text-slate-500">
                         Generated by {doc.generated_by}{doc.generated_at ? ` on ${new Date(doc.generated_at).toLocaleDateString()}` : ''}
                       </p>
                     )}
                     {nextStatus[doc.status] && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 text-xs w-full rounded-xl border-border/60 hover:bg-primary/5 transition-colors"
+                      <button
+                        className="h-8 text-xs w-full rounded-xl font-bold text-slate-300 transition-all hover:text-white"
+                        style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-hover)' }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(27,142,229,0.1)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-grid)'; }}
                         onClick={() => handleDocStatusChange(doc, nextStatus[doc.status])}
                       >
                         Mark as {nextStatus[doc.status]}
-                      </Button>
+                      </button>
                     )}
                   </motion.div>
                 );

@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/utils/api';
 import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
 import { formatDistanceToNow } from 'date-fns';
@@ -109,45 +107,53 @@ export function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative rounded-full h-8 w-8 text-muted-foreground hover:text-foreground">
+        <button className="relative rounded-full h-8 w-8 flex items-center justify-center text-slate-400 hover:text-white transition-colors hover:bg-white/10">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
-            <Badge
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-4 min-w-[16px] flex items-center justify-center p-0 text-[10px] leading-none"
-            >
+            <span className="absolute -top-1 -right-1 h-4 min-w-[16px] flex items-center justify-center rounded-full bg-[#1B8EE5] px-1 text-[10px] leading-none text-white font-semibold">
               {unreadCount > 99 ? '99+' : unreadCount}
-            </Badge>
+            </span>
           )}
-        </Button>
+        </button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h4 className="font-semibold text-sm">Notifications</h4>
+      <PopoverContent
+        className="w-96 p-0 rounded-xl shadow-2xl"
+        align="end"
+        style={{
+          background: 'var(--orbis-dropdown)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid var(--orbis-border)',
+        }}
+      >
+        <div
+          className="flex items-center justify-between p-4"
+          style={{ borderBottom: '1px solid var(--orbis-border)' }}
+        >
+          <h4 className="font-semibold text-sm text-white">Notifications</h4>
           {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-7"
+            <button
+              className="text-xs h-7 px-2 rounded text-slate-400 hover:text-white transition-colors hover:bg-white/10"
               onClick={handleMarkAllRead}
             >
               Mark all read
-            </Button>
+            </button>
           )}
         </div>
         <ScrollArea className="max-h-[400px]">
           {notifications.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground text-sm">
+            <div className="p-8 text-center text-slate-500 text-sm">
               No notifications yet
             </div>
           ) : (
-            <div className="divide-y">
+            <div
+              className="divide-y"
+              style={{ '--tw-divide-opacity': '1', borderColor: 'var(--orbis-border)' } as React.CSSProperties}
+            >
               {notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`p-3 hover:bg-muted/50 cursor-pointer transition-colors ${
-                    !n.is_read ? 'bg-primary/5' : ''
-                  }`}
+                  className={`p-3 cursor-pointer transition-colors hover:bg-white/5`}
+                  style={!n.is_read ? { background: 'rgba(27,142,229,0.08)' } : undefined}
                   onClick={() => !n.is_read && handleMarkRead(n.id)}
                 >
                   <div className="flex gap-3">
@@ -156,17 +162,17 @@ export function NotificationBell() {
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">
+                        <p className="text-sm font-medium truncate text-white">
                           {n.subject}
                         </p>
                         {!n.is_read && (
-                          <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                          <span className="h-2 w-2 rounded-full bg-[#1B8EE5] flex-shrink-0" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
                         {n.body}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         {n.created_at
                           ? formatDistanceToNow(new Date(n.created_at), {
                               addSuffix: true,

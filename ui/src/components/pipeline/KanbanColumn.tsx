@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Droppable } from '@hello-pangea/dnd';
 import { PipelineCandidate, PipelineStage } from '@/types/api';
 import KanbanCard from './KanbanCard';
 import { cn } from '@/lib/utils';
-import { Users, UserCheck, Bot, Phone, FileText, CheckCircle, XCircle, Inbox } from 'lucide-react';
+import { Users, UserCheck, Bot, Phone, FileText, CheckCircle, XCircle, Inbox, ChevronDown } from 'lucide-react';
+
+const KANBAN_PAGE_SIZE = 50;
 
 const STAGE_ICONS: Record<PipelineStage, React.ElementType> = {
   applied: Users,
@@ -15,14 +18,14 @@ const STAGE_ICONS: Record<PipelineStage, React.ElementType> = {
   rejected: XCircle,
 };
 
-const STAGE_STYLES: Record<PipelineStage, { bg: string; headerBg: string; headerBorder: string; dot: string; countBg: string; countText: string; dropHighlight: string; iconColor: string }> = {
-  applied:      { bg: 'bg-blue-50/30 dark:bg-blue-950/20',    headerBg: 'bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-950/40 dark:to-blue-900/20',    headerBorder: 'border-blue-200/50 dark:border-blue-800/40',    dot: 'bg-blue-500',    countBg: 'bg-blue-100 dark:bg-blue-900/50',    countText: 'text-blue-700 dark:text-blue-300',    dropHighlight: 'bg-blue-50/60 dark:bg-blue-950/40 ring-2 ring-blue-300/40 ring-inset',    iconColor: 'text-blue-500' },
-  screening:    { bg: 'bg-amber-50/30 dark:bg-amber-950/20',   headerBg: 'bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-950/40 dark:to-amber-900/20',   headerBorder: 'border-amber-200/50 dark:border-amber-800/40',   dot: 'bg-amber-500',   countBg: 'bg-amber-100 dark:bg-amber-900/50',   countText: 'text-amber-700 dark:text-amber-300',   dropHighlight: 'bg-amber-50/60 dark:bg-amber-950/40 ring-2 ring-amber-300/40 ring-inset',   iconColor: 'text-amber-500' },
-  ai_interview: { bg: 'bg-violet-50/30 dark:bg-violet-950/20', headerBg: 'bg-gradient-to-r from-violet-50 to-violet-100/50 dark:from-violet-950/40 dark:to-violet-900/20', headerBorder: 'border-violet-200/50 dark:border-violet-800/40', dot: 'bg-violet-500', countBg: 'bg-violet-100 dark:bg-violet-900/50', countText: 'text-violet-700 dark:text-violet-300', dropHighlight: 'bg-violet-50/60 dark:bg-violet-950/40 ring-2 ring-violet-300/40 ring-inset', iconColor: 'text-violet-500' },
-  interview:    { bg: 'bg-purple-50/30 dark:bg-purple-950/20', headerBg: 'bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-950/40 dark:to-purple-900/20', headerBorder: 'border-purple-200/50 dark:border-purple-800/40', dot: 'bg-purple-500', countBg: 'bg-purple-100 dark:bg-purple-900/50', countText: 'text-purple-700 dark:text-purple-300', dropHighlight: 'bg-purple-50/60 dark:bg-purple-950/40 ring-2 ring-purple-300/40 ring-inset', iconColor: 'text-purple-500' },
-  offer:        { bg: 'bg-emerald-50/30 dark:bg-emerald-950/20', headerBg: 'bg-gradient-to-r from-emerald-50 to-emerald-100/50 dark:from-emerald-950/40 dark:to-emerald-900/20', headerBorder: 'border-emerald-200/50 dark:border-emerald-800/40', dot: 'bg-emerald-500', countBg: 'bg-emerald-100 dark:bg-emerald-900/50', countText: 'text-emerald-700 dark:text-emerald-300', dropHighlight: 'bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-300/40 ring-inset', iconColor: 'text-emerald-500' },
-  hired:        { bg: 'bg-green-50/30 dark:bg-green-950/20',   headerBg: 'bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-950/40 dark:to-green-900/20',   headerBorder: 'border-green-200/50 dark:border-green-800/40',   dot: 'bg-green-500',   countBg: 'bg-green-100 dark:bg-green-900/50',   countText: 'text-green-700 dark:text-green-300',   dropHighlight: 'bg-green-50/60 dark:bg-green-950/40 ring-2 ring-green-300/40 ring-inset',   iconColor: 'text-green-500' },
-  rejected:     { bg: 'bg-red-50/30 dark:bg-red-950/20',     headerBg: 'bg-gradient-to-r from-red-50 to-red-100/50 dark:from-red-950/40 dark:to-red-900/20',     headerBorder: 'border-red-200/50 dark:border-red-800/40',     dot: 'bg-red-500',     countBg: 'bg-red-100 dark:bg-red-900/50',     countText: 'text-red-700 dark:text-red-300',     dropHighlight: 'bg-red-50/60 dark:bg-red-950/40 ring-2 ring-red-300/40 ring-inset',     iconColor: 'text-red-500' },
+const STAGE_STYLES: Record<PipelineStage, { bg: string; headerBg: string; dot: string; countBg: string; countText: string; dropRing: string; iconColor: string }> = {
+  applied:      { bg: 'rgba(59,130,246,0.04)',  headerBg: 'rgba(59,130,246,0.08)',  dot: 'bg-blue-500',    countBg: 'rgba(59,130,246,0.12)',  countText: 'text-blue-400',    dropRing: 'ring-blue-500/30',    iconColor: 'text-blue-400' },
+  screening:    { bg: 'rgba(245,158,11,0.04)',   headerBg: 'rgba(245,158,11,0.08)',   dot: 'bg-amber-500',   countBg: 'rgba(245,158,11,0.12)',   countText: 'text-amber-400',   dropRing: 'ring-amber-500/30',   iconColor: 'text-amber-400' },
+  ai_interview: { bg: 'rgba(27,142,229,0.04)',   headerBg: 'rgba(27,142,229,0.08)',   dot: 'bg-blue-500',  countBg: 'rgba(27,142,229,0.12)',   countText: 'text-blue-400',  dropRing: 'ring-blue-500/30',  iconColor: 'text-blue-400' },
+  interview:    { bg: 'rgba(168,85,247,0.04)',   headerBg: 'rgba(168,85,247,0.08)',   dot: 'bg-blue-500',  countBg: 'rgba(168,85,247,0.12)',   countText: 'text-blue-400',  dropRing: 'ring-blue-500/30',  iconColor: 'text-blue-400' },
+  offer:        { bg: 'rgba(16,185,129,0.04)',   headerBg: 'rgba(16,185,129,0.08)',   dot: 'bg-emerald-500', countBg: 'rgba(16,185,129,0.12)',   countText: 'text-emerald-400', dropRing: 'ring-emerald-500/30', iconColor: 'text-emerald-400' },
+  hired:        { bg: 'rgba(34,197,94,0.04)',    headerBg: 'rgba(34,197,94,0.08)',    dot: 'bg-green-500',   countBg: 'rgba(34,197,94,0.12)',    countText: 'text-green-400',   dropRing: 'ring-green-500/30',   iconColor: 'text-green-400' },
+  rejected:     { bg: 'rgba(239,68,68,0.04)',    headerBg: 'rgba(239,68,68,0.08)',    dot: 'bg-red-500',     countBg: 'rgba(239,68,68,0.12)',    countText: 'text-red-400',     dropRing: 'ring-red-500/30',     iconColor: 'text-red-400' },
 };
 
 const STAGE_LABELS: Record<PipelineStage, string> = {
@@ -55,24 +58,31 @@ interface KanbanColumnProps {
 export default function KanbanColumn({ stage, candidates, onCardClick, onFeedbackClick, onScheduleInterview, onSendOffer, onSendAIInterview, onGenerateDocument, onViewDocuments, onSendEmail, onViewAIResults, selectedCandidateId, onSelectCandidate, jdId }: KanbanColumnProps) {
   const styles = STAGE_STYLES[stage];
   const Icon = STAGE_ICONS[stage];
+  const [visibleCount, setVisibleCount] = useState(KANBAN_PAGE_SIZE);
+  const visibleCandidates = candidates.slice(0, visibleCount);
+  const hasMore = candidates.length > visibleCount;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className={cn('flex flex-col rounded-xl min-w-[272px] w-[272px] border border-border/40', styles.bg)}
+      className="flex flex-col rounded-xl min-w-[272px] w-[272px]"
+      style={{ background: styles.bg, border: '1px solid var(--orbis-border)' }}
     >
       {/* Header */}
-      <div className={cn('flex items-center gap-2.5 px-3.5 py-3 rounded-t-xl border-b', styles.headerBg, styles.headerBorder)}>
-        <div className={cn('flex items-center justify-center w-6 h-6 rounded-lg', styles.countBg)}>
+      <div
+        className="flex items-center gap-2.5 px-3.5 py-3 rounded-t-xl"
+        style={{ background: styles.headerBg, borderBottom: '1px solid var(--orbis-border)' }}
+      >
+        <div className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ background: styles.countBg }}>
           <Icon className={cn('h-3.5 w-3.5', styles.iconColor)} />
         </div>
-        <span className="text-[13px] font-semibold text-foreground tracking-tight">{STAGE_LABELS[stage]}</span>
-        <span className={cn(
-          'ml-auto inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-[11px] font-bold tabular-nums',
-          styles.countBg, styles.countText
-        )}>
+        <span className="text-[13px] font-semibold text-white tracking-tight">{STAGE_LABELS[stage]}</span>
+        <span
+          className={cn('ml-auto inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 rounded-full text-[11px] font-bold tabular-nums', styles.countText)}
+          style={{ background: styles.countBg }}
+        >
           {candidates.length}
         </span>
       </div>
@@ -85,10 +95,11 @@ export default function KanbanColumn({ stage, candidates, onCardClick, onFeedbac
             {...provided.droppableProps}
             className={cn(
               'flex-1 p-2 space-y-2 overflow-y-auto min-h-[120px] max-h-[calc(100vh-340px)] transition-all duration-200 rounded-b-xl',
-              snapshot.isDraggingOver && styles.dropHighlight
+              snapshot.isDraggingOver && `ring-2 ring-inset ${styles.dropRing}`
             )}
+            style={snapshot.isDraggingOver ? { background: styles.headerBg } : undefined}
           >
-            {candidates.map((candidate, index) => (
+            {visibleCandidates.map((candidate, index) => (
               <KanbanCard
                 key={candidate.id}
                 candidate={candidate}
@@ -108,8 +119,20 @@ export default function KanbanColumn({ stage, candidates, onCardClick, onFeedbac
               />
             ))}
             {provided.placeholder}
+            {hasMore && (
+              <button
+                onClick={() => setVisibleCount(prev => prev + KANBAN_PAGE_SIZE)}
+                className="w-full py-2 text-xs font-medium text-slate-500 hover:text-white rounded-lg transition-colors flex items-center justify-center gap-1"
+                style={{ background: 'transparent' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+                Show more ({candidates.length - visibleCount} remaining)
+              </button>
+            )}
             {candidates.length === 0 && !snapshot.isDraggingOver && (
-              <div className="flex flex-col items-center justify-center h-24 text-muted-foreground/60">
+              <div className="flex flex-col items-center justify-center h-24 text-slate-400">
                 <Inbox className="h-5 w-5 mb-1" />
                 <span className="text-[11px] font-medium">No candidates</span>
               </div>

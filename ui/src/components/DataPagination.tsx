@@ -1,12 +1,4 @@
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 
 interface DataPaginationProps {
   page: number;
@@ -37,45 +29,69 @@ export function DataPagination({ page, totalPages, total, pageSize, onPageChange
     pages.push(tp);
   }
 
+  const glassBtn = {
+    background: 'var(--orbis-card)',
+    border: '1px solid var(--orbis-border)',
+  };
+
+  const activeBtn = {
+    background: '#1B8EE5',
+    border: '1px solid rgba(27,142,229,0.5)',
+  };
+
   return (
     <div className="flex items-center justify-between mt-4">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-slate-400">
         Showing {start}–{end} of {total}
       </p>
       {tp > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => page > 1 && onPageChange(page - 1)}
-                className={page <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-              />
-            </PaginationItem>
-            {pages.map((p, i) =>
-              p === 'ellipsis' ? (
-                <PaginationItem key={`e-${i}`}>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              ) : (
-                <PaginationItem key={p}>
-                  <PaginationLink
-                    isActive={p === page}
-                    onClick={() => onPageChange(p)}
-                    className="cursor-pointer"
-                  >
-                    {p}
-                  </PaginationLink>
-                </PaginationItem>
-              )
-            )}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => page < tp && onPageChange(page + 1)}
-                className={page >= tp ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+        <nav role="navigation" aria-label="pagination" className="flex items-center gap-1">
+          {/* Previous */}
+          <button
+            onClick={() => page > 1 && onPageChange(page - 1)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-white transition-colors hover:bg-white/10 ${
+              page <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+            }`}
+            style={glassBtn}
+            disabled={page <= 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span>Previous</span>
+          </button>
+
+          {/* Page numbers */}
+          {pages.map((p, i) =>
+            p === 'ellipsis' ? (
+              <span key={`e-${i}`} className="flex h-9 w-9 items-center justify-center text-slate-500">
+                <MoreHorizontal className="h-4 w-4" />
+              </span>
+            ) : (
+              <button
+                key={p}
+                onClick={() => onPageChange(p)}
+                className={`h-9 w-9 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                  p === page ? 'text-white shadow-lg shadow-[#1B8EE5]/25' : 'text-slate-400 hover:text-white hover:bg-white/10'
+                }`}
+                style={p === page ? activeBtn : glassBtn}
+              >
+                {p}
+              </button>
+            )
+          )}
+
+          {/* Next */}
+          <button
+            onClick={() => page < tp && onPageChange(page + 1)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm text-white transition-colors hover:bg-white/10 ${
+              page >= tp ? 'pointer-events-none opacity-50' : 'cursor-pointer'
+            }`}
+            style={glassBtn}
+            disabled={page >= tp}
+          >
+            <span>Next</span>
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </nav>
       )}
     </div>
   );

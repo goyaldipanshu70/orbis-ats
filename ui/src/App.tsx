@@ -64,6 +64,11 @@ const WorkflowBuilder = lazy(() => import("./pages/WorkflowBuilder"));
 const WorkflowRunHistory = lazy(() => import("./pages/WorkflowRunHistory"));
 const WorkflowLeadResults = lazy(() => import("./pages/WorkflowLeadResults"));
 const WorkflowTemplates = lazy(() => import("./pages/WorkflowTemplates"));
+const NodeLibrary = lazy(() => import("./pages/NodeLibrary"));
+const CustomNodeCreator = lazy(() => import("./pages/CustomNodeCreator"));
+const CandidateOnboarding = lazy(() => import("./pages/CandidateOnboarding"));
+const CandidateProfile = lazy(() => import("./pages/CandidateProfile"));
+const AIAssessment = lazy(() => import("./pages/AIAssessment"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -112,6 +117,9 @@ const App = () => (
             {/* Candidate-only routes */}
             <Route path="/my-applications" element={<CandidateRoute><MyApplications /></CandidateRoute>} />
             <Route path="/my-applications/:id" element={<CandidateRoute><ApplicationDetail /></CandidateRoute>} />
+            <Route path="/candidate/onboarding" element={<CandidateRoute><Suspense fallback={null}><CandidateOnboarding /></Suspense></CandidateRoute>} />
+            <Route path="/candidate/profile" element={<CandidateRoute><Suspense fallback={null}><CandidateProfile /></Suspense></CandidateRoute>} />
+            <Route path="/ai-assessment" element={<CandidateRoute><Suspense fallback={null}><AIAssessment /></Suspense></CandidateRoute>} />
 
             {/* Hiring routes — requires admin, hr, or hiring_manager */}
             <Route path="/dashboard" element={<HiringRoute><Dashboard /></HiringRoute>} />
@@ -140,6 +148,9 @@ const App = () => (
             <Route path="/workflows/templates" element={<HRRoute><Suspense fallback={null}><WorkflowTemplates /></Suspense></HRRoute>} />
             <Route path="/workflows/:workflowId/runs" element={<HRRoute><Suspense fallback={null}><WorkflowRunHistory /></Suspense></HRRoute>} />
             <Route path="/workflows/runs/:runId/leads" element={<HRRoute><Suspense fallback={null}><WorkflowLeadResults /></Suspense></HRRoute>} />
+            <Route path="/workflows/nodes" element={<HRRoute><Suspense fallback={null}><NodeLibrary /></Suspense></HRRoute>} />
+            <Route path="/workflows/nodes/new" element={<HRRoute><Suspense fallback={null}><CustomNodeCreator /></Suspense></HRRoute>} />
+            <Route path="/workflows/nodes/:nodeId/edit" element={<HRRoute><Suspense fallback={null}><CustomNodeCreator /></Suspense></HRRoute>} />
             <Route path="/workflows/:workflowId" element={<HRRoute><Suspense fallback={null}><WorkflowBuilder /></Suspense></HRRoute>} />
 
             {/* Company routes — admin + HR */}

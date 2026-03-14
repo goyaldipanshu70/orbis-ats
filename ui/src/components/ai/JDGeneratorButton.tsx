@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
@@ -77,11 +76,10 @@ export default function JDGeneratorButton({
   };
 
   return (
-    <Button
+    <button
       type="button"
-      variant="outline"
-      size="sm"
-      className="h-7 text-xs rounded-lg gap-1.5 border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700"
+      className="inline-flex items-center h-7 px-3 text-xs font-medium rounded-lg gap-1.5 text-white transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
       onClick={handleGenerate}
       disabled={disabled || loading || !jobTitle.trim()}
     >
@@ -96,6 +94,6 @@ export default function JDGeneratorButton({
           Generate with AI
         </>
       )}
-    </Button>
+    </button>
   );
 }

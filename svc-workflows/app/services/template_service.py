@@ -133,6 +133,38 @@ WORKFLOW_TEMPLATES = [
             ],
         },
     },
+    {
+        "id": "source-filter-cold-email",
+        "name": "Source, Filter & Cold Email",
+        "description": "Search LinkedIn for candidates matching role/skills/location, filter by experience and score, then automatically send personalized cold emails to top matches",
+        "category": "outreach",
+        "definition_json": {
+            "nodes": [
+                {"id": "trigger-1", "type": "manual_trigger", "position": {"x": 50, "y": 300}, "data": {"label": "Start Sourcing", "config": {}}},
+                {"id": "linkedin-1", "type": "linkedin_search", "position": {"x": 300, "y": 200}, "data": {"label": "LinkedIn Search", "config": {"role": "Software Engineer", "skills": ["Python", "React"], "location": "San Francisco", "max_results": 25}}},
+                {"id": "github-1", "type": "github_search", "position": {"x": 300, "y": 400}, "data": {"label": "GitHub Search", "config": {"skills": ["Python", "React"], "location": "San Francisco", "max_results": 15}}},
+                {"id": "dedup-1", "type": "deduplicate", "position": {"x": 550, "y": 300}, "data": {"label": "Deduplicate", "config": {}}},
+                {"id": "extract-1", "type": "ai_profile_extractor", "position": {"x": 750, "y": 300}, "data": {"label": "Extract Profiles", "config": {}}},
+                {"id": "score-1", "type": "ai_candidate_scoring", "position": {"x": 950, "y": 300}, "data": {"label": "AI Scoring", "config": {"required_skills": ["Python", "React"], "role": "Software Engineer"}}},
+                {"id": "filter-1", "type": "filter", "position": {"x": 1150, "y": 300}, "data": {"label": "Filter Candidates", "config": {"min_score": 60, "min_experience": 2, "max_experience": 10, "has_email": True, "location": "San Francisco"}}},
+                {"id": "rank-1", "type": "rank_candidates", "position": {"x": 1350, "y": 300}, "data": {"label": "Top 10", "config": {"top_n": 10}}},
+                {"id": "save-1", "type": "save_to_talent_pool", "position": {"x": 1550, "y": 200}, "data": {"label": "Save to Pool", "config": {}}},
+                {"id": "outreach-1", "type": "add_to_email_campaign", "position": {"x": 1550, "y": 400}, "data": {"label": "Send Cold Emails", "config": {"campaign_name": "Sourcing Outreach", "email_subject": "Exciting {role} opportunity — {name}", "email_body": "<p>Hi {name},</p><p>I came across your profile and was impressed by your background. We're looking for a talented professional to join our team and I think your experience would be a great fit.</p><p>Would you be open to a quick 15-minute chat this week?</p><p>Best regards</p>", "send_immediately": True}}},
+            ],
+            "edges": [
+                ["trigger-1", "linkedin-1"],
+                ["trigger-1", "github-1"],
+                ["linkedin-1", "dedup-1"],
+                ["github-1", "dedup-1"],
+                ["dedup-1", "extract-1"],
+                ["extract-1", "score-1"],
+                ["score-1", "filter-1"],
+                ["filter-1", "rank-1"],
+                ["rank-1", "save-1"],
+                ["rank-1", "outreach-1"],
+            ],
+        },
+    },
 ]
 
 

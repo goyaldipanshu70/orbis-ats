@@ -1,8 +1,4 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ClipboardCheck, Star, Loader2, RefreshCw } from 'lucide-react';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
@@ -39,7 +35,7 @@ function renderStars(score: number) {
     } else if (i === fullStars && remainder >= 0.5) {
       stars.push(
         <div key={i} className="relative w-4 h-4">
-          <Star className="absolute w-4 h-4 text-slate-200 dark:text-slate-700" />
+          <Star className="absolute w-4 h-4 text-slate-400" />
           <div className="absolute overflow-hidden" style={{ width: '50%' }}>
             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
           </div>
@@ -47,7 +43,7 @@ function renderStars(score: number) {
       );
     } else {
       stars.push(
-        <Star key={i} className="w-4 h-4 text-slate-200 dark:text-slate-700" />
+        <Star key={i} className="w-4 h-4 text-slate-400" />
       );
     }
   }
@@ -55,17 +51,17 @@ function renderStars(score: number) {
 }
 
 function getOverallScoreColor(score: number) {
-  if (score >= 80) return 'text-emerald-600 dark:text-emerald-400';
-  if (score >= 60) return 'text-blue-600 dark:text-blue-400';
-  if (score >= 40) return 'text-amber-600 dark:text-amber-400';
-  return 'text-red-600 dark:text-red-400';
+  if (score >= 80) return 'text-emerald-400';
+  if (score >= 60) return 'text-blue-400';
+  if (score >= 40) return 'text-amber-400';
+  return 'text-red-400';
 }
 
-function getOverallScoreBg(score: number) {
-  if (score >= 80) return 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800';
-  if (score >= 60) return 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800';
-  if (score >= 40) return 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800';
-  return 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800';
+function getOverallScoreBg(score: number): React.CSSProperties {
+  if (score >= 80) return { background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' };
+  if (score >= 60) return { background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' };
+  if (score >= 40) return { background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' };
+  return { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' };
 }
 
 export default function AIScreeningScores({ candidateId, jdId }: Props) {
@@ -96,109 +92,132 @@ export default function AIScreeningScores({ candidateId, jdId }: Props) {
 
   if (loading) {
     return (
-      <Card className="border border-border/50 rounded-xl shadow-sm">
-        <CardHeader className="pb-3">
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' }}
+      >
+        <div className="p-5 pb-3">
           <div className="flex items-center gap-2">
-            <Skeleton className="h-8 w-8 rounded-lg" />
-            <Skeleton className="h-5 w-48" />
+            <div className="h-8 w-8 rounded-lg animate-pulse" style={{ background: 'var(--orbis-hover)' }} />
+            <div className="h-5 w-48 rounded animate-pulse" style={{ background: 'var(--orbis-hover)' }} />
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        </div>
+        <div className="px-5 pb-5 space-y-4">
           <div className="flex justify-center">
-            <Skeleton className="h-20 w-20 rounded-full" />
+            <div className="h-20 w-20 rounded-full animate-pulse" style={{ background: 'var(--orbis-hover)' }} />
           </div>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="space-y-2 p-4 rounded-xl border border-border/40">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-3 w-full" />
+            <div key={i} className="space-y-2 p-4 rounded-xl" style={{ border: '1px solid var(--orbis-border)' }}>
+              <div className="h-4 w-3/4 rounded animate-pulse" style={{ background: 'var(--orbis-hover)' }} />
+              <div className="h-3 w-full rounded animate-pulse" style={{ background: 'var(--orbis-border)' }} />
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <Skeleton key={s} className="h-4 w-4 rounded" />
+                  <div key={s} className="h-4 w-4 rounded animate-pulse" style={{ background: 'var(--orbis-hover)' }} />
                 ))}
               </div>
-              <Skeleton className="h-12 w-full rounded-lg" />
+              <div className="h-12 w-full rounded-lg animate-pulse" style={{ background: 'var(--orbis-border)' }} />
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (!data) {
     return (
-      <Card className="border border-dashed border-border/60 rounded-xl shadow-sm">
-        <CardContent className="p-6 text-center">
-          <div className="w-10 h-10 mx-auto mb-3 rounded-lg bg-primary/5 flex items-center justify-center">
-            <ClipboardCheck className="w-5 h-5 text-primary/60" />
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px dashed var(--orbis-border-strong)' }}
+      >
+        <div className="p-6 text-center">
+          <div
+            className="w-10 h-10 mx-auto mb-3 rounded-lg flex items-center justify-center"
+            style={{ background: 'rgba(27,142,229,0.1)' }}
+          >
+            <ClipboardCheck className="w-5 h-5 text-blue-400/60" />
           </div>
-          <p className="text-sm font-medium text-foreground mb-1">AI Screening Analysis</p>
-          <p className="text-xs text-muted-foreground mb-4">
+          <p className="text-sm font-medium text-white mb-1">AI Screening Analysis</p>
+          <p className="text-xs text-slate-400 mb-4">
             Score this candidate's screening responses with AI to get per-question ratings and reasoning.
           </p>
-          {error && <p className="text-xs text-red-500 mb-2">Scoring failed. Please try again.</p>}
-          <Button size="sm" onClick={scoreResponses} disabled={loading} className="rounded-xl">
+          {error && <p className="text-xs text-red-400 mb-2">Scoring failed. Please try again.</p>}
+          <button
+            onClick={scoreResponses}
+            disabled={loading}
+            className="inline-flex items-center px-4 py-2 rounded-xl text-sm font-medium text-white transition-all"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+          >
             {loading ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ClipboardCheck className="w-3.5 h-3.5 mr-1.5" />}
             {loading ? 'Scoring...' : 'Score Responses'}
-          </Button>
-        </CardContent>
-      </Card>
+          </button>
+        </div>
+      </div>
     );
   }
 
   const overallScore = Math.round(data.overall_score);
 
   return (
-    <Card className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-      <div className="h-1 bg-gradient-to-r from-indigo-500 to-blue-500" />
-      <CardHeader className="pb-3">
+    <div
+      className="rounded-2xl overflow-hidden transition-all duration-300"
+      style={{ background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' }}
+    >
+      <div className="h-1 bg-gradient-to-r from-blue-500 to-blue-500" />
+      <div className="p-5 pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2.5 text-lg">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center">
-              <ClipboardCheck className="w-4.5 h-4.5 text-indigo-500" />
+          <div className="flex items-center gap-2.5 text-lg font-semibold text-white">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: 'rgba(22,118,192,0.15)' }}
+            >
+              <ClipboardCheck className="w-4.5 h-4.5 text-blue-400" />
             </div>
             AI Screening Analysis
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
+          </div>
+          <button
             onClick={scoreResponses}
             disabled={loading}
-            className="text-xs text-muted-foreground hover:text-foreground rounded-lg h-8"
+            className="flex items-center text-xs text-slate-400 hover:text-white transition-colors rounded-lg px-2 py-1"
+            style={{ background: 'var(--orbis-input)' }}
           >
             {loading ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
             {loading ? 'Scoring...' : 'Re-score'}
-          </Button>
+          </button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-5">
+      </div>
+      <div className="px-5 pb-5 space-y-5">
         {/* Overall Score */}
         <div className="flex justify-center">
-          <div className={`inline-flex flex-col items-center p-5 rounded-2xl border ${getOverallScoreBg(overallScore)}`}>
+          <div
+            className="inline-flex flex-col items-center p-5 rounded-2xl"
+            style={getOverallScoreBg(overallScore)}
+          >
             <div className={`text-4xl font-bold ${getOverallScoreColor(overallScore)}`}>
               {overallScore}
             </div>
-            <div className="text-xs font-medium text-muted-foreground mt-1">Overall Score</div>
-            <div className="text-[10px] text-muted-foreground/70 mt-0.5">out of 100</div>
+            <div className="text-xs font-medium text-slate-400 mt-1">Overall Score</div>
+            <div className="text-[10px] text-slate-500 mt-0.5">out of 100</div>
           </div>
         </div>
 
         {/* Per-Question Cards */}
         {data.question_scores.length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-foreground">Response Scores</h4>
+            <h4 className="text-sm font-semibold text-white">Response Scores</h4>
             {data.question_scores.map((qs, idx) => (
               <div
                 key={qs.question_id ?? idx}
-                className="p-4 rounded-xl border border-border/50 bg-card hover:bg-accent/30 transition-colors"
+                className="p-4 rounded-xl transition-colors"
+                style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
               >
                 {/* Question text */}
-                <p className="text-sm font-semibold text-foreground mb-1.5">
+                <p className="text-sm font-semibold text-white mb-1.5">
                   {idx + 1}. {qs.question}
                 </p>
 
                 {/* Candidate response */}
                 {qs.response && (
-                  <p className="text-xs text-muted-foreground mb-2.5 line-clamp-3 leading-relaxed">
+                  <p className="text-xs text-slate-400 mb-2.5 line-clamp-3 leading-relaxed">
                     {qs.response}
                   </p>
                 )}
@@ -208,12 +227,15 @@ export default function AIScreeningScores({ candidateId, jdId }: Props) {
                   <div className="flex items-center gap-0.5">
                     {renderStars(qs.score)}
                   </div>
-                  <span className="text-xs font-semibold text-foreground">{qs.score}/5</span>
+                  <span className="text-xs font-semibold text-white">{qs.score}/5</span>
                 </div>
 
                 {/* Reasoning */}
-                <div className="p-3 rounded-lg bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                  <p className="text-xs text-muted-foreground leading-relaxed">
+                <div
+                  className="p-3 rounded-lg"
+                  style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-border)' }}
+                >
+                  <p className="text-xs text-slate-400 leading-relaxed">
                     {qs.reasoning}
                   </p>
                 </div>
@@ -224,11 +246,11 @@ export default function AIScreeningScores({ candidateId, jdId }: Props) {
 
         {/* Timestamp */}
         {data.scored_at && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-slate-500">
             Scored {new Date(data.scored_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

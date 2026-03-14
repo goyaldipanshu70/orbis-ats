@@ -7,9 +7,9 @@ from app.shared.graph_logging import logged_node
 @logged_node("candidate_ranking", "compute_rankings")
 async def compute_rankings_node(state: dict) -> dict:
     """Wrapper node that calls compute_rankings with DB session."""
-    from app.db.postgres import get_recruiting_db
+    from app.db.postgres import recruiting_db_session
     from app.nodes.candidate.ranker import compute_rankings
-    async for db in get_recruiting_db():
+    async with recruiting_db_session() as db:
         rankings = await compute_rankings(db, state["jd_id"])
     return {"rankings": rankings}
 

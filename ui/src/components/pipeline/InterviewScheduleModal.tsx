@@ -1,13 +1,20 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import AISuggestedQuestions from '@/components/ai/AISuggestedQuestions';
+
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+
+const selectDrop: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  border: '1px solid var(--orbis-border-strong)',
+};
 
 interface InterviewScheduleModalProps {
   isOpen: boolean;
@@ -111,24 +118,29 @@ export default function InterviewScheduleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Schedule Interview</DialogTitle>
-          <DialogDescription>
-            Schedule an interview for{' '}
-            <span className="font-medium text-foreground">{candidateName}</span>
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className="sm:max-w-2xl max-h-[85vh] overflow-y-auto border-0 rounded-2xl shadow-2xl p-0"
+        style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
+      >
+        <div className="px-6 pt-6 pb-4 rounded-t-2xl" style={{ borderBottom: '1px solid var(--orbis-border)', background: 'rgba(27,142,229,0.08)' }}>
+          <DialogHeader>
+            <DialogTitle className="text-white">Schedule Interview</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Schedule an interview for{' '}
+              <span className="font-medium text-white">{candidateName}</span>
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 px-6 py-5">
           {/* Interview Type */}
           <div className="space-y-2">
-            <Label htmlFor="interview-type">Interview Type</Label>
+            <label htmlFor="interview-type" className="text-sm font-medium text-slate-300">Interview Type</label>
             <Select value={interviewType} onValueChange={setInterviewType}>
-              <SelectTrigger id="interview-type">
+              <SelectTrigger id="interview-type" className="border-white/10 bg-white/5 text-white">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent style={selectDrop}>
                 <SelectItem value="phone">Phone</SelectItem>
                 <SelectItem value="video">Video</SelectItem>
                 <SelectItem value="in_person">In Person</SelectItem>
@@ -139,33 +151,37 @@ export default function InterviewScheduleModal({
           {/* Date and Time row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="scheduled-date">Date</Label>
-              <Input
+              <label htmlFor="scheduled-date" className="text-sm font-medium text-slate-300">Date</label>
+              <input
                 id="scheduled-date"
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg text-sm outline-none focus:ring-1 focus:ring-blue-500/50 [color-scheme:dark]"
+                style={glassInput}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="scheduled-time">Time</Label>
-              <Input
+              <label htmlFor="scheduled-time" className="text-sm font-medium text-slate-300">Time</label>
+              <input
                 id="scheduled-time"
                 type="time"
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
+                className="w-full h-10 px-3 rounded-lg text-sm outline-none focus:ring-1 focus:ring-blue-500/50 [color-scheme:dark]"
+                style={glassInput}
               />
             </div>
           </div>
 
           {/* Duration */}
           <div className="space-y-2">
-            <Label htmlFor="duration">Duration</Label>
+            <label htmlFor="duration" className="text-sm font-medium text-slate-300">Duration</label>
             <Select value={durationMinutes} onValueChange={setDurationMinutes}>
-              <SelectTrigger id="duration">
+              <SelectTrigger id="duration" className="border-white/10 bg-white/5 text-white">
                 <SelectValue placeholder="Select duration" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent style={selectDrop}>
                 <SelectItem value="30">30 minutes</SelectItem>
                 <SelectItem value="45">45 minutes</SelectItem>
                 <SelectItem value="60">60 minutes</SelectItem>
@@ -176,46 +192,53 @@ export default function InterviewScheduleModal({
 
           {/* Location */}
           <div className="space-y-2">
-            <Label htmlFor="location">
-              Location <span className="text-muted-foreground text-xs">(optional)</span>
-            </Label>
-            <Input
+            <label htmlFor="location" className="text-sm font-medium text-slate-300">
+              Location <span className="text-slate-500 text-xs">(optional)</span>
+            </label>
+            <input
               id="location"
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="e.g. Conference Room A, Zoom link, etc."
+              className="w-full h-10 px-3 rounded-lg text-sm outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+              style={glassInput}
             />
           </div>
 
           {/* Interviewer Names */}
           <div className="space-y-2">
-            <Label htmlFor="interviewers">Interviewers</Label>
-            <Input
+            <label htmlFor="interviewers" className="text-sm font-medium text-slate-300">Interviewers</label>
+            <input
               id="interviewers"
               type="text"
               value={interviewerNames}
               onChange={(e) => setInterviewerNames(e.target.value)}
               placeholder="e.g. John Smith, Jane Doe"
+              className="w-full h-10 px-3 rounded-lg text-sm outline-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+              style={glassInput}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-slate-500">
               Separate multiple names with commas
             </p>
           </div>
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes">
-              Notes <span className="text-muted-foreground text-xs">(optional)</span>
-            </Label>
-            <Textarea
+            <label htmlFor="notes" className="text-sm font-medium text-slate-300">
+              Notes <span className="text-slate-500 text-xs">(optional)</span>
+            </label>
+            <textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add any additional notes or instructions..."
               rows={3}
+              className="w-full px-3 py-2 rounded-lg text-sm outline-none resize-none placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50"
+              style={glassInput}
             />
           </div>
+
           {/* AI Suggested Questions */}
           <div className="pt-2">
             <AISuggestedQuestions
@@ -226,14 +249,24 @@ export default function InterviewScheduleModal({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
+        <div className="flex justify-end gap-2.5 px-6 py-4 rounded-b-2xl" style={{ borderTop: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
+          <button
+            onClick={handleClose}
+            disabled={isLoading}
+            className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 transition-colors hover:text-white disabled:opacity-50"
+            style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
+          >
             Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading}>
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isLoading}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:shadow-blue-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+          >
             {isLoading ? 'Scheduling...' : 'Schedule Interview'}
-          </Button>
-        </DialogFooter>
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );

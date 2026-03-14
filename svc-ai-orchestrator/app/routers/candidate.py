@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from app.core.security import get_current_user
-from app.db.postgres import get_recruiting_db
+from app.db.postgres import recruiting_db_session
 from app.graphs.candidate_fit import candidate_fit_graph
 from app.graphs.candidate_ranking import candidate_ranking_graph
 from app.graphs.skills_gap import skills_gap_graph
@@ -91,7 +91,7 @@ async def fit_summary_endpoint(
         input_summary=f"Candidate {req.candidate_id} for Job {req.jd_id}",
     )
 
-    async for db in get_recruiting_db():
+    async with recruiting_db_session() as db:
         context = await gather_candidate_context(db, req.candidate_id, req.jd_id)
 
     if context.get("error"):
@@ -172,7 +172,7 @@ async def skills_gap_endpoint(
         input_summary=f"Candidate {req.candidate_id} for Job {req.jd_id}",
     )
 
-    async for db in get_recruiting_db():
+    async with recruiting_db_session() as db:
         context = await gather_candidate_context(db, req.candidate_id, req.jd_id)
 
     if context.get("error"):

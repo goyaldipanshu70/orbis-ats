@@ -1,19 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format, subDays, startOfYear } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout';
-import { apiClient } from '@/utils/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CountingNumber } from '@/components/ui/counting-number';
 import { staggerContainer, fadeInUp } from '@/lib/animations';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiClient } from '@/utils/api';
 import {
   Clock, Users, CheckCircle, AlertTriangle, TrendingUp, TrendingDown,
   UserCheck, BarChart3, Target, ArrowUpDown, ChevronUp, ChevronDown,
   XCircle, AlertCircle,
 } from 'lucide-react';
+
+/* ── Design-system constants ─────────────────────────────────────────────── */
+
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
+
+/* ── Static data ─────────────────────────────────────────────────────────── */
 
 const DATE_PRESETS = [
   { label: '7 Days', days: 7 },
@@ -58,10 +63,8 @@ const KPI_CONFIG = [
     title: 'Avg. Time to Hire',
     suffix: ' days',
     icon: Clock,
-    color: 'blue',
-    borderColor: 'border-t-blue-500',
-    iconBg: 'bg-blue-100 dark:bg-blue-900/40',
-    iconColor: 'text-blue-600 dark:text-blue-400',
+    gradient: 'linear-gradient(135deg, #3b82f6, #1676c0)',
+    iconColor: 'text-blue-400',
     trend: -8,
   },
   {
@@ -69,10 +72,8 @@ const KPI_CONFIG = [
     title: 'Interview Completion',
     suffix: '%',
     icon: CheckCircle,
-    color: 'emerald',
-    borderColor: 'border-t-emerald-500',
-    iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    gradient: 'linear-gradient(135deg, #10b981, #059669)',
+    iconColor: 'text-emerald-400',
     trend: 5,
   },
   {
@@ -80,10 +81,8 @@ const KPI_CONFIG = [
     title: 'SLA Compliance',
     suffix: '%',
     icon: Target,
-    color: 'amber',
-    borderColor: 'border-t-amber-500',
-    iconBg: 'bg-amber-100 dark:bg-amber-900/40',
-    iconColor: 'text-amber-600 dark:text-amber-400',
+    gradient: 'linear-gradient(135deg, #f59e0b, #d97706)',
+    iconColor: 'text-amber-400',
     trend: 3,
   },
   {
@@ -91,31 +90,29 @@ const KPI_CONFIG = [
     title: 'Active Interviewers',
     suffix: '',
     icon: Users,
-    color: 'purple',
-    borderColor: 'border-t-purple-500',
-    iconBg: 'bg-purple-100 dark:bg-purple-900/40',
-    iconColor: 'text-purple-600 dark:text-purple-400',
+    gradient: 'linear-gradient(135deg, #1B8EE5, #1676c0)',
+    iconColor: 'text-blue-400',
     trend: 12,
   },
 ];
 
-function KpiCard({ title, value, suffix, icon: Icon, iconBg, iconColor, borderColor, trend, loading }: {
+/* ── Sub-components ──────────────────────────────────────────────────────── */
+
+function KpiCard({ title, value, suffix, icon: Icon, iconColor, gradient, trend, loading }: {
   title: string; value: number; suffix: string; icon: React.ElementType;
-  iconBg: string; iconColor: string; borderColor: string; trend: number; loading: boolean;
+  iconColor: string; gradient: string; trend: number; loading: boolean;
 }) {
   if (loading) {
     return (
-      <Card className={`border-t-2 ${borderColor} shadow-sm`}>
-        <CardContent className="p-5">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-11 w-11 rounded-full shrink-0" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-8 w-16" />
-            </div>
+      <div className="rounded-xl p-5" style={glassCard}>
+        <div className="flex items-center gap-4 animate-pulse">
+          <div className="h-11 w-11 rounded-full bg-white/[0.06] shrink-0" />
+          <div className="space-y-2 flex-1">
+            <div className="h-3 w-24 rounded bg-white/[0.06]" />
+            <div className="h-8 w-16 rounded bg-white/[0.06]" />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
   const isPositive = trend >= 0;
@@ -123,27 +120,29 @@ function KpiCard({ title, value, suffix, icon: Icon, iconBg, iconColor, borderCo
 
   return (
     <motion.div variants={fadeInUp}>
-      <Card className={`border-t-2 ${borderColor} shadow-sm hover:shadow-md transition-shadow duration-200`}>
-        <CardContent className="p-5">
+      <div className="rounded-xl overflow-hidden transition-shadow duration-200 hover:shadow-lg hover:shadow-blue-500/5" style={glassCard}>
+        {/* Gradient accent bar */}
+        <div className="h-1 w-full" style={{ background: gradient }} />
+        <div className="p-5">
           <div className="flex items-center gap-4">
-            <div className={`rounded-full p-2.5 ${iconBg} shrink-0`}>
+            <div className="rounded-full p-2.5 bg-white/[0.06] shrink-0">
               <Icon className={`h-5 w-5 ${iconColor}`} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
+              <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">{title}</p>
               <div className="flex items-end gap-2 mt-0.5">
-                <p className="text-3xl font-bold text-foreground leading-none">
+                <p className="text-3xl font-bold text-white leading-none">
                   <CountingNumber value={value} />{suffix}
                 </p>
-                <span className={`inline-flex items-center gap-0.5 text-xs font-medium pb-0.5 ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+                <span className={`inline-flex items-center gap-0.5 text-xs font-medium pb-0.5 ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
                   <TrendIcon className="h-3 w-3" />
                   {Math.abs(trend)}%
                 </span>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -151,15 +150,15 @@ function KpiCard({ title, value, suffix, icon: Icon, iconBg, iconColor, borderCo
 function SLABadge({ compliant }: { compliant: boolean }) {
   if (compliant) {
     return (
-      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-[11px] font-medium gap-1 px-2 py-0.5">
+      <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
         <CheckCircle className="h-3 w-3" /> Compliant
-      </Badge>
+      </span>
     );
   }
   return (
-    <Badge className="bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 text-[11px] font-medium gap-1 px-2 py-0.5">
+    <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/20">
       <XCircle className="h-3 w-3" /> Non-compliant
-    </Badge>
+    </span>
   );
 }
 
@@ -173,10 +172,10 @@ function PersonAvatar({ name }: { name: string }) {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-600 dark:to-slate-700 flex items-center justify-center shrink-0">
-        <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">{initials}</span>
+      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shrink-0">
+        <span className="text-[11px] font-semibold text-slate-300">{initials}</span>
       </div>
-      <span className="font-medium text-foreground">{name}</span>
+      <span className="font-medium text-white">{name}</span>
     </div>
   );
 }
@@ -188,7 +187,7 @@ function SortableHeader({ label, active, direction, onClick }: {
 }) {
   return (
     <th
-      className="py-3 px-4 text-center cursor-pointer select-none hover:text-foreground transition-colors group"
+      className="py-3 px-4 text-center cursor-pointer select-none hover:text-white transition-colors group"
       onClick={onClick}
     >
       <span className="inline-flex items-center gap-1">
@@ -240,6 +239,8 @@ const tableRowVariants = {
     transition: { delay: i * 0.03, duration: 0.3, ease: 'easeOut' },
   }),
 };
+
+/* ── Main component ──────────────────────────────────────────────────────── */
 
 export default function PeopleAnalytics() {
   const [datePreset, setDatePreset] = useState<number>(30);
@@ -328,14 +329,86 @@ export default function PeopleAnalytics() {
   const hrSort = useSortable(hrMetrics);
   const hmSort = useSortable(hmMetrics);
 
+  /* ── Table renderer (shared across tabs) ────────────────────────────────── */
+
+  function renderTable<T extends { name: string; sla_compliant: boolean }>(
+    title: string,
+    data: T[],
+    sortState: ReturnType<typeof useSortable<T>>,
+    columns: { key: keyof T; label: string; render?: (val: T[keyof T], row: T) => React.ReactNode }[],
+  ) {
+    return (
+      <div className="rounded-xl overflow-hidden" style={glassCard}>
+        <div className="px-6 pt-5 pb-2">
+          <h2 className="text-base font-semibold text-white">{title}</h2>
+        </div>
+        <div className="px-0 pb-0">
+          {loading ? (
+            <div className="space-y-3 px-6 pb-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-14 w-full rounded-lg bg-white/[0.04] animate-pulse" />
+              ))}
+            </div>
+          ) : data.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+              <AlertCircle className="h-8 w-8 mb-2 opacity-40" />
+              <p className="text-sm">No data available for this period</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs font-medium text-slate-500 uppercase tracking-wider" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                    <th className="py-3 px-6">{columns[0].label}</th>
+                    {columns.slice(1).map(col => (
+                      <SortableHeader
+                        key={String(col.key)}
+                        label={col.label}
+                        active={sortState.sortKey === col.key}
+                        direction={sortState.sortDir}
+                        onClick={() => sortState.toggle(col.key)}
+                      />
+                    ))}
+                    <th className="py-3 px-4 text-center">SLA Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortState.sorted.map((m, i) => (
+                    <motion.tr
+                      key={i}
+                      custom={i}
+                      variants={tableRowVariants}
+                      initial="hidden"
+                      animate="visible"
+                      className="transition-colors hover:bg-white/[0.02]"
+                      style={{ borderBottom: '1px solid var(--orbis-grid)' }}
+                    >
+                      <td className="py-3 px-6"><PersonAvatar name={m.name} /></td>
+                      {columns.slice(1).map(col => (
+                        <td key={String(col.key)} className="py-3 px-4 text-center text-slate-300">
+                          {col.render ? col.render(m[col.key], m) : String(m[col.key])}
+                        </td>
+                      ))}
+                      <td className="py-3 px-4 text-center"><SLABadge compliant={m.sla_compliant} /></td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <AppLayout>
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-5">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">People Analytics</h1>
-            <p className="text-muted-foreground text-sm mt-1">Team performance, SLA compliance, and workload monitoring</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white">People Analytics</h1>
+            <p className="text-slate-400 text-sm mt-1">Team performance, SLA compliance, and workload monitoring</p>
           </div>
         </div>
 
@@ -348,10 +421,14 @@ export default function PeopleAnalytics() {
               className={`
                 px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-200
                 ${datePreset === p.days
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-transparent border border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
+                  ? 'text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
                 }
               `}
+              style={datePreset === p.days
+                ? { background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }
+                : { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }
+              }
             >
               {p.label}
             </button>
@@ -373,9 +450,8 @@ export default function PeopleAnalytics() {
             value={kpis[cfg.key]}
             suffix={cfg.suffix}
             icon={cfg.icon}
-            iconBg={cfg.iconBg}
             iconColor={cfg.iconColor}
-            borderColor={cfg.borderColor}
+            gradient={cfg.gradient}
             trend={cfg.trend}
             loading={loading}
           />
@@ -384,7 +460,7 @@ export default function PeopleAnalytics() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-5 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="mb-5 p-1 rounded-lg" style={{ background: 'var(--orbis-input)' }}>
           <TabsTrigger value="interviewers" className="gap-1.5 data-[state=active]:shadow-sm rounded-md px-4">
             <UserCheck className="h-3.5 w-3.5" /> Interviewers
           </TabsTrigger>
@@ -398,173 +474,38 @@ export default function PeopleAnalytics() {
 
         {/* Interviewers Tab */}
         <TabsContent value="interviewers">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2 px-6 pt-5">
-              <CardTitle className="text-base font-semibold">Interviewer Performance</CardTitle>
-            </CardHeader>
-            <CardContent className="px-0 pb-0">
-              {loading ? (
-                <div className="space-y-3 px-6 pb-6">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
-                </div>
-              ) : interviewerMetrics.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <AlertCircle className="h-8 w-8 mb-2 opacity-40" />
-                  <p className="text-sm">No interviewer data available for this period</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        <th className="py-3 px-6">Interviewer</th>
-                        <SortableHeader label="Total" active={interviewerSort.sortKey === 'total_interviews'} direction={interviewerSort.sortDir} onClick={() => interviewerSort.toggle('total_interviews')} />
-                        <SortableHeader label="Completed" active={interviewerSort.sortKey === 'completed'} direction={interviewerSort.sortDir} onClick={() => interviewerSort.toggle('completed')} />
-                        <SortableHeader label="Pending" active={interviewerSort.sortKey === 'pending'} direction={interviewerSort.sortDir} onClick={() => interviewerSort.toggle('pending')} />
-                        <SortableHeader label="Avg Feedback" active={interviewerSort.sortKey === 'avg_feedback_time_hrs'} direction={interviewerSort.sortDir} onClick={() => interviewerSort.toggle('avg_feedback_time_hrs')} />
-                        <SortableHeader label="No-Show" active={interviewerSort.sortKey === 'no_show_rate'} direction={interviewerSort.sortDir} onClick={() => interviewerSort.toggle('no_show_rate')} />
-                        <th className="py-3 px-4 text-center">SLA Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {interviewerSort.sorted.map((m, i) => (
-                        <motion.tr
-                          key={i}
-                          custom={i}
-                          variants={tableRowVariants}
-                          initial="hidden"
-                          animate="visible"
-                          className="border-b border-border/40 last:border-0 even:bg-muted/30 hover:bg-muted/50 transition-colors"
-                        >
-                          <td className="py-3 px-6"><PersonAvatar name={m.name} /></td>
-                          <td className="py-3 px-4 text-center font-medium">{m.total_interviews}</td>
-                          <td className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400 font-semibold">{m.completed}</td>
-                          <td className="py-3 px-4 text-center text-amber-600 dark:text-amber-400">{m.pending}</td>
-                          <td className="py-3 px-4 text-center">{m.avg_feedback_time_hrs}h</td>
-                          <td className="py-3 px-4 text-center">{m.no_show_rate}%</td>
-                          <td className="py-3 px-4 text-center"><SLABadge compliant={m.sla_compliant} /></td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {renderTable('Interviewer Performance', interviewerMetrics, interviewerSort, [
+            { key: 'name', label: 'Interviewer' },
+            { key: 'total_interviews', label: 'Total', render: v => <span className="font-medium text-white">{String(v)}</span> },
+            { key: 'completed', label: 'Completed', render: v => <span className="text-emerald-400 font-semibold">{String(v)}</span> },
+            { key: 'pending', label: 'Pending', render: v => <span className="text-amber-400">{String(v)}</span> },
+            { key: 'avg_feedback_time_hrs', label: 'Avg Feedback', render: v => <>{String(v)}h</> },
+            { key: 'no_show_rate', label: 'No-Show', render: v => <>{String(v)}%</> },
+          ])}
         </TabsContent>
 
         {/* HR Team Tab */}
         <TabsContent value="hr">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2 px-6 pt-5">
-              <CardTitle className="text-base font-semibold">HR Team Performance</CardTitle>
-            </CardHeader>
-            <CardContent className="px-0 pb-0">
-              {loading ? (
-                <div className="space-y-3 px-6 pb-6">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
-                </div>
-              ) : hrMetrics.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <AlertCircle className="h-8 w-8 mb-2 opacity-40" />
-                  <p className="text-sm">No HR performance data available</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        <th className="py-3 px-6">Team Member</th>
-                        <SortableHeader label="Jobs" active={hrSort.sortKey === 'jobs_managed'} direction={hrSort.sortDir} onClick={() => hrSort.toggle('jobs_managed')} />
-                        <SortableHeader label="Candidates" active={hrSort.sortKey === 'candidates_processed'} direction={hrSort.sortDir} onClick={() => hrSort.toggle('candidates_processed')} />
-                        <SortableHeader label="Avg Screen" active={hrSort.sortKey === 'avg_time_to_screen_days'} direction={hrSort.sortDir} onClick={() => hrSort.toggle('avg_time_to_screen_days')} />
-                        <SortableHeader label="Offers" active={hrSort.sortKey === 'offers_sent'} direction={hrSort.sortDir} onClick={() => hrSort.toggle('offers_sent')} />
-                        <SortableHeader label="Hires" active={hrSort.sortKey === 'hires'} direction={hrSort.sortDir} onClick={() => hrSort.toggle('hires')} />
-                        <th className="py-3 px-4 text-center">SLA Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {hrSort.sorted.map((m, i) => (
-                        <motion.tr
-                          key={i}
-                          custom={i}
-                          variants={tableRowVariants}
-                          initial="hidden"
-                          animate="visible"
-                          className="border-b border-border/40 last:border-0 even:bg-muted/30 hover:bg-muted/50 transition-colors"
-                        >
-                          <td className="py-3 px-6"><PersonAvatar name={m.name} /></td>
-                          <td className="py-3 px-4 text-center">{m.jobs_managed}</td>
-                          <td className="py-3 px-4 text-center">{m.candidates_processed}</td>
-                          <td className="py-3 px-4 text-center">{m.avg_time_to_screen_days}d</td>
-                          <td className="py-3 px-4 text-center">{m.offers_sent}</td>
-                          <td className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400 font-semibold">{m.hires}</td>
-                          <td className="py-3 px-4 text-center"><SLABadge compliant={m.sla_compliant} /></td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {renderTable('HR Team Performance', hrMetrics, hrSort, [
+            { key: 'name', label: 'Team Member' },
+            { key: 'jobs_managed', label: 'Jobs' },
+            { key: 'candidates_processed', label: 'Candidates' },
+            { key: 'avg_time_to_screen_days', label: 'Avg Screen', render: v => <>{String(v)}d</> },
+            { key: 'offers_sent', label: 'Offers' },
+            { key: 'hires', label: 'Hires', render: v => <span className="text-emerald-400 font-semibold">{String(v)}</span> },
+          ])}
         </TabsContent>
 
         {/* Hiring Managers Tab */}
         <TabsContent value="hiring-managers">
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2 px-6 pt-5">
-              <CardTitle className="text-base font-semibold">Hiring Manager Activity</CardTitle>
-            </CardHeader>
-            <CardContent className="px-0 pb-0">
-              {loading ? (
-                <div className="space-y-3 px-6 pb-6">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
-                </div>
-              ) : hmMetrics.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <AlertCircle className="h-8 w-8 mb-2 opacity-40" />
-                  <p className="text-sm">No hiring manager data available</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        <th className="py-3 px-6">Manager</th>
-                        <SortableHeader label="Open Roles" active={hmSort.sortKey === 'open_roles'} direction={hmSort.sortDir} onClick={() => hmSort.toggle('open_roles')} />
-                        <SortableHeader label="Reviewed" active={hmSort.sortKey === 'candidates_reviewed'} direction={hmSort.sortDir} onClick={() => hmSort.toggle('candidates_reviewed')} />
-                        <SortableHeader label="Avg Decision" active={hmSort.sortKey === 'avg_decision_time_days'} direction={hmSort.sortDir} onClick={() => hmSort.toggle('avg_decision_time_days')} />
-                        <SortableHeader label="Interviews" active={hmSort.sortKey === 'interviews_scheduled'} direction={hmSort.sortDir} onClick={() => hmSort.toggle('interviews_scheduled')} />
-                        <SortableHeader label="Hires" active={hmSort.sortKey === 'hires'} direction={hmSort.sortDir} onClick={() => hmSort.toggle('hires')} />
-                        <th className="py-3 px-4 text-center">SLA Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {hmSort.sorted.map((m, i) => (
-                        <motion.tr
-                          key={i}
-                          custom={i}
-                          variants={tableRowVariants}
-                          initial="hidden"
-                          animate="visible"
-                          className="border-b border-border/40 last:border-0 even:bg-muted/30 hover:bg-muted/50 transition-colors"
-                        >
-                          <td className="py-3 px-6"><PersonAvatar name={m.name} /></td>
-                          <td className="py-3 px-4 text-center">{m.open_roles}</td>
-                          <td className="py-3 px-4 text-center">{m.candidates_reviewed}</td>
-                          <td className="py-3 px-4 text-center">{m.avg_decision_time_days}d</td>
-                          <td className="py-3 px-4 text-center">{m.interviews_scheduled}</td>
-                          <td className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400 font-semibold">{m.hires}</td>
-                          <td className="py-3 px-4 text-center"><SLABadge compliant={m.sla_compliant} /></td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {renderTable('Hiring Manager Activity', hmMetrics, hmSort, [
+            { key: 'name', label: 'Manager' },
+            { key: 'open_roles', label: 'Open Roles' },
+            { key: 'candidates_reviewed', label: 'Reviewed' },
+            { key: 'avg_decision_time_days', label: 'Avg Decision', render: v => <>{String(v)}d</> },
+            { key: 'interviews_scheduled', label: 'Interviews' },
+            { key: 'hires', label: 'Hires', render: v => <span className="text-emerald-400 font-semibold">{String(v)}</span> },
+          ])}
         </TabsContent>
       </Tabs>
     </AppLayout>

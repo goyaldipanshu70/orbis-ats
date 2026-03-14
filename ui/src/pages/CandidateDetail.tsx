@@ -3,18 +3,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { apiClient } from '@/utils/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Calendar, Clock, User, Award, AlertTriangle, Briefcase,
   GraduationCap, ArrowRight, MessageSquare, ClipboardList,
   BarChart3, PuzzleIcon, Trophy, ChevronLeft, Sparkles,
   TrendingUp, Shield, FileText, Edit3, Loader2, Camera,
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog';
@@ -30,7 +24,36 @@ import AIFitSummaryCard from '@/components/ai/AIFitSummaryCard';
 import SemanticSkillsGap from '@/components/ai/SemanticSkillsGap';
 import AIScreeningScores from '@/components/ai/AIScreeningScores';
 import AISuggestedQuestions from '@/components/ai/AISuggestedQuestions';
+import ScreeningQACard from '@/components/ai/ScreeningQACard';
+import AIInterviewResultCard from '@/components/ai/AIInterviewResultCard';
 
+/* ── Glass Design System ───────────────────────────────── */
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
+const gradientBtn: React.CSSProperties = {
+  background: 'linear-gradient(135deg, #1B8EE5, #1676c0)',
+  boxShadow: '0 8px 24px rgba(27,142,229,0.2)',
+};
+const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-hover)';
+  e.target.style.borderColor = '#1B8EE5';
+  e.target.style.boxShadow = '0 0 20px rgba(27,142,229,0.15)';
+};
+const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  e.target.style.background = 'var(--orbis-input)';
+  e.target.style.borderColor = 'var(--orbis-border)';
+  e.target.style.boxShadow = 'none';
+};
+
+/* ── Framer Motion Variants ─────────────────────────────── */
 const container = {
   hidden: {},
   visible: {
@@ -103,14 +126,12 @@ const CandidateDetail = () => {
       const profile = await apiClient.getCandidateProfile(Number(candidateId));
       setCandidateProfile(profile);
     } catch {
-      // Profile may not exist for this candidate
       setCandidateProfile(null);
     }
   };
 
   const openEditProfile = async () => {
     if (!candidate && !candidateProfile) return;
-    // Try to load profile data first, then populate form
     let profile = candidateProfile;
     try {
       const p = await apiClient.getCandidateProfile(Number(candidateId));
@@ -176,10 +197,11 @@ const CandidateDetail = () => {
     }
   };
 
+  /* ── Loading State ─────────────────────────────────────── */
   if (isLoading) {
     return (
       <AppLayout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/20">
+        <div className="min-h-screen" style={{ background: 'var(--orbis-page)' }}>
           <div className="flex items-center justify-center h-[60vh]">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -187,10 +209,10 @@ const CandidateDetail = () => {
               className="text-center"
             >
               <div className="relative w-16 h-16 mx-auto mb-6">
-                <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
-                <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                <div className="absolute inset-0 rounded-full" style={{ border: '4px solid rgba(27,142,229,0.2)' }} />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent animate-spin" style={{ borderTopColor: '#1B8EE5' }} />
               </div>
-              <p className="text-base font-medium text-muted-foreground">Loading candidate details...</p>
+              <p className="text-base font-medium text-slate-400">Loading candidate details...</p>
             </motion.div>
           </div>
         </div>
@@ -198,25 +220,32 @@ const CandidateDetail = () => {
     );
   }
 
+  /* ── Empty State ───────────────────────────────────────── */
   if (!candidate && !candidateProfile) {
     return (
       <AppLayout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/20">
+        <div className="min-h-screen" style={{ background: 'var(--orbis-page)' }}>
           <div className="flex items-center justify-center h-[60vh]">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-center max-w-sm"
             >
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-muted/60 flex items-center justify-center">
-                <ClipboardList className="w-10 h-10 text-muted-foreground/60" />
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center" style={{ background: 'var(--orbis-input)' }}>
+                <ClipboardList className="w-10 h-10 text-slate-500" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No evaluation found</h3>
-              <p className="text-sm text-muted-foreground mb-6">This candidate hasn't been interviewed yet.</p>
-              <Button variant="outline" className="rounded-xl" onClick={() => navigate(-1)}>
-                <ChevronLeft className="h-4 w-4 mr-1.5" />
+              <h3 className="text-lg font-semibold text-white mb-2">No evaluation found</h3>
+              <p className="text-sm text-slate-400 mb-6">This candidate hasn't been interviewed yet.</p>
+              <button
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+                style={glassCard}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
+              >
+                <ChevronLeft className="h-4 w-4" />
                 Go Back
-              </Button>
+              </button>
             </motion.div>
           </div>
         </div>
@@ -224,6 +253,7 @@ const CandidateDetail = () => {
     );
   }
 
+  /* ── Helpers ───────────────────────────────────────────── */
   const scoreBreakdownLabels = {
     technical_competency: 'Technical Competency',
     core_qualifications: 'Core Qualifications',
@@ -251,11 +281,11 @@ const CandidateDetail = () => {
   };
 
   const getPerformanceBadge = (score: number, maxScore: number) => {
-    if (maxScore === 0) return { label: 'N/A', className: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400' };
+    if (maxScore === 0) return { label: 'N/A', cls: 'bg-white/5 text-slate-400 border-white/10' };
     const percentage = (score / maxScore) * 100;
-    if (percentage >= 80) return { label: 'Excellent', className: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' };
-    if (percentage >= 60) return { label: 'Good', className: 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800' };
-    return { label: 'Needs Work', className: 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800' };
+    if (percentage >= 80) return { label: 'Excellent', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' };
+    if (percentage >= 60) return { label: 'Good', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
+    return { label: 'Needs Work', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
   };
 
   const totalScore = candidate?.score_breakdown?.total_score;
@@ -271,10 +301,14 @@ const CandidateDetail = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/20">
+      <div className="min-h-screen relative" style={{ background: 'var(--orbis-page)' }}>
+        {/* Ambient glow */}
+        <div className="fixed top-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full pointer-events-none -z-10" style={{ background: 'rgba(27,142,229,0.04)', filter: 'blur(120px)' }} />
+        <div className="fixed bottom-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full pointer-events-none -z-10" style={{ background: 'rgba(59,130,246,0.04)', filter: 'blur(120px)' }} />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-          {/* ── Hero Header ─────────────────────────────────────────── */}
+          {/* ── Hero Header ─────────────────────────────────────── */}
           <motion.div
             variants={container}
             initial="hidden"
@@ -283,75 +317,78 @@ const CandidateDetail = () => {
           >
             {/* Back button */}
             <motion.div variants={itemFade} className="mb-5">
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => navigate(-1)}
-                className="text-muted-foreground hover:text-foreground -ml-2 rounded-xl"
+                className="flex items-center gap-1 text-slate-400 hover:text-white transition-colors text-sm font-medium group"
               >
-                <ChevronLeft className="h-4 w-4 mr-1" />
+                <ChevronLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
                 Back
-              </Button>
+              </button>
             </motion.div>
 
             {/* Candidate hero card */}
             <motion.div variants={itemFade}>
-              <Card className="border-0 rounded-2xl shadow-lg bg-gradient-to-r from-white via-white to-blue-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/30 overflow-hidden">
-                <CardContent className="p-6 sm:p-8">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-5">
-                      {/* Avatar */}
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="text-2xl font-bold text-primary">
-                          {(candidate?.candidate_name || candidateProfile?.full_name || '?').charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                          {candidate?.candidate_name || candidateProfile?.full_name || 'Unknown'}
-                        </h1>
-                        <div className="flex items-center gap-2 mt-1.5 text-muted-foreground">
-                          <Briefcase className="w-4 h-4" />
-                          <span className="text-base font-medium">{candidate?.position || candidateProfile?.current_role || 'Candidate'}</span>
-                        </div>
-                      </div>
+              <div className="rounded-2xl p-6 sm:p-8 overflow-hidden" style={glassCard}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-5">
+                    {/* Avatar */}
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(27,142,229,0.15)', border: '1px solid rgba(27,142,229,0.3)' }}>
+                      <span className="text-2xl font-bold" style={{ color: '#1B8EE5' }}>
+                        {(candidate?.candidate_name || candidateProfile?.full_name || '?').charAt(0).toUpperCase()}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      {(isAdmin() || isHR()) && (
-                        <Button variant="outline" size="sm" onClick={openEditProfile} className="rounded-xl">
-                          <Edit3 className="h-4 w-4 mr-1" /> Edit Profile
-                        </Button>
-                      )}
-                      {candidate?.ai_recommendation && (
-                        <RecommendationBadge recommendation={candidate.ai_recommendation} className="text-sm px-4 py-1.5" />
-                      )}
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                        {candidate?.candidate_name || candidateProfile?.full_name || 'Unknown'}
+                      </h1>
+                      <div className="flex items-center gap-2 mt-1.5 text-slate-400">
+                        <Briefcase className="w-4 h-4" />
+                        <span className="text-base font-medium">{candidate?.position || candidateProfile?.current_role || 'Candidate'}</span>
+                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {(isAdmin() || isHR()) && (
+                      <button
+                        onClick={openEditProfile}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+                        style={glassCard}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
+                      >
+                        <Edit3 className="h-4 w-4" /> Edit Profile
+                      </button>
+                    )}
+                    {candidate?.ai_recommendation && (
+                      <RecommendationBadge recommendation={candidate.ai_recommendation} className="text-sm px-4 py-1.5" />
+                    )}
+                  </div>
+                </div>
+              </div>
             </motion.div>
 
             {/* Quick actions */}
             <motion.div variants={itemFade} className="mt-4">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mr-1">Actions</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 mr-1">Actions</span>
                 {quickActions.filter(a => a.show).map(action => (
-                  <Button
+                  <button
                     key={action.label}
-                    variant="outline"
-                    size="sm"
                     onClick={action.onClick}
-                    className="rounded-xl border-border/60 hover:bg-accent/60 hover:shadow-sm transition-all text-xs h-8"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-300 transition-all hover:text-white"
+                    style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-hover)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-grid)'; }}
                   >
-                    <action.icon className="h-3.5 w-3.5 mr-1.5" />
+                    <action.icon className="h-3.5 w-3.5" />
                     {action.label}
-                  </Button>
+                  </button>
                 ))}
               </div>
             </motion.div>
           </motion.div>
 
-          {/* ── AI Fit Summary + Skills Gap ──────────────────────────── */}
+          {/* ── AI Fit Summary + Skills Gap ──────────────────────── */}
           {jobId && candidateId && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               <AIFitSummaryCard candidateId={Number(candidateId)} jdId={Number(jobId)} />
@@ -359,7 +396,7 @@ const CandidateDetail = () => {
             </div>
           )}
 
-          {/* ── AI Screening Scores + Suggested Questions ──────────── */}
+          {/* ── AI Screening Scores + Suggested Questions ──────── */}
           {jobId && candidateId && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               <AIScreeningScores candidateId={Number(candidateId)} jdId={Number(jobId)} />
@@ -367,7 +404,15 @@ const CandidateDetail = () => {
             </div>
           )}
 
-          {/* ── Main Content Grid ───────────────────────────────────── */}
+          {/* ── Screening Q&A + AI Interview Results ──────────── */}
+          {jobId && candidateId && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <ScreeningQACard candidateId={Number(candidateId)} jdId={Number(jobId)} />
+              <AIInterviewResultCard candidateId={Number(candidateId)} jdId={Number(jobId)} />
+            </div>
+          )}
+
+          {/* ── Main Content Grid ───────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             {/* Left Column - Details */}
@@ -384,53 +429,50 @@ const CandidateDetail = () => {
                     {[
                       {
                         icon: Calendar,
-                        iconColor: 'text-blue-500',
-                        iconBg: 'bg-blue-50 dark:bg-blue-950/40',
+                        iconColor: '#3b82f6',
+                        iconBg: 'rgba(59,130,246,0.1)',
                         label: 'Available to Start',
                         value: candidate.available_to_start,
                       },
                       {
                         icon: Clock,
-                        iconColor: 'text-emerald-500',
-                        iconBg: 'bg-emerald-50 dark:bg-emerald-950/40',
+                        iconColor: '#34d399',
+                        iconBg: 'rgba(52,211,153,0.1)',
                         label: 'Weekend Work',
                         value: candidate.willing_to_work_weekends,
                       },
                       {
                         icon: User,
-                        iconColor: 'text-violet-500',
-                        iconBg: 'bg-violet-50 dark:bg-violet-950/40',
+                        iconColor: '#4db5f0',
+                        iconBg: 'rgba(77,181,240,0.1)',
                         label: 'Cultural Fit',
                         value: null,
-                        badge: (
-                          <Badge className={
-                            candidate.cultural_fit === 'Yes'
-                              ? 'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700'
-                              : 'bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700'
-                          }>
-                            {candidate.cultural_fit}
-                          </Badge>
-                        ),
+                        badge: candidate.cultural_fit,
                       },
                     ].map((tile, i) => (
-                      <Card
+                      <div
                         key={i}
-                        className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 bg-card"
+                        className="rounded-xl p-4 flex items-center gap-3.5 transition-all hover:scale-[1.02]"
+                        style={glassCard}
                       >
-                        <CardContent className="p-4 flex items-center gap-3.5">
-                          <div className={`w-10 h-10 rounded-xl ${tile.iconBg} flex items-center justify-center flex-shrink-0`}>
-                            <tile.icon className={`w-5 h-5 ${tile.iconColor}`} />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-muted-foreground">{tile.label}</p>
-                            {tile.badge ? (
-                              <div className="mt-0.5">{tile.badge}</div>
-                            ) : (
-                              <p className="text-sm font-semibold text-foreground truncate">{tile.value}</p>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: tile.iconBg }}>
+                          <tile.icon className="w-5 h-5" style={{ color: tile.iconColor }} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium text-slate-500">{tile.label}</p>
+                          {tile.badge ? (
+                            <span className={`inline-block mt-0.5 text-xs font-bold px-2 py-0.5 rounded-md border ${
+                              tile.badge === 'Yes'
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                            }`}>
+                              {tile.badge}
+                            </span>
+                          ) : (
+                            <p className="text-sm font-semibold text-white truncate">{tile.value}</p>
+                          )}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </motion.div>
@@ -439,161 +481,159 @@ const CandidateDetail = () => {
               {/* Profile Info — shown when no evaluation but profile exists */}
               {!candidate && candidateProfile && (
                 <motion.div variants={itemFade}>
-                  <Card className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2.5 text-lg">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
-                          <User className="w-4.5 h-4.5 text-blue-500" />
+                  <div className="rounded-xl overflow-hidden" style={glassCard}>
+                    <div className="p-5" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                      <h3 className="flex items-center gap-2.5 text-lg font-bold text-white">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                          <User className="w-4 h-4 text-blue-400" />
                         </div>
                         Candidate Profile
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                      </h3>
+                    </div>
+                    <div className="p-5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {candidateProfile.email && (
-                          <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Email</p>
-                            <p className="text-sm font-medium text-foreground">{candidateProfile.email}</p>
+                          <div className="p-3 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                            <p className="text-xs font-medium text-slate-500 mb-1">Email</p>
+                            <p className="text-sm font-medium text-white">{candidateProfile.email}</p>
                           </div>
                         )}
                         {candidateProfile.phone && (
-                          <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Phone</p>
-                            <p className="text-sm font-medium text-foreground">{candidateProfile.phone}</p>
+                          <div className="p-3 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                            <p className="text-xs font-medium text-slate-500 mb-1">Phone</p>
+                            <p className="text-sm font-medium text-white">{candidateProfile.phone}</p>
                           </div>
                         )}
                         {candidateProfile.location && (
-                          <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Location</p>
-                            <p className="text-sm font-medium text-foreground">{candidateProfile.location}</p>
+                          <div className="p-3 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                            <p className="text-xs font-medium text-slate-500 mb-1">Location</p>
+                            <p className="text-sm font-medium text-white">{candidateProfile.location}</p>
                           </div>
                         )}
                         {candidateProfile.category && (
-                          <div className="p-3 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                            <p className="text-xs font-medium text-muted-foreground mb-1">Category</p>
-                            <p className="text-sm font-medium text-foreground">{candidateProfile.category}</p>
+                          <div className="p-3 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                            <p className="text-xs font-medium text-slate-500 mb-1">Category</p>
+                            <p className="text-sm font-medium text-white">{candidateProfile.category}</p>
                           </div>
                         )}
                       </div>
                       {candidateProfile.notes && (
-                        <div className="mt-4 p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">Notes</p>
-                          <p className="text-sm text-foreground leading-relaxed">{candidateProfile.notes}</p>
+                        <div className="mt-4 p-4 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                          <p className="text-xs font-medium text-slate-500 mb-1">Notes</p>
+                          <p className="text-sm text-slate-300 leading-relaxed">{candidateProfile.notes}</p>
                         </div>
                       )}
-                      <div className="mt-4 p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50">
-                        <p className="text-sm text-amber-800 dark:text-amber-300">
+                      <div className="mt-4 p-4 rounded-xl" style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)' }}>
+                        <p className="text-sm text-amber-400">
                           This candidate has not been evaluated via AI interview yet. Only profile information is available.
                         </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
               {/* Assessment Summary */}
               {candidate && (
                 <motion.div variants={itemFade}>
-                  <Card className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2.5 text-lg">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 flex items-center justify-center">
-                          <Award className="w-4.5 h-4.5 text-blue-500" />
+                  <div className="rounded-xl overflow-hidden" style={glassCard}>
+                    <div className="p-5" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                      <h3 className="flex items-center gap-2.5 text-lg font-bold text-white">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(59,130,246,0.1)' }}>
+                          <Award className="w-4 h-4 text-blue-400" />
                         </div>
                         Assessment Summary
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                      </h3>
+                    </div>
+                    <div className="p-5 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
+                        <div className="p-4 rounded-xl" style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)' }}>
                           <div className="flex items-center gap-2 mb-2.5">
-                            <div className="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-                              <Award className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(52,211,153,0.15)' }}>
+                              <Award className="w-3.5 h-3.5 text-emerald-400" />
                             </div>
-                            <h4 className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Strongest Competency</h4>
+                            <h4 className="text-sm font-semibold text-emerald-400">Strongest Competency</h4>
                           </div>
-                          <Badge className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 font-medium rounded-lg px-3 py-1">
+                          <span className="inline-block text-xs font-bold px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             {candidate.strongest_competency}
-                          </Badge>
+                          </span>
                         </div>
-                        <div className="p-4 rounded-xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50">
+                        <div className="p-4 rounded-xl" style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)' }}>
                           <div className="flex items-center gap-2 mb-2.5">
-                            <div className="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                              <GraduationCap className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                            <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(251,191,36,0.15)' }}>
+                              <GraduationCap className="w-3.5 h-3.5 text-amber-400" />
                             </div>
-                            <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">Area for Development</h4>
+                            <h4 className="text-sm font-semibold text-amber-400">Area for Development</h4>
                           </div>
-                          <Badge className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 font-medium rounded-lg px-3 py-1">
+                          <span className="inline-block text-xs font-bold px-3 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">
                             {candidate.area_for_development}
-                          </Badge>
+                          </span>
                         </div>
                       </div>
-                      <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                        <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                        <h4 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
                           <FileText className="w-4 h-4 text-slate-500" />
                           Overall Impression
                         </h4>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{candidate.overall_impression}</p>
+                        <p className="text-sm text-slate-400 leading-relaxed">{candidate.overall_impression}</p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
               {/* Areas of Concern */}
               {candidate?.red_flags && candidate.red_flags.length > 0 && (
                 <motion.div variants={itemFade}>
-                  <Card className="border border-red-200/60 dark:border-red-900/40 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
-                    <div className="h-1 bg-gradient-to-r from-red-500 to-rose-500" />
-                    <CardHeader className="pb-3">
-                      <CardTitle className="flex items-center gap-2.5 text-lg text-red-600 dark:text-red-400">
-                        <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-950/40 flex items-center justify-center">
-                          <AlertTriangle className="w-4.5 h-4.5 text-red-500" />
+                  <div className="rounded-xl overflow-hidden" style={{ ...glassCard, borderColor: 'rgba(244,63,94,0.2)' }}>
+                    <div className="h-1" style={{ background: 'linear-gradient(90deg, #ef4444, #f43f5e)' }} />
+                    <div className="p-5" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                      <h3 className="flex items-center gap-2.5 text-lg font-bold text-rose-400">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.1)' }}>
+                          <AlertTriangle className="w-4 h-4 text-rose-400" />
                         </div>
                         Areas of Concern
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2.5">
-                        {candidate.red_flags.map((flag, index) => (
-                          <div key={index} className="flex items-start gap-3 p-3 rounded-xl bg-red-50/60 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40">
-                            <div className="w-5 h-5 rounded-md bg-red-100 dark:bg-red-900/50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                              <AlertTriangle className="w-3 h-3 text-red-500" />
-                            </div>
-                            <span className="text-sm text-red-800 dark:text-red-300">{flag}</span>
+                      </h3>
+                    </div>
+                    <div className="p-5 space-y-2.5">
+                      {candidate.red_flags.map((flag, index) => (
+                        <div key={index} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.12)' }}>
+                          <div className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: 'rgba(244,63,94,0.15)' }}>
+                            <AlertTriangle className="w-3 h-3 text-rose-400" />
                           </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
+                          <span className="text-sm text-rose-300">{flag}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
               {/* Additional Notes */}
               <motion.div variants={itemFade}>
-                <Card className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2.5 text-lg">
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                        <FileText className="w-4.5 h-4.5 text-slate-500" />
+                <div className="rounded-xl overflow-hidden" style={glassCard}>
+                  <div className="p-5" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                    <h3 className="flex items-center gap-2.5 text-lg font-bold text-white">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--orbis-input)' }}>
+                        <FileText className="w-4 h-4 text-slate-400" />
                       </div>
                       Additional Notes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                    </h3>
+                  </div>
+                  <div className="p-5">
                     {(candidate?.notes || candidateProfile?.notes) ? (
-                      <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50">
-                        <p className="text-sm text-foreground leading-relaxed">{candidate?.notes || candidateProfile?.notes}</p>
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                        <p className="text-sm text-slate-300 leading-relaxed">{candidate?.notes || candidateProfile?.notes}</p>
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground italic">No additional notes available</p>
+                      <p className="text-sm text-slate-500 italic">No additional notes available</p>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             </motion.div>
 
-            {/* ── Right Column - Scores ─────────────────────────────── */}
+            {/* ── Right Column - Scores ─────────────────────────── */}
             <motion.div
               variants={container}
               initial="hidden"
@@ -603,12 +643,12 @@ const CandidateDetail = () => {
               {/* Overall Assessment Ring — only when evaluation exists */}
               {candidate && (
                 <motion.div variants={itemFade}>
-                  <Card className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-card via-card to-blue-50/30 dark:to-blue-950/20 overflow-hidden">
-                    <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
-                    <CardHeader className="text-center pb-2 pt-6">
-                      <CardTitle className="text-lg font-semibold">Overall Assessment</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center pb-6 space-y-5">
+                  <div className="rounded-xl overflow-hidden" style={glassCard}>
+                    <div className="h-1" style={{ background: 'linear-gradient(90deg, #3b82f6, #1676c0)' }} />
+                    <div className="text-center pt-6 pb-2 px-5">
+                      <h3 className="text-lg font-bold text-white">Overall Assessment</h3>
+                    </div>
+                    <div className="text-center pb-6 px-5 space-y-5">
                       <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -620,8 +660,7 @@ const CandidateDetail = () => {
                               cx="50"
                               cy="50"
                               r="40"
-                              stroke="currentColor"
-                              className="text-muted/40"
+                              stroke="var(--orbis-border)"
                               strokeWidth="6"
                               fill="none"
                             />
@@ -632,8 +671,7 @@ const CandidateDetail = () => {
                               strokeWidth="6"
                               fill="none"
                               strokeLinecap="round"
-                              className="text-primary"
-                              stroke="currentColor"
+                              stroke="#1B8EE5"
                               initial={{ strokeDasharray: '0 251.2' }}
                               animate={{ strokeDasharray: `${totalScorePercentage * 2.512} 251.2` }}
                               transition={{ duration: 1.2, ease: 'easeOut', delay: 0.4 }}
@@ -645,11 +683,11 @@ const CandidateDetail = () => {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.6 }}
-                                className="text-3xl font-bold text-foreground"
+                                className="text-3xl font-bold text-white"
                               >
                                 {Math.round(totalScorePercentage)}%
                               </motion.div>
-                              <div className="text-xs text-muted-foreground mt-0.5">
+                              <div className="text-xs text-slate-500 mt-0.5">
                                 {totalScore?.obtained_score ?? 0}/{totalScore?.max_score ?? 0}
                               </div>
                             </div>
@@ -657,52 +695,52 @@ const CandidateDetail = () => {
                         </div>
                       </motion.div>
                       <RecommendationBadge recommendation={candidate.ai_recommendation} className="text-sm px-5 py-2" />
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
               {/* Compatibility Score */}
               {compatibilityScore && (
                 <motion.div variants={itemFade}>
-                  <Card className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 bg-gradient-to-br from-card via-card to-violet-50/30 dark:to-violet-950/20 overflow-hidden">
-                    <div className="h-1 bg-gradient-to-r from-violet-500 to-purple-500" />
-                    <CardHeader className="text-center pb-2 pt-5">
-                      <CardTitle className="text-base font-semibold flex items-center justify-center gap-2">
-                        <PuzzleIcon className="w-4.5 h-4.5 text-violet-500" />
+                  <div className="rounded-xl overflow-hidden" style={glassCard}>
+                    <div className="h-1" style={{ background: 'linear-gradient(90deg, #1B8EE5, #a855f7)' }} />
+                    <div className="text-center pt-5 pb-2 px-5">
+                      <h3 className="text-base font-bold text-white flex items-center justify-center gap-2">
+                        <PuzzleIcon className="w-4 h-4 text-blue-400" />
                         Compatibility
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-center pb-5 space-y-2">
-                      <div className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                      </h3>
+                    </div>
+                    <div className="text-center pb-5 px-5 space-y-2">
+                      <div className="text-4xl font-bold" style={{ background: 'linear-gradient(135deg, #1B8EE5, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                         {typeof compatibilityScore.score === 'number'
                           ? `${Math.round(compatibilityScore.score)}%`
                           : typeof compatibilityScore === 'number'
                           ? `${Math.round(compatibilityScore)}%`
                           : '--'}
                       </div>
-                      <div className="text-xs font-medium text-muted-foreground">
+                      <div className="text-xs font-medium text-slate-500">
                         {compatibilityScore.label || 'Job-Candidate Fit'}
                       </div>
                       {compatibilityScore.summary && (
-                        <p className="text-xs text-muted-foreground/80 leading-relaxed mt-1 px-2">{compatibilityScore.summary}</p>
+                        <p className="text-xs text-slate-500 leading-relaxed mt-1 px-2">{compatibilityScore.summary}</p>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
               {/* Score Breakdown */}
               {candidate && (
               <motion.div variants={itemFade}>
-                <Card className="border border-border/50 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                <div className="rounded-xl overflow-hidden" style={glassCard}>
+                  <div className="p-5" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-slate-400" />
                       Score Breakdown
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-5">
+                    </h3>
+                  </div>
+                  <div className="p-5 space-y-5">
                     {Object.entries(scoreBreakdownLabels).map(([key, label]) => {
                       const scoreKey = key as keyof typeof scoreBreakdownLabels;
                       const score = candidate.score_breakdown?.[scoreKey];
@@ -717,13 +755,13 @@ const CandidateDetail = () => {
                         <div className="space-y-2" key={key}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <IconComp className="w-3.5 h-3.5 text-muted-foreground/70" />
-                              <span className="text-xs font-medium text-muted-foreground">{label}</span>
+                              <IconComp className="w-3.5 h-3.5 text-slate-500" />
+                              <span className="text-xs font-medium text-slate-400">{label}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 rounded-md border ${perfBadge.className}`}>
+                              <span className={`text-[10px] font-bold px-1.5 py-0 h-5 inline-flex items-center rounded-md border ${perfBadge.cls}`}>
                                 {perfBadge.label}
-                              </Badge>
+                              </span>
                               <ScoreDisplay
                                 score={score.obtained_score}
                                 maxScore={score.max_score}
@@ -740,100 +778,193 @@ const CandidateDetail = () => {
                         </div>
                       );
                     })}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
               )}
             </motion.div>
           </div>
         </div>
       </div>
-      {/* Edit Profile Dialog */}
+
+      {/* ── Edit Profile Dialog ─────────────────────────────── */}
       <Dialog open={showEditProfile} onOpenChange={setShowEditProfile}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle>Edit Candidate Profile</DialogTitle>
-            <DialogDescription>Update candidate information and contact details</DialogDescription>
+            <DialogTitle className="text-white text-xl font-bold">Edit Candidate Profile</DialogTitle>
+            <DialogDescription className="text-slate-400">Update candidate information and contact details</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {/* Photo upload */}
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: 'rgba(27,142,229,0.15)', border: '1px solid rgba(27,142,229,0.3)' }}>
                 {(candidateProfile as any)?.photo_url ? (
                   <img src={(candidateProfile as any).photo_url} alt="Photo" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-2xl font-bold text-primary">
+                  <span className="text-2xl font-bold" style={{ color: '#1B8EE5' }}>
                     {(editProfileForm.full_name || '?').charAt(0).toUpperCase()}
                   </span>
                 )}
               </div>
               <div>
-                <Label htmlFor="photo-upload" className="cursor-pointer">
-                  <Button variant="outline" size="sm" className="rounded-xl" asChild disabled={photoUploading}>
-                    <span>
-                      {photoUploading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Camera className="h-4 w-4 mr-1" />}
-                      {photoUploading ? 'Uploading...' : 'Change Photo'}
-                    </span>
-                  </Button>
-                </Label>
+                <label htmlFor="photo-upload" className="cursor-pointer">
+                  <span
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105"
+                    style={glassCard}
+                  >
+                    {photoUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                    {photoUploading ? 'Uploading...' : 'Change Photo'}
+                  </span>
+                </label>
                 <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Full Name</Label>
-                <Input value={editProfileForm.full_name || ''} onChange={e => setEditProfileForm(f => ({ ...f, full_name: e.target.value }))} />
+                <label className="text-sm font-medium text-slate-300">Full Name</label>
+                <input
+                  className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  value={editProfileForm.full_name || ''}
+                  onChange={e => setEditProfileForm(f => ({ ...f, full_name: e.target.value }))}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>Email</Label>
-                <Input type="email" value={editProfileForm.email || ''} onChange={e => setEditProfileForm(f => ({ ...f, email: e.target.value }))} />
+                <label className="text-sm font-medium text-slate-300">Email</label>
+                <input
+                  type="email"
+                  className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  value={editProfileForm.email || ''}
+                  onChange={e => setEditProfileForm(f => ({ ...f, email: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Phone</Label>
-                <Input value={editProfileForm.phone || ''} onChange={e => setEditProfileForm(f => ({ ...f, phone: e.target.value }))} />
+                <label className="text-sm font-medium text-slate-300">Phone</label>
+                <input
+                  className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  value={editProfileForm.phone || ''}
+                  onChange={e => setEditProfileForm(f => ({ ...f, phone: e.target.value }))}
+                />
               </div>
               <div className="grid gap-2">
-                <Label>Current Role</Label>
-                <Input value={editProfileForm.current_role || ''} onChange={e => setEditProfileForm(f => ({ ...f, current_role: e.target.value }))} />
+                <label className="text-sm font-medium text-slate-300">Current Role</label>
+                <input
+                  className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  value={editProfileForm.current_role || ''}
+                  onChange={e => setEditProfileForm(f => ({ ...f, current_role: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Category</Label>
-                <Input value={editProfileForm.category || ''} onChange={e => setEditProfileForm(f => ({ ...f, category: e.target.value }))} placeholder="e.g. Engineering, Design" />
+                <label className="text-sm font-medium text-slate-300">Category</label>
+                <input
+                  className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  value={editProfileForm.category || ''}
+                  onChange={e => setEditProfileForm(f => ({ ...f, category: e.target.value }))}
+                  placeholder="e.g. Engineering, Design"
+                />
               </div>
               <div className="grid gap-2">
-                <Label>Location</Label>
-                <Input value={editProfileForm.location || ''} onChange={e => setEditProfileForm(f => ({ ...f, location: e.target.value }))} />
+                <label className="text-sm font-medium text-slate-300">Location</label>
+                <input
+                  className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  value={editProfileForm.location || ''}
+                  onChange={e => setEditProfileForm(f => ({ ...f, location: e.target.value }))}
+                />
               </div>
             </div>
             <div className="grid gap-2">
-              <Label>LinkedIn URL</Label>
-              <Input value={editProfileForm.linkedin_url || ''} onChange={e => setEditProfileForm(f => ({ ...f, linkedin_url: e.target.value }))} placeholder="https://linkedin.com/in/..." />
+              <label className="text-sm font-medium text-slate-300">LinkedIn URL</label>
+              <input
+                className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                style={glassInput}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                value={editProfileForm.linkedin_url || ''}
+                onChange={e => setEditProfileForm(f => ({ ...f, linkedin_url: e.target.value }))}
+                placeholder="https://linkedin.com/in/..."
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>GitHub URL</Label>
-                <Input value={editProfileForm.github_url || ''} onChange={e => setEditProfileForm(f => ({ ...f, github_url: e.target.value }))} placeholder="https://github.com/..." />
+                <label className="text-sm font-medium text-slate-300">GitHub URL</label>
+                <input
+                  className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  value={editProfileForm.github_url || ''}
+                  onChange={e => setEditProfileForm(f => ({ ...f, github_url: e.target.value }))}
+                  placeholder="https://github.com/..."
+                />
               </div>
               <div className="grid gap-2">
-                <Label>Portfolio URL</Label>
-                <Input value={editProfileForm.portfolio_url || ''} onChange={e => setEditProfileForm(f => ({ ...f, portfolio_url: e.target.value }))} placeholder="https://..." />
+                <label className="text-sm font-medium text-slate-300">Portfolio URL</label>
+                <input
+                  className="w-full h-11 rounded-xl px-4 text-sm outline-none transition-all placeholder:text-slate-500"
+                  style={glassInput}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
+                  value={editProfileForm.portfolio_url || ''}
+                  onChange={e => setEditProfileForm(f => ({ ...f, portfolio_url: e.target.value }))}
+                  placeholder="https://..."
+                />
               </div>
             </div>
             <div className="grid gap-2">
-              <Label>Notes</Label>
-              <Textarea value={editProfileForm.notes || ''} onChange={e => setEditProfileForm(f => ({ ...f, notes: e.target.value }))} rows={3} />
+              <label className="text-sm font-medium text-slate-300">Notes</label>
+              <textarea
+                className="w-full rounded-xl p-4 text-sm outline-none transition-all resize-none placeholder:text-slate-500"
+                style={glassInput}
+                onFocus={handleFocus as any}
+                onBlur={handleBlur as any}
+                rows={3}
+                value={editProfileForm.notes || ''}
+                onChange={e => setEditProfileForm(f => ({ ...f, notes: e.target.value }))}
+              />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditProfile(false)}>Cancel</Button>
-            <Button onClick={handleSaveProfile} disabled={isSavingProfile || photoUploading}>
-              {isSavingProfile ? <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Saving...</> : 'Save Changes'}
-            </Button>
+          <DialogFooter className="gap-3">
+            <button
+              onClick={() => setShowEditProfile(false)}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+              style={glassCard}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveProfile}
+              disabled={isSavingProfile || photoUploading}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={gradientBtn}
+            >
+              {isSavingProfile ? (
+                <span className="flex items-center gap-1.5"><Loader2 className="h-4 w-4 animate-spin" /> Saving...</span>
+              ) : 'Save Changes'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -5,19 +5,20 @@ interface Props {
   onClick?: () => void;
 }
 
-function getScoreColor(score: number) {
-  if (score >= 70) return { bg: 'bg-emerald-100 dark:bg-emerald-950/50', text: 'text-emerald-700 dark:text-emerald-300', ring: 'ring-emerald-200 dark:ring-emerald-800' };
-  if (score >= 40) return { bg: 'bg-amber-100 dark:bg-amber-950/50', text: 'text-amber-700 dark:text-amber-300', ring: 'ring-amber-200 dark:ring-amber-800' };
-  return { bg: 'bg-red-100 dark:bg-red-950/50', text: 'text-red-700 dark:text-red-300', ring: 'ring-red-200 dark:ring-red-800' };
+function getScoreStyle(score: number): React.CSSProperties {
+  if (score >= 70) return { background: 'rgba(16,185,129,0.15)', color: '#6ee7b7', boxShadow: 'inset 0 0 0 1px rgba(16,185,129,0.3)' };
+  if (score >= 40) return { background: 'rgba(245,158,11,0.15)', color: '#fcd34d', boxShadow: 'inset 0 0 0 1px rgba(245,158,11,0.3)' };
+  return { background: 'rgba(239,68,68,0.15)', color: '#fca5a5', boxShadow: 'inset 0 0 0 1px rgba(239,68,68,0.3)' };
 }
 
 export default function CandidateRankBadge({ score, onClick }: Props) {
-  const color = getScoreColor(score);
+  const style = getScoreStyle(score);
 
   const badge = (
     <button
       onClick={onClick}
-      className={`w-8 h-8 rounded-full ${color.bg} ${color.text} ring-1 ${color.ring} flex items-center justify-center text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity`}
+      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity"
+      style={style}
       type="button"
     >
       {Math.round(score)}

@@ -58,7 +58,7 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
     if (!candidate) return;
 
     if (fromStage === toStage) {
-      // Reorder within same column — no API call needed
+      // Reorder within same column -- no API call needed
       const items = [...data[fromStage]];
       const [moved] = items.splice(source.index, 1);
       items.splice(destination.index, 0, moved);
@@ -66,13 +66,13 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
       return;
     }
 
-    // Different stage — show confirmation modal for rejection, instant move for others
+    // Different stage -- show confirmation modal for rejection, instant move for others
     if (toStage === 'rejected') {
       setTransitionModal({ candidate, fromStage, toStage });
       return;
     }
 
-    // AI Interview stage — open config modal; backend auto-moves on invite send
+    // AI Interview stage -- open config modal; backend auto-moves on invite send
     if (toStage === 'ai_interview' && fromStage !== 'ai_interview' && onSendAIInterview) {
       onSendAIInterview(candidate);
       return;
@@ -85,7 +85,7 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
       return;
     }
 
-    // Hired stage — check available locations
+    // Hired stage -- check available locations
     if (toStage === 'hired' && jdId) {
       apiClient.getAvailableHireLocations(String(jdId))
         .then((locations) => {
@@ -106,7 +106,7 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
       return;
     }
 
-    // Offer stage — redirect to offer modal
+    // Offer stage -- redirect to offer modal
     if (toStage === 'offer') {
       setOfferMoveCandidate({ candidate, fromStage });
       return;
@@ -175,8 +175,11 @@ export default function KanbanBoard({ data, onDataChange, onCardClick, onFeedbac
   return (
     <>
       <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin">
-          {STAGES.map((stage, i) => (
+        <div
+          className="flex gap-3 overflow-x-auto pb-4 scrollbar-thin rounded-2xl p-3"
+          style={{ background: 'var(--orbis-subtle)', border: '1px solid var(--orbis-grid)' }}
+        >
+          {STAGES.map((stage) => (
             <KanbanColumn
               key={stage}
               stage={stage}

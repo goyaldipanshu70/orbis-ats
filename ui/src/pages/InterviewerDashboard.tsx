@@ -3,12 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { subDays } from 'date-fns';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +17,18 @@ import {
   Users, ExternalLink, MessageSquare, Eye, Briefcase, AlertCircle,
   RefreshCw, User,
 } from 'lucide-react';
+
+/* ── Glass Design System ───────────────────────────────── */
+const glassCard: React.CSSProperties = {
+  background: 'var(--orbis-card)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid var(--orbis-border)',
+};
+const glassInput: React.CSSProperties = {
+  background: 'var(--orbis-input)',
+  border: '1px solid var(--orbis-border)',
+  color: 'hsl(var(--foreground))',
+};
 
 interface InterviewStats {
   upcoming_count: number;
@@ -50,15 +57,15 @@ interface InterviewItem {
 }
 
 const ROUND_TYPE_CONFIG: Record<string, { badge: string; border: string; label?: string }> = {
-  Technical: { badge: 'bg-purple-100 text-purple-700 border-purple-200', border: 'border-l-purple-500' },
-  Behavioral: { badge: 'bg-blue-100 text-blue-700 border-blue-200', border: 'border-l-blue-500' },
-  'Culture Fit': { badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', border: 'border-l-emerald-500' },
-  Cultural: { badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', border: 'border-l-emerald-500' },
-  'System Design': { badge: 'bg-cyan-100 text-cyan-700 border-cyan-200', border: 'border-l-cyan-500' },
-  'Hiring Manager': { badge: 'bg-amber-100 text-amber-700 border-amber-200', border: 'border-l-amber-500' },
+  Technical:      { badge: 'bg-blue-500/10 text-blue-400 border border-blue-500/20', border: 'border-l-blue-500' },
+  Behavioral:     { badge: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',       border: 'border-l-blue-500' },
+  'Culture Fit':  { badge: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', border: 'border-l-emerald-500' },
+  Cultural:       { badge: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20', border: 'border-l-emerald-500' },
+  'System Design':{ badge: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20',       border: 'border-l-cyan-500' },
+  'Hiring Manager':{ badge: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',   border: 'border-l-amber-500' },
 };
 
-const DEFAULT_ROUND_CONFIG = { badge: 'bg-slate-100 text-slate-700 border-slate-200', border: 'border-l-slate-400' };
+const DEFAULT_ROUND_CONFIG = { badge: 'bg-white/5 text-slate-400 border border-white/10', border: 'border-l-slate-500' };
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
@@ -215,26 +222,28 @@ export default function InterviewerDashboard() {
       label: 'Upcoming Interviews',
       value: upcomingInterviews.length,
       icon: Calendar,
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
-      tint: 'bg-blue-50/40',
+      gradient: 'linear-gradient(135deg, #3b82f6, #1676c0)',
+      iconColor: 'text-blue-400',
+      iconBg: 'rgba(59,130,246,0.15)',
     },
     {
       label: 'Pending Feedback',
       value: pendingFeedbackCount,
       icon: AlertTriangle,
-      iconBg: pendingFeedbackCount > 0 ? 'bg-amber-100' : 'bg-slate-100',
-      iconColor: pendingFeedbackCount > 0 ? 'text-amber-600' : 'text-slate-500',
-      tint: pendingFeedbackCount > 0 ? 'bg-amber-50/50' : 'bg-slate-50/40',
+      gradient: pendingFeedbackCount > 0
+        ? 'linear-gradient(135deg, #f59e0b, #ef4444)'
+        : 'linear-gradient(135deg, #64748b, #475569)',
+      iconColor: pendingFeedbackCount > 0 ? 'text-amber-400' : 'text-slate-400',
+      iconBg: pendingFeedbackCount > 0 ? 'rgba(245,158,11,0.15)' : 'rgba(100,116,139,0.15)',
       highlight: pendingFeedbackCount > 0,
     },
     {
       label: 'Completed This Month',
       value: stats?.completed_this_month ?? 0,
       icon: CheckCircle,
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-      tint: 'bg-emerald-50/40',
+      gradient: 'linear-gradient(135deg, #10b981, #059669)',
+      iconColor: 'text-emerald-400',
+      iconBg: 'rgba(16,185,129,0.15)',
     },
   ];
 
@@ -249,10 +258,10 @@ export default function InterviewerDashboard() {
       >
         <div className="flex items-end justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">My Interviews</h1>
-            <p className="text-sm text-muted-foreground mt-1">Your upcoming and past interview schedule</p>
+            <h1 className="text-2xl font-bold tracking-tight text-white">My Interviews</h1>
+            <p className="text-sm text-slate-400 mt-1">Your upcoming and past interview schedule</p>
           </div>
-          <p className="text-sm text-muted-foreground">{getTodayFormatted()}</p>
+          <p className="text-sm text-slate-500">{getTodayFormatted()}</p>
         </div>
       </motion.div>
 
@@ -265,35 +274,40 @@ export default function InterviewerDashboard() {
       >
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-11 w-11 rounded-full" />
-                  <div className="space-y-2">
-                    <Skeleton className="h-7 w-12" />
-                    <Skeleton className="h-3 w-28" />
-                  </div>
+            <div key={i} className="rounded-xl p-5" style={glassCard}>
+              <div className="flex items-center gap-4">
+                <div className="h-11 w-11 rounded-full animate-pulse bg-white/10" />
+                <div className="space-y-2">
+                  <div className="h-7 w-12 rounded animate-pulse bg-white/10" />
+                  <div className="h-3 w-28 rounded animate-pulse bg-white/10" />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))
         ) : (
           kpis.map(kpi => (
             <motion.div key={kpi.label} variants={fadeInUp}>
-              <Card className={`relative overflow-hidden transition-shadow hover:shadow-md ${kpi.highlight ? 'ring-2 ring-amber-400/70 ring-offset-1' : ''}`}>
-                <div className={`absolute inset-0 ${kpi.tint}`} />
-                <CardContent className="relative p-5">
+              <div
+                className={`relative overflow-hidden rounded-xl transition-all hover:scale-[1.02] ${kpi.highlight ? 'ring-2 ring-amber-400/40' : ''}`}
+                style={glassCard}
+              >
+                {/* Gradient top bar */}
+                <div className="h-1 w-full" style={{ background: kpi.gradient }} />
+                <div className="p-5">
                   <div className="flex items-center gap-4">
-                    <div className={`flex items-center justify-center h-11 w-11 rounded-full ${kpi.iconBg}`}>
+                    <div
+                      className="flex items-center justify-center h-11 w-11 rounded-full"
+                      style={{ background: kpi.iconBg }}
+                    >
                       <kpi.icon className={`h-5 w-5 ${kpi.iconColor}`} />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold tracking-tight text-foreground">{kpi.value}</p>
-                      <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
+                      <p className="text-2xl font-bold tracking-tight text-white">{kpi.value}</p>
+                      <p className="text-xs font-medium text-slate-400">{kpi.label}</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </motion.div>
           ))
         )}
@@ -307,10 +321,10 @@ export default function InterviewerDashboard() {
         className="mb-10"
       >
         <div className="flex items-center gap-2 mb-4">
-          <Calendar className="h-5 w-5 text-blue-600" />
-          <h2 className="text-lg font-semibold text-foreground">Upcoming Interviews</h2>
+          <Calendar className="h-5 w-5 text-blue-400" />
+          <h2 className="text-lg font-semibold text-white">Upcoming Interviews</h2>
           {!loading && (
-            <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+            <span className="text-xs font-medium text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
               {upcomingInterviews.length + overdueInterviews.length}
             </span>
           )}
@@ -319,18 +333,16 @@ export default function InterviewerDashboard() {
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2">
             {Array.from({ length: 2 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-3">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-48" />
-                      <Skeleton className="h-3 w-40" />
-                    </div>
+              <div key={i} className="rounded-xl p-5" style={glassCard}>
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-full animate-pulse bg-white/10" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-32 rounded animate-pulse bg-white/10" />
+                    <div className="h-3 w-48 rounded animate-pulse bg-white/10" />
+                    <div className="h-3 w-40 rounded animate-pulse bg-white/10" />
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         ) : (
@@ -339,8 +351,8 @@ export default function InterviewerDashboard() {
             {overdueInterviews.length > 0 && (
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-semibold text-amber-700">Overdue ({overdueInterviews.length})</span>
+                  <AlertCircle className="h-4 w-4 text-amber-400" />
+                  <span className="text-sm font-semibold text-amber-400">Overdue ({overdueInterviews.length})</span>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   {overdueInterviews.map((interview, index) => (
@@ -380,13 +392,11 @@ export default function InterviewerDashboard() {
                 ))}
               </motion.div>
             ) : overdueInterviews.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="p-10 text-center">
-                  <Calendar className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-                  <h3 className="text-sm font-medium text-muted-foreground">No upcoming interviews</h3>
-                  <p className="text-xs text-muted-foreground/70 mt-1">You have no interviews scheduled at the moment.</p>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-dashed border-white/10 p-10 text-center" style={{ background: 'var(--orbis-subtle)' }}>
+                <Calendar className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+                <h3 className="text-sm font-medium text-slate-400">No upcoming interviews</h3>
+                <p className="text-xs text-slate-500 mt-1">You have no interviews scheduled at the moment.</p>
+              </div>
             ) : null}
           </>
         )}
@@ -399,39 +409,35 @@ export default function InterviewerDashboard() {
         transition={{ duration: 0.4, delay: 0.25 }}
       >
         <div className="flex items-center gap-2 mb-4">
-          <CheckCircle className="h-5 w-5 text-emerald-600" />
-          <h2 className="text-lg font-semibold text-foreground">Past Interviews</h2>
+          <CheckCircle className="h-5 w-5 text-emerald-400" />
+          <h2 className="text-lg font-semibold text-white">Past Interviews</h2>
           {!loading && (
-            <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+            <span className="text-xs font-medium text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
               {completedInterviews.length}
             </span>
           )}
         </div>
 
         {loading ? (
-          <Card>
-            <CardContent className="p-0">
-              <div className="divide-y">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 p-4">
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-4 w-36 hidden sm:block" />
-                    <Skeleton className="h-4 w-20 hidden md:block" />
-                    <Skeleton className="h-5 w-16 ml-auto" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="rounded-xl" style={glassCard}>
+            <div className="divide-y divide-white/[0.06]">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 p-4">
+                  <div className="h-8 w-8 rounded-full animate-pulse bg-white/10" />
+                  <div className="h-4 w-28 rounded animate-pulse bg-white/10" />
+                  <div className="h-4 w-36 rounded animate-pulse bg-white/10 hidden sm:block" />
+                  <div className="h-4 w-20 rounded animate-pulse bg-white/10 hidden md:block" />
+                  <div className="h-5 w-16 rounded animate-pulse bg-white/10 ml-auto" />
+                </div>
+              ))}
+            </div>
+          </div>
         ) : completedInterviews.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="p-10 text-center">
-              <CheckCircle className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-              <h3 className="text-sm font-medium text-muted-foreground">No completed interviews this month</h3>
-              <p className="text-xs text-muted-foreground/70 mt-1">Check back later for updates.</p>
-            </CardContent>
-          </Card>
+          <div className="rounded-xl border border-dashed border-white/10 p-10 text-center" style={{ background: 'var(--orbis-subtle)' }}>
+            <CheckCircle className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+            <h3 className="text-sm font-medium text-slate-400">No completed interviews this month</h3>
+            <p className="text-xs text-slate-500 mt-1">Check back later for updates.</p>
+          </div>
         ) : (
           <>
             <ListToolbar
@@ -450,109 +456,101 @@ export default function InterviewerDashboard() {
             />
 
             {filteredCompleted.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="p-10 text-center">
-                  <CheckCircle className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-                  <h3 className="text-sm font-medium text-muted-foreground">No interviews match your filters</h3>
-                  <p className="text-xs text-muted-foreground/70 mt-1">Try adjusting your search or date range.</p>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-dashed border-white/10 p-10 text-center" style={{ background: 'var(--orbis-subtle)' }}>
+                <CheckCircle className="h-10 w-10 mx-auto text-slate-400 mb-3" />
+                <h3 className="text-sm font-medium text-slate-400">No interviews match your filters</h3>
+                <p className="text-xs text-slate-500 mt-1">Try adjusting your search or date range.</p>
+              </div>
             ) : (
-              <Card className="overflow-hidden">
-                <CardContent className="p-0">
-                  {/* Table Header */}
-                  <div className="hidden sm:grid grid-cols-[2fr_2fr_1.2fr_1fr_1.2fr_1fr] gap-3 px-5 py-3 bg-muted/50 border-b text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    <span>Candidate</span>
-                    <span>Job</span>
-                    <span>Date</span>
-                    <span>Type</span>
-                    <span>Status</span>
-                    <span className="text-right">Action</span>
-                  </div>
+              <div className="rounded-xl overflow-hidden" style={glassCard}>
+                {/* Table Header */}
+                <div className="hidden sm:grid grid-cols-[2fr_2fr_1.2fr_1fr_1.2fr_1fr] gap-3 px-5 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider" style={{ background: 'var(--orbis-card)', borderBottom: '1px solid var(--orbis-border)' }}>
+                  <span>Candidate</span>
+                  <span>Job</span>
+                  <span>Date</span>
+                  <span>Type</span>
+                  <span>Status</span>
+                  <span className="text-right">Action</span>
+                </div>
 
-                  {/* Table Rows */}
-                  <AnimatePresence>
-                    <div className="divide-y">
-                      {completedPagination.pageItems.map((interview, index) => {
-                        const roundConfig = ROUND_TYPE_CONFIG[interview.round_type] || DEFAULT_ROUND_CONFIG;
-                        const isPending = !interview.feedback_submitted;
+                {/* Table Rows */}
+                <AnimatePresence>
+                  <div className="divide-y divide-white/[0.06]">
+                    {completedPagination.pageItems.map((interview, index) => {
+                      const roundConfig = ROUND_TYPE_CONFIG[interview.round_type] || DEFAULT_ROUND_CONFIG;
+                      const isPending = !interview.feedback_submitted;
 
-                        return (
-                          <motion.div
-                            key={interview.schedule_id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.03 }}
-                            className={`grid grid-cols-1 sm:grid-cols-[2fr_2fr_1.2fr_1fr_1.2fr_1fr] gap-2 sm:gap-3 px-5 py-3.5 items-center transition-colors ${
-                              isPending ? 'bg-amber-50/60 dark:bg-amber-950/10' : 'hover:bg-muted/30'
-                            }`}
-                          >
-                            {/* Candidate */}
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold shrink-0">
-                                {getInitials(interview.candidate_name)}
-                              </div>
-                              <span className="text-sm font-medium text-foreground truncate">{interview.candidate_name}</span>
+                      return (
+                        <motion.div
+                          key={interview.schedule_id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.03 }}
+                          className={`grid grid-cols-1 sm:grid-cols-[2fr_2fr_1.2fr_1fr_1.2fr_1fr] gap-2 sm:gap-3 px-5 py-3.5 items-center transition-colors ${
+                            isPending ? 'bg-amber-500/[0.04]' : 'hover:bg-white/[0.03]'
+                          }`}
+                        >
+                          {/* Candidate */}
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex items-center justify-center h-8 w-8 rounded-full text-xs font-semibold shrink-0" style={{ background: 'var(--orbis-hover)', color: '#94a3b8' }}>
+                              {getInitials(interview.candidate_name)}
                             </div>
+                            <span className="text-sm font-medium text-white truncate">{interview.candidate_name}</span>
+                          </div>
 
-                            {/* Job */}
-                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <Briefcase className="h-3.5 w-3.5 shrink-0 hidden sm:block" />
-                              <span className="truncate">{interview.job_title}</span>
+                          {/* Job */}
+                          <div className="flex items-center gap-1.5 text-sm text-slate-400">
+                            <Briefcase className="h-3.5 w-3.5 shrink-0 hidden sm:block" />
+                            <span className="truncate">{interview.job_title}</span>
+                          </div>
+
+                          {/* Date */}
+                          <span className="text-sm text-slate-400">{formatDate(interview.scheduled_date)}</span>
+
+                          {/* Type */}
+                          <span className={`inline-flex items-center text-[11px] px-2 py-0.5 rounded-md w-fit ${roundConfig.badge}`}>
+                            {interview.round_type}
+                          </span>
+
+                          {/* Status */}
+                          {isPending ? (
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5 text-amber-400" />
+                              <span className="text-xs font-medium text-amber-400">Pending</span>
                             </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                              <span className="text-xs font-medium text-emerald-400">Feedback Submitted</span>
+                            </div>
+                          )}
 
-                            {/* Date */}
-                            <span className="text-sm text-muted-foreground">{formatDate(interview.scheduled_date)}</span>
-
-                            {/* Type */}
-                            <Badge variant="outline" className={`text-[11px] px-2 py-0 w-fit ${roundConfig.badge}`}>
-                              {interview.round_type}
-                            </Badge>
-
-                            {/* Status */}
+                          {/* Action */}
+                          <div className="text-right">
                             {isPending ? (
-                              <div className="flex items-center gap-1.5">
-                                <Clock className="h-3.5 w-3.5 text-amber-600" />
-                                <span className="text-xs font-medium text-amber-700">Pending</span>
-                              </div>
+                              <button
+                                className="inline-flex items-center text-amber-400 hover:text-amber-300 h-7 text-xs font-medium px-2 rounded-md transition-colors hover:bg-amber-500/10"
+                                onClick={() => navigate(`/interviews/${interview.schedule_id}/feedback`)}
+                              >
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                Submit Feedback
+                              </button>
                             ) : (
-                              <div className="flex items-center gap-1.5">
-                                <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
-                                <span className="text-xs font-medium text-emerald-700">Feedback Submitted</span>
-                              </div>
+                              <button
+                                className="inline-flex items-center text-emerald-400 hover:text-emerald-300 h-7 text-xs font-medium px-2 rounded-md transition-colors hover:bg-emerald-500/10"
+                                onClick={() => navigate(`/interviews/${interview.schedule_id}/feedback`)}
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                View Feedback
+                              </button>
                             )}
-
-                            {/* Action */}
-                            <div className="text-right">
-                              {isPending ? (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-amber-700 hover:text-amber-800 hover:bg-amber-100 h-7 text-xs font-medium"
-                                  onClick={() => navigate(`/interviews/${interview.schedule_id}/feedback`)}
-                                >
-                                  <MessageSquare className="h-3 w-3 mr-1" />
-                                  Submit Feedback
-                                </Button>
-                              ) : (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100 h-7 text-xs font-medium"
-                                  onClick={() => navigate(`/interviews/${interview.schedule_id}/feedback`)}
-                                >
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  View Feedback
-                                </Button>
-                              )}
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  </AnimatePresence>
-                </CardContent>
-              </Card>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </AnimatePresence>
+              </div>
             )}
 
             <DataPagination
@@ -568,40 +566,45 @@ export default function InterviewerDashboard() {
 
       {/* Reschedule Dialog */}
       <Dialog open={!!rescheduleTarget} onOpenChange={(open) => { if (!open) setRescheduleTarget(null); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md border-white/10" style={{ background: 'var(--orbis-dropdown)', backdropFilter: 'blur(24px)' }}>
           <DialogHeader>
-            <DialogTitle>Reschedule Interview</DialogTitle>
+            <DialogTitle className="text-white">Reschedule Interview</DialogTitle>
           </DialogHeader>
           {rescheduleTarget && (
             <div className="space-y-4 py-2">
-              <p className="text-sm text-muted-foreground">
-                Rescheduling interview with <span className="font-medium text-foreground">{rescheduleTarget.candidate_name}</span> for {rescheduleTarget.job_title} — Round {rescheduleTarget.round_number}.
+              <p className="text-sm text-slate-400">
+                Rescheduling interview with <span className="font-medium text-white">{rescheduleTarget.candidate_name}</span> for {rescheduleTarget.job_title} — Round {rescheduleTarget.round_number}.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor="reschedule-date">New Date</Label>
-                  <Input
+                  <Label htmlFor="reschedule-date" className="text-slate-300">New Date</Label>
+                  <input
                     id="reschedule-date"
                     type="date"
+                    className="w-full h-9 rounded-lg px-3 text-sm outline-none transition-colors focus:ring-1 focus:ring-blue-500/50"
+                    style={glassInput}
                     value={rescheduleDate}
                     onChange={(e) => setRescheduleDate(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="reschedule-time">New Time</Label>
-                  <Input
+                  <Label htmlFor="reschedule-time" className="text-slate-300">New Time</Label>
+                  <input
                     id="reschedule-time"
                     type="time"
+                    className="w-full h-9 rounded-lg px-3 text-sm outline-none transition-colors focus:ring-1 focus:ring-blue-500/50"
+                    style={glassInput}
                     value={rescheduleTime}
                     onChange={(e) => setRescheduleTime(e.target.value)}
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="reschedule-reason">Reason (optional)</Label>
+                <Label htmlFor="reschedule-reason" className="text-slate-300">Reason (optional)</Label>
                 <Textarea
                   id="reschedule-reason"
                   placeholder="e.g., Scheduling conflict, candidate requested change..."
+                  className="bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:ring-blue-500/50"
                   value={rescheduleReason}
                   onChange={(e) => setRescheduleReason(e.target.value)}
                   rows={3}
@@ -610,12 +613,22 @@ export default function InterviewerDashboard() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRescheduleTarget(null)} disabled={rescheduleSubmitting}>
+            <button
+              className="h-9 px-4 rounded-lg text-sm font-medium text-slate-300 transition-colors hover:bg-white/5"
+              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+              onClick={() => setRescheduleTarget(null)}
+              disabled={rescheduleSubmitting}
+            >
               Cancel
-            </Button>
-            <Button onClick={handleReschedule} disabled={rescheduleSubmitting || !rescheduleDate || !rescheduleTime}>
+            </button>
+            <button
+              className="h-9 px-4 rounded-lg text-sm font-medium text-white transition-all hover:brightness-110 disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 16px rgba(27,142,229,0.25)' }}
+              onClick={handleReschedule}
+              disabled={rescheduleSubmitting || !rescheduleDate || !rescheduleTime}
+            >
               {rescheduleSubmitting ? 'Rescheduling...' : 'Reschedule'}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -639,18 +652,21 @@ function UpcomingInterviewCard({
   const roundConfig = ROUND_TYPE_CONFIG[interview.round_type] || DEFAULT_ROUND_CONFIG;
 
   return (
-    <Card className={`hover:shadow-md transition-all border-l-4 ${roundConfig.border} ${isOverdue ? 'ring-2 ring-amber-400/70 ring-offset-1' : ''}`}>
-      <CardContent className="p-5">
+    <div
+      className={`rounded-xl border-l-4 ${roundConfig.border} transition-all hover:scale-[1.01] ${isOverdue ? 'ring-2 ring-amber-400/30' : ''}`}
+      style={glassCard}
+    >
+      <div className="p-5">
         <div className="space-y-3.5">
           {/* Top row: avatar + name + badge */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex items-center justify-center h-10 w-10 rounded-full bg-slate-100 text-slate-600 text-sm font-semibold shrink-0">
+              <div className="flex items-center justify-center h-10 w-10 rounded-full text-sm font-semibold shrink-0" style={{ background: 'var(--orbis-hover)', color: '#94a3b8' }}>
                 {getInitials(interview.candidate_name)}
               </div>
               <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-foreground truncate">{interview.candidate_name}</h3>
-                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                <h3 className="text-sm font-semibold text-white truncate">{interview.candidate_name}</h3>
+                <p className="text-xs text-slate-400 truncate flex items-center gap-1">
                   <Briefcase className="h-3 w-3 shrink-0" />
                   {interview.job_title} — Round {interview.round_number}
                 </p>
@@ -659,18 +675,18 @@ function UpcomingInterviewCard({
 
             <div className="flex items-center gap-1.5 shrink-0">
               {isOverdue && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-700 border-amber-200">
+                <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   Overdue
-                </Badge>
+                </span>
               )}
-              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${roundConfig.badge}`}>
+              <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-md ${roundConfig.badge}`}>
                 {interview.round_type}
-              </Badge>
+              </span>
             </div>
           </div>
 
           {/* Date / time / duration */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-400">
             <span className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
               {formatDate(interview.scheduled_date)}
@@ -679,7 +695,7 @@ function UpcomingInterviewCard({
               <Clock className="h-3.5 w-3.5" />
               {formatTime(interview.scheduled_time)}
             </span>
-            <span className="flex items-center gap-1.5 text-muted-foreground/70">
+            <span className="flex items-center gap-1.5 text-slate-500">
               {interview.duration_minutes} min
             </span>
             <span className="flex items-center gap-1.5 capitalize">
@@ -690,7 +706,7 @@ function UpcomingInterviewCard({
 
           {/* Co-interviewers */}
           {interview.interviewer_names.length > 0 && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
               <Users className="h-3.5 w-3.5 shrink-0" />
               <span>Panel: {interview.interviewer_names.join(', ')}</span>
             </div>
@@ -699,38 +715,35 @@ function UpcomingInterviewCard({
           {/* Actions */}
           <div className="flex items-center gap-2 pt-1">
             {interview.status === 'scheduled' && interview.meeting_link && (
-              <Button
-                size="sm"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs"
+              <button
+                className="inline-flex items-center h-8 px-3 rounded-lg text-xs font-medium text-white transition-all hover:brightness-110"
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 4px 12px rgba(16,185,129,0.25)' }}
                 onClick={() => window.open(interview.meeting_link, '_blank')}
               >
                 <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                 Join
-              </Button>
+              </button>
             )}
             {interview.status === 'scheduled' && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs"
+              <button
+                className="inline-flex items-center h-8 px-3 rounded-lg text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.06]"
+                style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
                 onClick={() => onReschedule(interview)}
               >
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                 Reschedule
-              </Button>
+              </button>
             )}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 text-xs text-muted-foreground ml-auto"
+            <button
+              className="inline-flex items-center h-8 px-2 rounded-lg text-xs text-slate-500 hover:text-slate-300 transition-colors hover:bg-white/[0.04] ml-auto"
               onClick={() => onNavigate(`/jobs/${interview.jd_id}/candidates/${interview.candidate_id}`)}
             >
               <User className="h-3.5 w-3.5 mr-1" />
               View Profile
-            </Button>
+            </button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -1,11 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -17,7 +12,6 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient, AdminUser } from '@/utils/api';
@@ -27,12 +21,15 @@ import {
   Search, KeyRound, RotateCcw, FileText, Clock, AlertTriangle, Plus, UserCog, Loader2,
   Mail, Phone, Bot, CheckCircle2, XCircle, Settings2,
 } from 'lucide-react';
-import { CountingNumber } from '@/components/ui/counting-number';
-import { Fade } from '@/components/ui/fade';
-import { motion, AnimatePresence } from 'framer-motion';
-import { scaleIn, fadeInUp, staggerContainer } from '@/lib/animations';
-import { StaggerGrid } from '@/components/ui/stagger-grid';
 import { format, formatDistanceToNow } from 'date-fns';
+
+// ---------------------------------------------------------------------------
+// Design system constants
+// ---------------------------------------------------------------------------
+
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
 
 // ---------------------------------------------------------------------------
 // Types
@@ -89,16 +86,12 @@ function userInitials(firstName?: string, lastName?: string): string {
   return `${(firstName || '?')[0]}${(lastName || '?')[0]}`.toUpperCase();
 }
 
-function roleBadgeVariant(role: string): { bg: string; text: string; dot: string } {
+function roleBadgeVariant(role: string) {
   switch (role) {
-    case 'admin':
-      return { bg: 'bg-purple-50 dark:bg-purple-950/40', text: 'text-purple-700 dark:text-purple-300', dot: 'bg-purple-500' };
-    case 'hr':
-      return { bg: 'bg-blue-50 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', dot: 'bg-blue-500' };
-    case 'hiring_manager':
-      return { bg: 'bg-emerald-50 dark:bg-emerald-950/40', text: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500' };
-    default:
-      return { bg: 'bg-gray-50 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', dot: 'bg-gray-400' };
+    case 'admin': return { bg: 'bg-blue-500/10', text: 'text-blue-400', dot: 'bg-blue-500' };
+    case 'hr': return { bg: 'bg-blue-500/10', text: 'text-blue-400', dot: 'bg-blue-500' };
+    case 'hiring_manager': return { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-500' };
+    default: return { bg: 'bg-white/5', text: 'text-slate-400', dot: 'bg-slate-400' };
   }
 }
 
@@ -117,8 +110,8 @@ function roleLabel(role: string): string {
 
 function avatarColor(name: string): string {
   const colors = [
-    'bg-blue-600', 'bg-emerald-600', 'bg-violet-600', 'bg-amber-600',
-    'bg-rose-600', 'bg-cyan-600', 'bg-indigo-600', 'bg-teal-600',
+    'bg-blue-600', 'bg-emerald-600', 'bg-blue-600', 'bg-amber-600',
+    'bg-rose-600', 'bg-cyan-600', 'bg-blue-600', 'bg-teal-600',
   ];
   const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[hash % colors.length];
@@ -160,107 +153,115 @@ const ATSSettingsPanel = () => {
     }
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-slate-500" /></div>;
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
       {/* Rejection Lock */}
-      <Card className="rounded-xl border shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/40">
-              <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      <div className="rounded-2xl p-[1px]" style={glassCard}>
+        <div className="p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(245,158,11,0.1)' }}>
+              <Shield className="h-4 w-4 text-amber-400" />
             </div>
             <div>
-              <CardTitle className="text-sm font-semibold">Rejection Lock Period</CardTitle>
-              <CardDescription className="text-xs">Block rejected candidates from reapplying.</CardDescription>
+              <h3 className="text-sm font-semibold text-white">Rejection Lock Period</h3>
+              <p className="text-xs text-slate-400">Block rejected candidates from reapplying.</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <Label className="text-sm font-medium">Enable Rejection Lock</Label>
-            <Switch
-              checked={settings.rejection_lock_enabled}
-              onCheckedChange={v => setSettings(s => ({ ...s, rejection_lock_enabled: v }))}
-            />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg p-3" style={{ border: '1px solid var(--orbis-border)' }}>
+              <label className="text-sm font-medium text-slate-300">Enable Rejection Lock</label>
+              <Switch
+                checked={settings.rejection_lock_enabled}
+                onCheckedChange={v => setSettings(s => ({ ...s, rejection_lock_enabled: v }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300">Default Lock Period (days)</label>
+              <input
+                type="number"
+                min={0}
+                max={365}
+                value={settings.default_rejection_lock_days}
+                onChange={e => setSettings(s => ({ ...s, default_rejection_lock_days: Math.max(0, parseInt(e.target.value) || 0) }))}
+                className="mt-1.5 w-32 h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={glassInput}
+                disabled={!settings.rejection_lock_enabled}
+              />
+              <p className="text-xs text-slate-500 mt-1.5">Individual jobs can override this default.</p>
+            </div>
           </div>
-          <div>
-            <Label className="text-sm font-medium">Default Lock Period (days)</Label>
-            <Input
-              type="number"
-              min={0}
-              max={365}
-              value={settings.default_rejection_lock_days}
-              onChange={e => setSettings(s => ({ ...s, default_rejection_lock_days: Math.max(0, parseInt(e.target.value) || 0) }))}
-              className="mt-1.5 w-32"
-              disabled={!settings.rejection_lock_enabled}
-            />
-            <p className="text-xs text-muted-foreground mt-1.5">Individual jobs can override this default.</p>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* OTP Verification */}
-      <Card className="rounded-xl border shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/40">
-              <KeyRound className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      <div className="rounded-2xl p-[1px]" style={glassCard}>
+        <div className="p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(59,130,246,0.1)' }}>
+              <KeyRound className="h-4 w-4 text-blue-400" />
             </div>
             <div>
-              <CardTitle className="text-sm font-semibold">OTP Verification</CardTitle>
-              <CardDescription className="text-xs">Email and phone verification for signup.</CardDescription>
+              <h3 className="text-sm font-semibold text-white">OTP Verification</h3>
+              <p className="text-xs text-slate-400">Email and phone verification for signup.</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <Label className="text-sm font-medium">Require Email Verification</Label>
-            <Switch
-              checked={settings.otp_email_required}
-              onCheckedChange={v => setSettings(s => ({ ...s, otp_email_required: v }))}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <Label className="text-sm font-medium">Require Phone Verification</Label>
-            <Switch
-              checked={settings.otp_phone_required}
-              onCheckedChange={v => setSettings(s => ({ ...s, otp_phone_required: v }))}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-sm font-medium">OTP Expiry (minutes)</Label>
-              <Input
-                type="number"
-                min={1}
-                max={30}
-                value={settings.otp_expiry_minutes}
-                onChange={e => setSettings(s => ({ ...s, otp_expiry_minutes: Math.max(1, parseInt(e.target.value) || 10) }))}
-                className="mt-1.5"
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg p-3" style={{ border: '1px solid var(--orbis-border)' }}>
+              <label className="text-sm font-medium text-slate-300">Require Email Verification</label>
+              <Switch
+                checked={settings.otp_email_required}
+                onCheckedChange={v => setSettings(s => ({ ...s, otp_email_required: v }))}
               />
             </div>
-            <div>
-              <Label className="text-sm font-medium">Max Attempts</Label>
-              <Input
-                type="number"
-                min={1}
-                max={10}
-                value={settings.otp_max_attempts}
-                onChange={e => setSettings(s => ({ ...s, otp_max_attempts: Math.max(1, parseInt(e.target.value) || 5) }))}
-                className="mt-1.5"
+            <div className="flex items-center justify-between rounded-lg p-3" style={{ border: '1px solid var(--orbis-border)' }}>
+              <label className="text-sm font-medium text-slate-300">Require Phone Verification</label>
+              <Switch
+                checked={settings.otp_phone_required}
+                onCheckedChange={v => setSettings(s => ({ ...s, otp_phone_required: v }))}
               />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-slate-300">OTP Expiry (minutes)</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={settings.otp_expiry_minutes}
+                  onChange={e => setSettings(s => ({ ...s, otp_expiry_minutes: Math.max(1, parseInt(e.target.value) || 10) }))}
+                  className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={glassInput}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300">Max Attempts</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={settings.otp_max_attempts}
+                  onChange={e => setSettings(s => ({ ...s, otp_max_attempts: Math.max(1, parseInt(e.target.value) || 5) }))}
+                  className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={glassInput}
+                />
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Save */}
       <div className="md:col-span-2 flex justify-end">
-        <Button onClick={handleSave} disabled={saving} className="rounded-lg">
-          {saving ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Saving...</> : 'Save ATS Settings'}
-        </Button>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50"
+          style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+        >
+          {saving ? <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Saving...</span> : 'Save ATS Settings'}
+        </button>
       </div>
     </div>
   );
@@ -374,248 +375,248 @@ const ProviderSettingsPanel = () => {
   };
 
   if (emailLoading || smsLoading || aiLoading) {
-    return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+    return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-slate-500" /></div>;
   }
 
   return (
     <div className="space-y-6">
       {/* -- Email Provider -- */}
-      <Card className="rounded-xl border shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/40">
-              <Mail className="h-4.5 w-4.5 text-blue-600 dark:text-blue-400" />
+      <div className="rounded-2xl" style={glassCard}>
+        <div className="p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: 'rgba(59,130,246,0.1)' }}>
+              <Mail className="h-4.5 w-4.5 text-blue-400" />
             </div>
             <div>
-              <CardTitle className="text-sm font-semibold">Email Provider</CardTitle>
-              <CardDescription className="text-xs">OTP, notifications, and offer letters.</CardDescription>
+              <h3 className="text-sm font-semibold text-white">Email Provider</h3>
+              <p className="text-xs text-slate-400">OTP, notifications, and offer letters.</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium">Provider</Label>
-            <Select value={emailSettings.provider} onValueChange={v => setEmailSettings(s => ({ ...s, provider: v }))}>
-              <SelectTrigger className="mt-1.5 h-9 text-sm w-52"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sendgrid">SendGrid</SelectItem>
-                <SelectItem value="mailgun">Mailgun</SelectItem>
-                <SelectItem value="smtp">SMTP</SelectItem>
-                <SelectItem value="ses">AWS SES</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-300">Provider</label>
+              <Select value={emailSettings.provider} onValueChange={v => setEmailSettings(s => ({ ...s, provider: v }))}>
+                <SelectTrigger className="mt-1.5 h-10 text-sm w-52 rounded-xl text-white border-0" style={glassInput}><SelectValue /></SelectTrigger>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                  <SelectItem value="sendgrid" className="text-slate-200 focus:bg-white/10 focus:text-white">SendGrid</SelectItem>
+                  <SelectItem value="mailgun" className="text-slate-200 focus:bg-white/10 focus:text-white">Mailgun</SelectItem>
+                  <SelectItem value="smtp" className="text-slate-200 focus:bg-white/10 focus:text-white">SMTP</SelectItem>
+                  <SelectItem value="ses" className="text-slate-200 focus:bg-white/10 focus:text-white">AWS SES</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {(emailSettings.provider === 'sendgrid' || emailSettings.provider === 'mailgun') && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">API Key</Label>
-                <Input type="password" value={emailSettings.api_key || ''} onChange={e => setEmailSettings(s => ({ ...s, api_key: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="API key" />
+            {(emailSettings.provider === 'sendgrid' || emailSettings.provider === 'mailgun') && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-300">API Key</label>
+                  <input type="password" value={emailSettings.api_key || ''} onChange={e => setEmailSettings(s => ({ ...s, api_key: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="API key" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300">{emailSettings.provider === 'mailgun' ? 'Domain' : 'From Email'}</label>
+                  <input value={emailSettings.provider === 'mailgun' ? (emailSettings.smtp_host || '') : (emailSettings.smtp_user || '')} onChange={e => setEmailSettings(s => emailSettings.provider === 'mailgun' ? ({ ...s, smtp_host: e.target.value }) : ({ ...s, smtp_user: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder={emailSettings.provider === 'mailgun' ? 'mg.example.com' : 'noreply@example.com'} />
+                </div>
               </div>
-              <div>
-                <Label className="text-sm font-medium">{emailSettings.provider === 'mailgun' ? 'Domain' : 'From Email'}</Label>
-                <Input value={emailSettings.provider === 'mailgun' ? (emailSettings.smtp_host || '') : (emailSettings.smtp_user || '')} onChange={e => setEmailSettings(s => emailSettings.provider === 'mailgun' ? ({ ...s, smtp_host: e.target.value }) : ({ ...s, smtp_user: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder={emailSettings.provider === 'mailgun' ? 'mg.example.com' : 'noreply@example.com'} />
+            )}
+
+            {emailSettings.provider === 'smtp' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">SMTP Host</label><input value={emailSettings.smtp_host || ''} onChange={e => setEmailSettings(s => ({ ...s, smtp_host: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="smtp.gmail.com" /></div>
+                <div><label className="text-sm font-medium text-slate-300">SMTP Port</label><input type="number" value={emailSettings.smtp_port || 587} onChange={e => setEmailSettings(s => ({ ...s, smtp_port: parseInt(e.target.value) || 587 }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">Username</label><input value={emailSettings.smtp_user || ''} onChange={e => setEmailSettings(s => ({ ...s, smtp_user: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">Password</label><input type="password" value={emailSettings.smtp_password || ''} onChange={e => setEmailSettings(s => ({ ...s, smtp_password: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+              </div>
+            )}
+
+            {emailSettings.provider === 'ses' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">AWS Access Key ID</label><input value={emailSettings.aws_access_key_id || ''} onChange={e => setEmailSettings(s => ({ ...s, aws_access_key_id: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">AWS Secret Access Key</label><input type="password" value={emailSettings.aws_secret_access_key || ''} onChange={e => setEmailSettings(s => ({ ...s, aws_secret_access_key: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">AWS Region</label><input value={emailSettings.aws_region || 'us-east-1'} onChange={e => setEmailSettings(s => ({ ...s, aws_region: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">From Email</label><input value={emailSettings.ses_from_email || ''} onChange={e => setEmailSettings(s => ({ ...s, ses_from_email: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="noreply@example.com" /></div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+              <button onClick={saveEmail} disabled={emailSaving} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+                {emailSaving ? <span className="flex items-center gap-1.5"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</span> : 'Save'}
+              </button>
+              <div className="flex items-center gap-2 ml-auto">
+                <input value={testEmailTo} onChange={e => setTestEmailTo(e.target.value)} className="h-10 px-3 rounded-xl text-sm w-56 outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="test@example.com" />
+                <button onClick={testEmail} disabled={emailTesting} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50 flex items-center gap-1.5" style={{ ...glassCard }}>
+                  {emailTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />} Test
+                </button>
               </div>
             </div>
-          )}
-
-          {emailSettings.provider === 'smtp' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-sm font-medium">SMTP Host</Label><Input value={emailSettings.smtp_host || ''} onChange={e => setEmailSettings(s => ({ ...s, smtp_host: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="smtp.gmail.com" /></div>
-              <div><Label className="text-sm font-medium">SMTP Port</Label><Input type="number" value={emailSettings.smtp_port || 587} onChange={e => setEmailSettings(s => ({ ...s, smtp_port: parseInt(e.target.value) || 587 }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">Username</Label><Input value={emailSettings.smtp_user || ''} onChange={e => setEmailSettings(s => ({ ...s, smtp_user: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">Password</Label><Input type="password" value={emailSettings.smtp_password || ''} onChange={e => setEmailSettings(s => ({ ...s, smtp_password: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-            </div>
-          )}
-
-          {emailSettings.provider === 'ses' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-sm font-medium">AWS Access Key ID</Label><Input value={emailSettings.aws_access_key_id || ''} onChange={e => setEmailSettings(s => ({ ...s, aws_access_key_id: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">AWS Secret Access Key</Label><Input type="password" value={emailSettings.aws_secret_access_key || ''} onChange={e => setEmailSettings(s => ({ ...s, aws_secret_access_key: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">AWS Region</Label><Input value={emailSettings.aws_region || 'us-east-1'} onChange={e => setEmailSettings(s => ({ ...s, aws_region: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">From Email</Label><Input value={emailSettings.ses_from_email || ''} onChange={e => setEmailSettings(s => ({ ...s, ses_from_email: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="noreply@example.com" /></div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 pt-2 border-t">
-            <Button onClick={saveEmail} disabled={emailSaving} size="sm" className="rounded-lg">
-              {emailSaving ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Saving...</> : 'Save'}
-            </Button>
-            <div className="flex items-center gap-2 ml-auto">
-              <Input value={testEmailTo} onChange={e => setTestEmailTo(e.target.value)} className="h-9 text-sm w-56" placeholder="test@example.com" />
-              <Button variant="outline" size="sm" onClick={testEmail} disabled={emailTesting} className="rounded-lg">
-                {emailTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Mail className="h-3.5 w-3.5 mr-1.5" />} Test
-              </Button>
-            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* -- SMS Provider -- */}
-      <Card className="rounded-xl border shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/40">
-              <Phone className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
+      <div className="rounded-2xl" style={glassCard}>
+        <div className="p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: 'rgba(16,185,129,0.1)' }}>
+              <Phone className="h-4.5 w-4.5 text-emerald-400" />
             </div>
             <div>
-              <CardTitle className="text-sm font-semibold">SMS Provider</CardTitle>
-              <CardDescription className="text-xs">OTP verification and notifications.</CardDescription>
+              <h3 className="text-sm font-semibold text-white">SMS Provider</h3>
+              <p className="text-xs text-slate-400">OTP verification and notifications.</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium">Provider</Label>
-            <Select value={smsSettings.provider} onValueChange={v => setSmsSettings(s => ({ ...s, provider: v }))}>
-              <SelectTrigger className="mt-1.5 h-9 text-sm w-52"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="twilio">Twilio</SelectItem>
-                <SelectItem value="vonage">Vonage</SelectItem>
-                <SelectItem value="sns">AWS SNS</SelectItem>
-                <SelectItem value="messagebird">MessageBird</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-300">Provider</label>
+              <Select value={smsSettings.provider} onValueChange={v => setSmsSettings(s => ({ ...s, provider: v }))}>
+                <SelectTrigger className="mt-1.5 h-10 text-sm w-52 rounded-xl text-white border-0" style={glassInput}><SelectValue /></SelectTrigger>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                  <SelectItem value="twilio" className="text-slate-200 focus:bg-white/10 focus:text-white">Twilio</SelectItem>
+                  <SelectItem value="vonage" className="text-slate-200 focus:bg-white/10 focus:text-white">Vonage</SelectItem>
+                  <SelectItem value="sns" className="text-slate-200 focus:bg-white/10 focus:text-white">AWS SNS</SelectItem>
+                  <SelectItem value="messagebird" className="text-slate-200 focus:bg-white/10 focus:text-white">MessageBird</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {smsSettings.provider === 'twilio' && (
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">Account SID</label><input value={smsSettings.twilio_account_sid} onChange={e => setSmsSettings(s => ({ ...s, twilio_account_sid: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">Auth Token</label><input type="password" value={smsSettings.twilio_auth_token} onChange={e => setSmsSettings(s => ({ ...s, twilio_auth_token: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">From Number</label><input value={smsSettings.twilio_from_number} onChange={e => setSmsSettings(s => ({ ...s, twilio_from_number: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="+1234567890" /></div>
+              </div>
+            )}
+
+            {smsSettings.provider === 'vonage' && (
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">API Key</label><input value={smsSettings.vonage_api_key} onChange={e => setSmsSettings(s => ({ ...s, vonage_api_key: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">API Secret</label><input type="password" value={smsSettings.vonage_api_secret} onChange={e => setSmsSettings(s => ({ ...s, vonage_api_secret: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">From Number</label><input value={smsSettings.vonage_from_number} onChange={e => setSmsSettings(s => ({ ...s, vonage_from_number: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="Intesa" /></div>
+              </div>
+            )}
+
+            {smsSettings.provider === 'sns' && (
+              <div className="grid grid-cols-3 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">AWS Access Key ID</label><input value={smsSettings.aws_access_key_id} onChange={e => setSmsSettings(s => ({ ...s, aws_access_key_id: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">AWS Secret Access Key</label><input type="password" value={smsSettings.aws_secret_access_key} onChange={e => setSmsSettings(s => ({ ...s, aws_secret_access_key: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">AWS Region</label><input value={smsSettings.aws_region} onChange={e => setSmsSettings(s => ({ ...s, aws_region: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+              </div>
+            )}
+
+            {smsSettings.provider === 'messagebird' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">Access Key</label><input type="password" value={smsSettings.messagebird_access_key} onChange={e => setSmsSettings(s => ({ ...s, messagebird_access_key: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} /></div>
+                <div><label className="text-sm font-medium text-slate-300">Originator</label><input value={smsSettings.messagebird_originator} onChange={e => setSmsSettings(s => ({ ...s, messagebird_originator: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="Intesa" /></div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+              <button onClick={saveSms} disabled={smsSaving} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+                {smsSaving ? <span className="flex items-center gap-1.5"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</span> : 'Save'}
+              </button>
+              <div className="flex items-center gap-2 ml-auto">
+                <input value={testSmsTo} onChange={e => setTestSmsTo(e.target.value)} className="h-10 px-3 rounded-xl text-sm w-56 outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="+1234567890" />
+                <button onClick={testSms} disabled={smsTesting} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50 flex items-center gap-1.5" style={{ ...glassCard }}>
+                  {smsTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Phone className="h-3.5 w-3.5" />} Test
+                </button>
+              </div>
+            </div>
           </div>
-
-          {smsSettings.provider === 'twilio' && (
-            <div className="grid grid-cols-3 gap-4">
-              <div><Label className="text-sm font-medium">Account SID</Label><Input value={smsSettings.twilio_account_sid} onChange={e => setSmsSettings(s => ({ ...s, twilio_account_sid: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">Auth Token</Label><Input type="password" value={smsSettings.twilio_auth_token} onChange={e => setSmsSettings(s => ({ ...s, twilio_auth_token: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">From Number</Label><Input value={smsSettings.twilio_from_number} onChange={e => setSmsSettings(s => ({ ...s, twilio_from_number: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="+1234567890" /></div>
-            </div>
-          )}
-
-          {smsSettings.provider === 'vonage' && (
-            <div className="grid grid-cols-3 gap-4">
-              <div><Label className="text-sm font-medium">API Key</Label><Input value={smsSettings.vonage_api_key} onChange={e => setSmsSettings(s => ({ ...s, vonage_api_key: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">API Secret</Label><Input type="password" value={smsSettings.vonage_api_secret} onChange={e => setSmsSettings(s => ({ ...s, vonage_api_secret: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">From Number</Label><Input value={smsSettings.vonage_from_number} onChange={e => setSmsSettings(s => ({ ...s, vonage_from_number: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="Intesa" /></div>
-            </div>
-          )}
-
-          {smsSettings.provider === 'sns' && (
-            <div className="grid grid-cols-3 gap-4">
-              <div><Label className="text-sm font-medium">AWS Access Key ID</Label><Input value={smsSettings.aws_access_key_id} onChange={e => setSmsSettings(s => ({ ...s, aws_access_key_id: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">AWS Secret Access Key</Label><Input type="password" value={smsSettings.aws_secret_access_key} onChange={e => setSmsSettings(s => ({ ...s, aws_secret_access_key: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">AWS Region</Label><Input value={smsSettings.aws_region} onChange={e => setSmsSettings(s => ({ ...s, aws_region: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-            </div>
-          )}
-
-          {smsSettings.provider === 'messagebird' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-sm font-medium">Access Key</Label><Input type="password" value={smsSettings.messagebird_access_key} onChange={e => setSmsSettings(s => ({ ...s, messagebird_access_key: e.target.value }))} className="mt-1.5 h-9 text-sm" /></div>
-              <div><Label className="text-sm font-medium">Originator</Label><Input value={smsSettings.messagebird_originator} onChange={e => setSmsSettings(s => ({ ...s, messagebird_originator: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="Intesa" /></div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 pt-2 border-t">
-            <Button onClick={saveSms} disabled={smsSaving} size="sm" className="rounded-lg">
-              {smsSaving ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Saving...</> : 'Save'}
-            </Button>
-            <div className="flex items-center gap-2 ml-auto">
-              <Input value={testSmsTo} onChange={e => setTestSmsTo(e.target.value)} className="h-9 text-sm w-56" placeholder="+1234567890" />
-              <Button variant="outline" size="sm" onClick={testSms} disabled={smsTesting} className="rounded-lg">
-                {smsTesting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Phone className="h-3.5 w-3.5 mr-1.5" />} Test
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* -- AI Provider -- */}
-      <Card className="rounded-xl border shadow-sm">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-950/40">
-              <Bot className="h-4.5 w-4.5 text-violet-600 dark:text-violet-400" />
+      <div className="rounded-2xl" style={glassCard}>
+        <div className="p-5">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: 'rgba(27,142,229,0.1)' }}>
+              <Bot className="h-4.5 w-4.5 text-blue-400" />
             </div>
             <div>
-              <CardTitle className="text-sm font-semibold">AI Provider</CardTitle>
-              <CardDescription className="text-xs">JD analysis, resume scoring, interviews, and RAG.</CardDescription>
+              <h3 className="text-sm font-semibold text-white">AI Provider</h3>
+              <p className="text-xs text-slate-400">JD analysis, resume scoring, interviews, and RAG.</p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-sm font-medium">Provider</Label>
-            <Select value={aiSettings.provider} onValueChange={v => setAiSettings(s => ({ ...s, provider: v }))}>
-              <SelectTrigger className="mt-1.5 h-9 text-sm w-52"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="openai">OpenAI</SelectItem>
-                <SelectItem value="anthropic">Anthropic</SelectItem>
-                <SelectItem value="gemini">Google Gemini</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {aiSettings.provider === 'openai' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-sm font-medium">API Key</Label><Input type="password" value={aiSettings.openai_api_key} onChange={e => setAiSettings(s => ({ ...s, openai_api_key: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="sk-..." /></div>
-              <div>
-                <Label className="text-sm font-medium">Model</Label>
-                <Select value={aiSettings.openai_model} onValueChange={v => setAiSettings(s => ({ ...s, openai_model: v }))}>
-                  <SelectTrigger className="mt-1.5 h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
-                    <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                    <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-                    <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-300">Provider</label>
+              <Select value={aiSettings.provider} onValueChange={v => setAiSettings(s => ({ ...s, provider: v }))}>
+                <SelectTrigger className="mt-1.5 h-10 text-sm w-52 rounded-xl text-white border-0" style={glassInput}><SelectValue /></SelectTrigger>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                  <SelectItem value="openai" className="text-slate-200 focus:bg-white/10 focus:text-white">OpenAI</SelectItem>
+                  <SelectItem value="anthropic" className="text-slate-200 focus:bg-white/10 focus:text-white">Anthropic</SelectItem>
+                  <SelectItem value="gemini" className="text-slate-200 focus:bg-white/10 focus:text-white">Google Gemini</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {aiSettings.provider === 'anthropic' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-sm font-medium">API Key</Label><Input type="password" value={aiSettings.anthropic_api_key} onChange={e => setAiSettings(s => ({ ...s, anthropic_api_key: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="sk-ant-..." /></div>
-              <div>
-                <Label className="text-sm font-medium">Model</Label>
-                <Select value={aiSettings.anthropic_model} onValueChange={v => setAiSettings(s => ({ ...s, anthropic_model: v }))}>
-                  <SelectTrigger className="mt-1.5 h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="claude-sonnet-4-20250514">Claude Sonnet 4</SelectItem>
-                    <SelectItem value="claude-haiku-4-5-20251001">Claude Haiku 4.5</SelectItem>
-                  </SelectContent>
-                </Select>
+            {aiSettings.provider === 'openai' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">API Key</label><input type="password" value={aiSettings.openai_api_key} onChange={e => setAiSettings(s => ({ ...s, openai_api_key: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="sk-..." /></div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300">Model</label>
+                  <Select value={aiSettings.openai_model} onValueChange={v => setAiSettings(s => ({ ...s, openai_model: v }))}>
+                    <SelectTrigger className="mt-1.5 h-10 text-sm rounded-xl text-white border-0" style={glassInput}><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                      <SelectItem value="gpt-4o-mini" className="text-slate-200 focus:bg-white/10 focus:text-white">GPT-4o Mini</SelectItem>
+                      <SelectItem value="gpt-4o" className="text-slate-200 focus:bg-white/10 focus:text-white">GPT-4o</SelectItem>
+                      <SelectItem value="gpt-4-turbo" className="text-slate-200 focus:bg-white/10 focus:text-white">GPT-4 Turbo</SelectItem>
+                      <SelectItem value="gpt-3.5-turbo" className="text-slate-200 focus:bg-white/10 focus:text-white">GPT-3.5 Turbo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-          )}
-
-          {aiSettings.provider === 'gemini' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label className="text-sm font-medium">API Key</Label><Input type="password" value={aiSettings.google_api_key} onChange={e => setAiSettings(s => ({ ...s, google_api_key: e.target.value }))} className="mt-1.5 h-9 text-sm" placeholder="AIza..." /></div>
-              <div>
-                <Label className="text-sm font-medium">Model</Label>
-                <Select value={aiSettings.google_model} onValueChange={v => setAiSettings(s => ({ ...s, google_model: v }))}>
-                  <SelectTrigger className="mt-1.5 h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
-                    <SelectItem value="gemini-2.0-pro">Gemini 2.0 Pro</SelectItem>
-                    <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                    <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 pt-2 border-t">
-            <Button onClick={saveAi} disabled={aiSaving} size="sm" className="rounded-lg">
-              {aiSaving ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Saving...</> : 'Save'}
-            </Button>
-            <Button variant="outline" size="sm" onClick={testAi} disabled={aiTesting} className="rounded-lg">
-              {aiTesting ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> Testing...</> : <><Bot className="h-3.5 w-3.5 mr-1.5" /> Test Connection</>}
-            </Button>
-            {aiTestResult && (
-              <span className={`text-xs font-medium ${aiTestResult.includes('OK') || aiTestResult.includes('successful') ? 'text-emerald-600' : 'text-red-500'}`}>
-                {aiTestResult}
-              </span>
             )}
+
+            {aiSettings.provider === 'anthropic' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">API Key</label><input type="password" value={aiSettings.anthropic_api_key} onChange={e => setAiSettings(s => ({ ...s, anthropic_api_key: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="sk-ant-..." /></div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300">Model</label>
+                  <Select value={aiSettings.anthropic_model} onValueChange={v => setAiSettings(s => ({ ...s, anthropic_model: v }))}>
+                    <SelectTrigger className="mt-1.5 h-10 text-sm rounded-xl text-white border-0" style={glassInput}><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                      <SelectItem value="claude-sonnet-4-20250514" className="text-slate-200 focus:bg-white/10 focus:text-white">Claude Sonnet 4</SelectItem>
+                      <SelectItem value="claude-haiku-4-5-20251001" className="text-slate-200 focus:bg-white/10 focus:text-white">Claude Haiku 4.5</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {aiSettings.provider === 'gemini' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-sm font-medium text-slate-300">API Key</label><input type="password" value={aiSettings.google_api_key} onChange={e => setAiSettings(s => ({ ...s, google_api_key: e.target.value }))} className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all" style={glassInput} placeholder="AIza..." /></div>
+                <div>
+                  <label className="text-sm font-medium text-slate-300">Model</label>
+                  <Select value={aiSettings.google_model} onValueChange={v => setAiSettings(s => ({ ...s, google_model: v }))}>
+                    <SelectTrigger className="mt-1.5 h-10 text-sm rounded-xl text-white border-0" style={glassInput}><SelectValue /></SelectTrigger>
+                    <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                      <SelectItem value="gemini-2.0-flash" className="text-slate-200 focus:bg-white/10 focus:text-white">Gemini 2.0 Flash</SelectItem>
+                      <SelectItem value="gemini-2.0-pro" className="text-slate-200 focus:bg-white/10 focus:text-white">Gemini 2.0 Pro</SelectItem>
+                      <SelectItem value="gemini-1.5-flash" className="text-slate-200 focus:bg-white/10 focus:text-white">Gemini 1.5 Flash</SelectItem>
+                      <SelectItem value="gemini-1.5-pro" className="text-slate-200 focus:bg-white/10 focus:text-white">Gemini 1.5 Pro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 pt-2" style={{ borderTop: '1px solid var(--orbis-border)' }}>
+              <button onClick={saveAi} disabled={aiSaving} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+                {aiSaving ? <span className="flex items-center gap-1.5"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</span> : 'Save'}
+              </button>
+              <button onClick={testAi} disabled={aiTesting} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50 flex items-center gap-1.5" style={{ ...glassCard }}>
+                {aiTesting ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Testing...</> : <><Bot className="h-3.5 w-3.5" /> Test Connection</>}
+              </button>
+              {aiTestResult && (
+                <span className={`text-xs font-medium ${aiTestResult.includes('OK') || aiTestResult.includes('successful') ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {aiTestResult}
+                </span>
+              )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1003,12 +1004,12 @@ const AdminDashboard = () => {
 
   const statCards = stats
     ? [
-        { label: 'Total Users', value: stats.total_users, icon: Users, bg: 'bg-blue-100 dark:bg-blue-950/40', fg: 'text-blue-600 dark:text-blue-400' },
-        { label: 'Admin Users', value: stats.admin_users, icon: Shield, bg: 'bg-purple-100 dark:bg-purple-950/40', fg: 'text-purple-600 dark:text-purple-400' },
-        { label: 'HR Users', value: stats.hr_users, icon: UserCog, bg: 'bg-violet-100 dark:bg-violet-950/40', fg: 'text-violet-600 dark:text-violet-400' },
-        { label: 'Active Sessions', value: stats.active_sessions, icon: Activity, bg: 'bg-amber-100 dark:bg-amber-950/40', fg: 'text-amber-600 dark:text-amber-400' },
-        { label: 'Total Jobs', value: stats.total_jobs, icon: Briefcase, bg: 'bg-cyan-100 dark:bg-cyan-950/40', fg: 'text-cyan-600 dark:text-cyan-400' },
-        { label: 'Total Candidates', value: stats.total_candidates, icon: Users, bg: 'bg-rose-100 dark:bg-rose-950/40', fg: 'text-rose-600 dark:text-rose-400' },
+        { label: 'Total Users', value: stats.total_users, icon: Users, gradient: 'linear-gradient(135deg, rgba(59,130,246,0.5), rgba(59,130,246,0.1))', iconBg: 'rgba(59,130,246,0.15)', fg: 'text-blue-400' },
+        { label: 'Admin Users', value: stats.admin_users, icon: Shield, gradient: 'linear-gradient(135deg, rgba(27,142,229,0.5), rgba(27,142,229,0.1))', iconBg: 'rgba(27,142,229,0.15)', fg: 'text-blue-400' },
+        { label: 'HR Users', value: stats.hr_users, icon: UserCog, gradient: 'linear-gradient(135deg, rgba(16,185,129,0.5), rgba(16,185,129,0.1))', iconBg: 'rgba(16,185,129,0.15)', fg: 'text-emerald-400' },
+        { label: 'Active Sessions', value: stats.active_sessions, icon: Activity, gradient: 'linear-gradient(135deg, rgba(245,158,11,0.5), rgba(245,158,11,0.1))', iconBg: 'rgba(245,158,11,0.15)', fg: 'text-amber-400' },
+        { label: 'Total Jobs', value: stats.total_jobs, icon: Briefcase, gradient: 'linear-gradient(135deg, rgba(6,182,212,0.5), rgba(6,182,212,0.1))', iconBg: 'rgba(6,182,212,0.15)', fg: 'text-cyan-400' },
+        { label: 'Total Candidates', value: stats.total_candidates, icon: Users, gradient: 'linear-gradient(135deg, rgba(244,63,94,0.5), rgba(244,63,94,0.1))', iconBg: 'rgba(244,63,94,0.15)', fg: 'text-rose-400' },
       ]
     : [];
 
@@ -1020,242 +1021,224 @@ const AdminDashboard = () => {
     <AppLayout>
       {/* Page header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Admin Panel</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <h1 className="text-2xl font-bold tracking-tight text-white">Admin Panel</h1>
+        <p className="text-sm text-slate-400 mt-1">
           System administration and configuration
         </p>
       </div>
 
       {/* Stats row */}
-      <StaggerGrid className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         {statsLoading
           ? Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="animate-pulse rounded-xl">
-                <CardContent className="p-4">
-                  <div className="h-9 w-9 rounded-lg bg-muted mb-3" />
-                  <div className="h-7 w-12 bg-muted rounded mb-1" />
-                  <div className="h-4 w-20 bg-muted rounded" />
-                </CardContent>
-              </Card>
+              <div key={i} className="animate-pulse rounded-2xl p-4" style={glassCard}>
+                <div className="h-9 w-9 rounded-lg bg-white/5 mb-3" />
+                <div className="h-7 w-12 bg-white/5 rounded mb-1" />
+                <div className="h-4 w-20 bg-white/5 rounded" />
+              </div>
             ))
           : statCards.map((card) => {
               const Icon = card.icon;
               return (
-                <motion.div key={card.label} variants={scaleIn}>
-                <Card className="rounded-xl border shadow-sm hover:shadow-md transition-all duration-200">
-                  <CardContent className="p-4">
-                    <div className={`h-9 w-9 rounded-lg ${card.bg} flex items-center justify-center mb-3`}>
+                <div key={card.label} className="rounded-2xl overflow-hidden transition-all duration-200 hover:scale-[1.02]" style={glassCard}>
+                  <div className="h-1" style={{ background: card.gradient }} />
+                  <div className="p-4">
+                    <div className="h-9 w-9 rounded-lg flex items-center justify-center mb-3" style={{ background: card.iconBg }}>
                       <Icon className={`h-4.5 w-4.5 ${card.fg}`} />
                     </div>
-                    <p className="text-2xl font-bold text-foreground tracking-tight">
-                      <CountingNumber value={card.value} />
+                    <p className="text-2xl font-bold text-white tracking-tight">
+                      {card.value}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 font-medium">{card.label}</p>
-                  </CardContent>
-                </Card>
-                </motion.div>
+                    <p className="text-xs text-slate-500 mt-0.5 font-medium">{card.label}</p>
+                  </div>
+                </div>
               );
             })}
-      </StaggerGrid>
+      </div>
 
       {/* Tabs */}
       <Tabs defaultValue="users" className="space-y-6">
-        <div className="border-b">
-          <TabsList className="bg-transparent h-auto p-0 gap-0 flex">
-            <TabsTrigger
-              value="users"
-              className="relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-muted-foreground rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors"
-            >
-              <Users className="h-4 w-4" /> Users
-            </TabsTrigger>
-            <TabsTrigger
-              value="audit-logs"
-              className="relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-muted-foreground rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors"
-            >
-              <Clock className="h-4 w-4" /> Audit Logs
-            </TabsTrigger>
-            <TabsTrigger
-              value="offer-templates"
-              className="relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-muted-foreground rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors"
-            >
-              <FileText className="h-4 w-4" /> Offer Templates
-            </TabsTrigger>
-            <TabsTrigger
-              value="ats-settings"
-              className="relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-muted-foreground rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors"
-            >
-              <Shield className="h-4 w-4" /> ATS Settings
-            </TabsTrigger>
-            <TabsTrigger
-              value="providers"
-              className="relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-muted-foreground rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-foreground transition-colors"
-            >
-              <Settings2 className="h-4 w-4" /> Providers
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="rounded-xl p-1" style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-hover)' }}>
+          <TabsTrigger
+            value="users"
+            className="rounded-lg text-sm text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 flex items-center gap-2"
+          >
+            <Users className="h-4 w-4" /> Users
+          </TabsTrigger>
+          <TabsTrigger
+            value="audit-logs"
+            className="rounded-lg text-sm text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 flex items-center gap-2"
+          >
+            <Clock className="h-4 w-4" /> Audit Logs
+          </TabsTrigger>
+          <TabsTrigger
+            value="offer-templates"
+            className="rounded-lg text-sm text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 flex items-center gap-2"
+          >
+            <FileText className="h-4 w-4" /> Offer Templates
+          </TabsTrigger>
+          <TabsTrigger
+            value="ats-settings"
+            className="rounded-lg text-sm text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 flex items-center gap-2"
+          >
+            <Shield className="h-4 w-4" /> ATS Settings
+          </TabsTrigger>
+          <TabsTrigger
+            value="providers"
+            className="rounded-lg text-sm text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 flex items-center gap-2"
+          >
+            <Settings2 className="h-4 w-4" /> Providers
+          </TabsTrigger>
+        </TabsList>
 
         {/* ================================================================
             USERS TAB
         ================================================================ */}
-        <TabsContent value="users" asChild>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-          <Card className="rounded-xl border shadow-sm">
-            <CardContent className="p-6">
+        <TabsContent value="users">
+          <div className="rounded-2xl" style={glassCard}>
+            <div className="p-6">
               {/* Top action bar */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-1">
                   <div className="relative w-full sm:w-72">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+                    <input
                       placeholder="Search users..."
                       value={userSearch}
                       onChange={e => setUserSearch(e.target.value)}
-                      className="pl-9 h-9 text-sm rounded-lg"
+                      className="pl-9 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                      style={glassInput}
                     />
                   </div>
                   <Select value={roleFilter} onValueChange={(v: any) => setRoleFilter(v)}>
-                    <SelectTrigger className="w-[160px] h-9 text-sm rounded-lg">
+                    <SelectTrigger className="w-[160px] h-10 text-sm rounded-xl text-white border-0" style={glassInput}>
                       <SelectValue placeholder="Filter role" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="hr">HR</SelectItem>
-                      <SelectItem value="hiring_manager">Hiring Manager</SelectItem>
-                      <SelectItem value="interviewer">Interviewer</SelectItem>
-                      <SelectItem value="candidate">Candidate</SelectItem>
+                    <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                      <SelectItem value="all" className="text-slate-200 focus:bg-white/10 focus:text-white">All Roles</SelectItem>
+                      <SelectItem value="admin" className="text-slate-200 focus:bg-white/10 focus:text-white">Admin</SelectItem>
+                      <SelectItem value="hr" className="text-slate-200 focus:bg-white/10 focus:text-white">HR</SelectItem>
+                      <SelectItem value="hiring_manager" className="text-slate-200 focus:bg-white/10 focus:text-white">Hiring Manager</SelectItem>
+                      <SelectItem value="interviewer" className="text-slate-200 focus:bg-white/10 focus:text-white">Interviewer</SelectItem>
+                      <SelectItem value="candidate" className="text-slate-200 focus:bg-white/10 focus:text-white">Candidate</SelectItem>
                     </SelectContent>
                   </Select>
                   {selectedUserIds.size > 0 && (
-                    <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="rounded-lg">
-                      <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete ({selectedUserIds.size})
-                    </Button>
+                    <button onClick={handleBulkDelete} className="px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+                      <Trash2 className="h-3.5 w-3.5" /> Delete ({selectedUserIds.size})
+                    </button>
                   )}
                 </div>
-                <Button onClick={() => setCreateUserOpen(true)} size="sm" className="rounded-lg">
-                  <UserPlus className="h-4 w-4 mr-1.5" /> Create User
-                </Button>
+                <button onClick={() => setCreateUserOpen(true)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all flex items-center gap-1.5" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+                  <UserPlus className="h-4 w-4" /> Create User
+                </button>
               </div>
 
               {/* Users table */}
-              <div className="border rounded-xl overflow-hidden">
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--orbis-border)' }}>
                 <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-12 pl-4">
+                  <TableHeader style={{ background: 'var(--orbis-subtle)' }}>
+                    <TableRow className="hover:bg-transparent" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                      <TableHead className="text-slate-500 text-xs font-medium w-12 pl-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
                         <Checkbox
                           checked={filteredUsers.length > 0 && selectedUserIds.size === filteredUsers.length}
                           onCheckedChange={toggleSelectAll}
                         />
                       </TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">User</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Email</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Role</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Status</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Last Login</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground text-right pr-4">Actions</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>User</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Email</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Role</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Status</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Last Login</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium text-right pr-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {usersLoading ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-16">
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" />
-                          <span className="text-sm text-muted-foreground">Loading users...</span>
+                          <Loader2 className="h-5 w-5 animate-spin text-slate-500 mx-auto mb-2" />
+                          <span className="text-sm text-slate-500">Loading users...</span>
                         </TableCell>
                       </TableRow>
                     ) : filteredUsers.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-16">
-                          <Users className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                          <span className="text-sm text-muted-foreground">No users found.</span>
+                          <Users className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                          <span className="text-sm text-slate-500">No users found.</span>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredUsers.map((u, index) => {
+                      filteredUsers.map((u) => {
                         const badge = roleBadgeVariant(u.role);
                         return (
-                          <motion.tr
+                          <TableRow
                             key={u.id}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: index * 0.03 }}
-                            className="border-b transition-colors hover:bg-muted/30 data-[state=selected]:bg-muted/50"
-                            data-state={selectedUserIds.has(u.id) ? 'selected' : undefined}
+                            className="hover:bg-white/[0.02]"
+                            style={{ borderBottom: '1px solid var(--orbis-grid)' }}
                           >
-                            <TableCell className="pl-4">
+                            <TableCell className="text-slate-300 text-sm pl-4">
                               <Checkbox
                                 checked={selectedUserIds.has(u.id)}
                                 onCheckedChange={() => toggleSelectUser(u.id)}
                               />
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-slate-300 text-sm">
                               <div className="flex items-center gap-3">
                                 <div className={`h-8 w-8 rounded-full ${avatarColor(u.first_name + u.last_name)} flex items-center justify-center text-xs font-semibold text-white shrink-0`}>
                                   {userInitials(u.first_name, u.last_name)}
                                 </div>
-                                <span className="font-medium text-foreground text-sm">
+                                <span className="font-medium text-white text-sm">
                                   {u.first_name} {u.last_name}
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
-                            <TableCell>
+                            <TableCell className="text-slate-400 text-sm">{u.email}</TableCell>
+                            <TableCell className="text-slate-300 text-sm">
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${badge.bg} ${badge.text}`}>
                                 <span className={`h-1.5 w-1.5 rounded-full ${badge.dot}`} />
                                 {roleLabel(u.role)}
                               </span>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-slate-300 text-sm">
                               <div className="flex items-center gap-2">
-                                <span className={`h-2 w-2 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`} />
-                                <span className={`text-xs font-medium ${u.is_active ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
+                                <span className={`h-2 w-2 rounded-full ${u.is_active ? 'bg-emerald-500' : 'bg-slate-600'}`} />
+                                <span className={`text-xs font-medium ${u.is_active ? 'text-emerald-400' : 'text-slate-500'}`}>
                                   {u.is_active ? 'Active' : 'Inactive'}
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">
+                            <TableCell className="text-slate-400 text-sm">
                               {u.last_login
                                 ? formatDistanceToNow(new Date(u.last_login), { addSuffix: true })
                                 : 'Never'}
                             </TableCell>
-                            <TableCell className="pr-4">
+                            <TableCell className="text-slate-300 text-sm pr-4">
                               <div className="flex items-center justify-end gap-0.5">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 rounded-lg hover:bg-muted"
+                                <button
+                                  className="h-8 w-8 p-0 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
                                   onClick={() => openEditUser(u)}
                                   title="Edit user"
                                 >
-                                  <Edit className="h-3.5 w-3.5 text-muted-foreground" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 rounded-lg hover:bg-muted"
+                                  <Edit className="h-3.5 w-3.5 text-slate-400" />
+                                </button>
+                                <button
+                                  className="h-8 w-8 p-0 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
                                   onClick={() => { setResetPwdTarget(u); setResetPwdOpen(true); }}
                                   title="Reset password"
                                 >
-                                  <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30"
+                                  <RotateCcw className="h-3.5 w-3.5 text-slate-400" />
+                                </button>
+                                <button
+                                  className="h-8 w-8 p-0 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10"
                                   onClick={() => { setDeleteUserTarget(u); setDeleteUserOpen(true); }}
                                   title="Delete user"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-red-500 transition-colors" />
-                                </Button>
+                                  <Trash2 className="h-3.5 w-3.5 text-slate-400 hover:text-red-400 transition-colors" />
+                                </button>
                               </div>
                             </TableCell>
-                          </motion.tr>
+                          </TableRow>
                         );
                       })
                     )}
@@ -1271,91 +1254,85 @@ const AdminDashboard = () => {
                   onPageChange={setUsersPage}
                 />
               ) : (
-                <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                <div className="flex items-center justify-center gap-2 py-3 text-xs text-slate-500">
                   Showing {filteredUsers.length} of {usersPagination.total} users
                 </div>
               )}
-            </CardContent>
-          </Card>
-          </motion.div>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ================================================================
             AUDIT LOGS TAB
         ================================================================ */}
-        <TabsContent value="audit-logs" asChild>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-          <Card className="rounded-xl border shadow-sm">
-            <CardContent className="p-6">
+        <TabsContent value="audit-logs">
+          <div className="rounded-2xl" style={glassCard}>
+            <div className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
-                  <h3 className="text-base font-semibold text-foreground">Activity Log</h3>
-                  <p className="text-sm text-muted-foreground mt-0.5">Track platform activity and user actions.</p>
+                  <h3 className="text-base font-semibold text-white">Activity Log</h3>
+                  <p className="text-sm text-slate-400 mt-0.5">Track platform activity and user actions.</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Select value={auditActionFilter} onValueChange={v => { setAuditActionFilter(v); setAuditPage(1); }}>
-                    <SelectTrigger className="w-[180px] h-9 text-sm rounded-lg">
+                    <SelectTrigger className="w-[180px] h-10 text-sm rounded-xl text-white border-0" style={glassInput}>
                       <SelectValue placeholder="Filter by action" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Actions</SelectItem>
+                    <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                      <SelectItem value="all" className="text-slate-200 focus:bg-white/10 focus:text-white">All Actions</SelectItem>
                       {auditActions.map(a => (
-                        <SelectItem key={a} value={a}>{a}</SelectItem>
+                        <SelectItem key={a} value={a} className="text-slate-200 focus:bg-white/10 focus:text-white">{a}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Badge variant="secondary" className="text-xs px-2.5 py-1 rounded-full font-medium">
+                  <span className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ background: 'var(--orbis-input)', color: '#94a3b8' }}>
                     {auditTotal} entries
-                  </Badge>
+                  </span>
                 </div>
               </div>
 
-              <div className="border rounded-xl overflow-hidden">
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--orbis-border)' }}>
                 <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Timestamp</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">User</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Action</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Resource</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Details</TableHead>
+                  <TableHeader style={{ background: 'var(--orbis-subtle)' }}>
+                    <TableRow className="hover:bg-transparent" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Timestamp</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>User</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Action</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Resource</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Details</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {auditLoading ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-16">
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" />
-                          <span className="text-sm text-muted-foreground">Loading audit logs...</span>
+                          <Loader2 className="h-5 w-5 animate-spin text-slate-500 mx-auto mb-2" />
+                          <span className="text-sm text-slate-500">Loading audit logs...</span>
                         </TableCell>
                       </TableRow>
                     ) : auditLogs.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-16">
-                          <Clock className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                          <span className="text-sm text-muted-foreground">No audit log entries yet.</span>
+                          <Clock className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                          <span className="text-sm text-slate-500">No audit log entries yet.</span>
                         </TableCell>
                       </TableRow>
                     ) : (
                       auditLogs.map(log => (
-                        <TableRow key={log.id} className="hover:bg-muted/30">
-                          <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                        <TableRow key={log.id} className="hover:bg-white/[0.02]" style={{ borderBottom: '1px solid var(--orbis-grid)' }}>
+                          <TableCell className="text-slate-400 text-sm whitespace-nowrap">
                             {log.created_at ? format(new Date(log.created_at), 'MMM d, yyyy HH:mm') : '--'}
                           </TableCell>
-                          <TableCell className="text-sm text-foreground font-medium">
+                          <TableCell className="text-white text-sm font-medium">
                             {log.user_email || `User #${log.user_id}`}
                           </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs font-medium rounded-full">{log.action}</Badge>
+                          <TableCell className="text-slate-300 text-sm">
+                            <span className="text-xs font-medium rounded-full px-2.5 py-1" style={{ background: 'var(--orbis-input)', color: '#94a3b8' }}>{log.action}</span>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="text-slate-400 text-sm">
                             {log.resource_type ? `${log.resource_type}${log.resource_id ? ` #${log.resource_id}` : ''}` : '--'}
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
+                          <TableCell className="text-slate-400 text-sm max-w-[300px] truncate">
                             {log.details || '--'}
                           </TableCell>
                         </TableRow>
@@ -1371,90 +1348,82 @@ const AdminDashboard = () => {
                 pageSize={20}
                 onPageChange={setAuditPage}
               />
-            </CardContent>
-          </Card>
-          </motion.div>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ================================================================
             OFFER TEMPLATES TAB
         ================================================================ */}
-        <TabsContent value="offer-templates" asChild>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-          <Card className="rounded-xl border shadow-sm">
-            <CardContent className="p-6">
+        <TabsContent value="offer-templates">
+          <div className="rounded-2xl" style={glassCard}>
+            <div className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
-                  <h3 className="text-base font-semibold text-foreground">Offer Templates</h3>
-                  <p className="text-sm text-muted-foreground mt-0.5">Create and manage document templates for offer letters and HR documents.</p>
+                  <h3 className="text-base font-semibold text-white">Offer Templates</h3>
+                  <p className="text-sm text-slate-400 mt-0.5">Create and manage document templates for offer letters and HR documents.</p>
                 </div>
-                <Button onClick={() => setCreateTemplateOpen(true)} size="sm" className="rounded-lg">
-                  <Plus className="h-4 w-4 mr-1.5" /> Create Template
-                </Button>
+                <button onClick={() => setCreateTemplateOpen(true)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all flex items-center gap-1.5" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+                  <Plus className="h-4 w-4" /> Create Template
+                </button>
               </div>
 
-              <div className="border rounded-xl overflow-hidden">
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--orbis-border)' }}>
                 <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Name</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Category</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground">Created</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider text-muted-foreground text-right pr-4">Actions</TableHead>
+                  <TableHeader style={{ background: 'var(--orbis-subtle)' }}>
+                    <TableRow className="hover:bg-transparent" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Name</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Category</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Created</TableHead>
+                      <TableHead className="text-slate-500 text-xs font-medium text-right pr-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {templatesLoading ? (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-16">
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground mx-auto mb-2" />
-                          <span className="text-sm text-muted-foreground">Loading templates...</span>
+                          <Loader2 className="h-5 w-5 animate-spin text-slate-500 mx-auto mb-2" />
+                          <span className="text-sm text-slate-500">Loading templates...</span>
                         </TableCell>
                       </TableRow>
                     ) : templates.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center py-16">
-                          <FileText className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                          <span className="text-sm text-muted-foreground">No templates created yet. Click "Create Template" to get started.</span>
+                          <FileText className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                          <span className="text-sm text-slate-500">No templates created yet. Click "Create Template" to get started.</span>
                         </TableCell>
                       </TableRow>
                     ) : (
                       templates.map(t => (
-                        <TableRow key={t.id} className="hover:bg-muted/30">
-                          <TableCell>
+                        <TableRow key={t.id} className="hover:bg-white/[0.02]" style={{ borderBottom: '1px solid var(--orbis-grid)' }}>
+                          <TableCell className="text-slate-300 text-sm">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                                <FileText className="h-4 w-4 text-muted-foreground" />
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'var(--orbis-input)' }}>
+                                <FileText className="h-4 w-4 text-slate-400" />
                               </div>
-                              <span className="text-sm font-medium text-foreground">{t.name}</span>
+                              <span className="text-sm font-medium text-white">{t.name}</span>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary" className="text-xs font-medium rounded-full">
+                          <TableCell className="text-slate-300 text-sm">
+                            <span className="text-xs font-medium rounded-full px-2.5 py-1" style={{ background: 'var(--orbis-input)', color: '#94a3b8' }}>
                               {t.category}
-                            </Badge>
+                            </span>
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="text-slate-400 text-sm">
                             {format(new Date(t.created_at), 'MMM d, yyyy')}
                           </TableCell>
-                          <TableCell className="pr-4">
+                          <TableCell className="text-slate-300 text-sm pr-4">
                             <div className="flex items-center justify-end gap-0.5">
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-muted" onClick={() => openEditTemplate(t)} title="Edit template">
-                                <Edit className="h-3.5 w-3.5 text-muted-foreground" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30"
+                              <button className="h-8 w-8 p-0 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5" onClick={() => openEditTemplate(t)} title="Edit template">
+                                <Edit className="h-3.5 w-3.5 text-slate-400" />
+                              </button>
+                              <button
+                                className="h-8 w-8 p-0 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10"
                                 onClick={() => { setDeleteTemplateTarget(t); setDeleteTemplateOpen(true); }}
                                 title="Delete template"
                               >
-                                <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-red-500 transition-colors" />
-                              </Button>
+                                <Trash2 className="h-3.5 w-3.5 text-slate-400 hover:text-red-400 transition-colors" />
+                              </button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1470,35 +1439,22 @@ const AdminDashboard = () => {
                 pageSize={20}
                 onPageChange={setTemplatesPage}
               />
-            </CardContent>
-          </Card>
-          </motion.div>
+            </div>
+          </div>
         </TabsContent>
 
         {/* ================================================================
             ATS SETTINGS TAB
         ================================================================ */}
-        <TabsContent value="ats-settings" asChild>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ATSSettingsPanel />
-          </motion.div>
+        <TabsContent value="ats-settings">
+          <ATSSettingsPanel />
         </TabsContent>
 
         {/* ================================================================
             PROVIDERS TAB
         ================================================================ */}
-        <TabsContent value="providers" asChild>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ProviderSettingsPanel />
-          </motion.div>
+        <TabsContent value="providers">
+          <ProviderSettingsPanel />
         </TabsContent>
       </Tabs>
 
@@ -1508,313 +1464,325 @@ const AdminDashboard = () => {
 
       {/* Create User Dialog */}
       <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
-        <DialogContent className="sm:max-w-md rounded-xl">
+        <DialogContent className="sm:max-w-md border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Create New User</DialogTitle>
-            <DialogDescription>Add a new user to the platform.</DialogDescription>
+            <DialogTitle className="text-white text-lg font-semibold">Create New User</DialogTitle>
+            <DialogDescription className="text-slate-400">Add a new user to the platform.</DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="cu-fname" className="text-sm font-medium">First Name</Label>
-                <Input
+                <label htmlFor="cu-fname" className="text-sm font-medium text-slate-300">First Name</label>
+                <input
                   id="cu-fname"
                   value={createUserForm.first_name}
                   onChange={e => setCreateUserForm(p => ({ ...p, first_name: e.target.value }))}
-                  className="mt-1.5 h-9 text-sm rounded-lg"
+                  className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={glassInput}
                   placeholder="John"
                 />
               </div>
               <div>
-                <Label htmlFor="cu-lname" className="text-sm font-medium">Last Name</Label>
-                <Input
+                <label htmlFor="cu-lname" className="text-sm font-medium text-slate-300">Last Name</label>
+                <input
                   id="cu-lname"
                   value={createUserForm.last_name}
                   onChange={e => setCreateUserForm(p => ({ ...p, last_name: e.target.value }))}
-                  className="mt-1.5 h-9 text-sm rounded-lg"
+                  className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={glassInput}
                   placeholder="Doe"
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="cu-email" className="text-sm font-medium">Email Address</Label>
-              <Input
+              <label htmlFor="cu-email" className="text-sm font-medium text-slate-300">Email Address</label>
+              <input
                 id="cu-email"
                 type="email"
                 value={createUserForm.email}
                 onChange={e => setCreateUserForm(p => ({ ...p, email: e.target.value }))}
-                className="mt-1.5 h-9 text-sm rounded-lg"
+                className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={glassInput}
                 placeholder="john@company.com"
               />
             </div>
             <div>
-              <Label htmlFor="cu-password" className="text-sm font-medium">Password</Label>
-              <Input
+              <label htmlFor="cu-password" className="text-sm font-medium text-slate-300">Password</label>
+              <input
                 id="cu-password"
                 type="password"
                 value={createUserForm.password}
                 onChange={e => setCreateUserForm(p => ({ ...p, password: e.target.value }))}
-                className="mt-1.5 h-9 text-sm rounded-lg"
+                className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={glassInput}
                 placeholder="Minimum 8 characters"
               />
             </div>
             <div>
-              <Label className="text-sm font-medium">Role</Label>
+              <label className="text-sm font-medium text-slate-300">Role</label>
               <Select value={createUserForm.role} onValueChange={(v: any) => setCreateUserForm(p => ({ ...p, role: v }))}>
-                <SelectTrigger className="mt-1.5 h-9 text-sm rounded-lg">
+                <SelectTrigger className="mt-1.5 h-10 text-sm rounded-xl text-white border-0" style={glassInput}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="hr">HR</SelectItem>
-                  <SelectItem value="hiring_manager">Hiring Manager</SelectItem>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                  <SelectItem value="admin" className="text-slate-200 focus:bg-white/10 focus:text-white">Admin</SelectItem>
+                  <SelectItem value="hr" className="text-slate-200 focus:bg-white/10 focus:text-white">HR</SelectItem>
+                  <SelectItem value="hiring_manager" className="text-slate-200 focus:bg-white/10 focus:text-white">Hiring Manager</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreateUserOpen(false)} className="rounded-lg">Cancel</Button>
-            <Button onClick={handleCreateUser} disabled={createUserLoading} className="rounded-lg">
-              {createUserLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Creating...</> : 'Create User'}
-            </Button>
+            <button onClick={() => setCreateUserOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:bg-white/5" style={{ ...glassCard }}>Cancel</button>
+            <button onClick={handleCreateUser} disabled={createUserLoading} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+              {createUserLoading ? <span className="flex items-center gap-1.5"><Loader2 className="h-4 w-4 animate-spin" /> Creating...</span> : 'Create User'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit User Dialog */}
       <Dialog open={editUserOpen} onOpenChange={setEditUserOpen}>
-        <DialogContent className="sm:max-w-md rounded-xl">
+        <DialogContent className="sm:max-w-md border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Edit User</DialogTitle>
-            <DialogDescription>Update user information for {editUserTarget?.email}.</DialogDescription>
+            <DialogTitle className="text-white text-lg font-semibold">Edit User</DialogTitle>
+            <DialogDescription className="text-slate-400">Update user information for {editUserTarget?.email}.</DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="eu-fname" className="text-sm font-medium">First Name</Label>
-                <Input
+                <label htmlFor="eu-fname" className="text-sm font-medium text-slate-300">First Name</label>
+                <input
                   id="eu-fname"
                   value={editUserForm.first_name}
                   onChange={e => setEditUserForm(p => ({ ...p, first_name: e.target.value }))}
-                  className="mt-1.5 h-9 text-sm rounded-lg"
+                  className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={glassInput}
                 />
               </div>
               <div>
-                <Label htmlFor="eu-lname" className="text-sm font-medium">Last Name</Label>
-                <Input
+                <label htmlFor="eu-lname" className="text-sm font-medium text-slate-300">Last Name</label>
+                <input
                   id="eu-lname"
                   value={editUserForm.last_name}
                   onChange={e => setEditUserForm(p => ({ ...p, last_name: e.target.value }))}
-                  className="mt-1.5 h-9 text-sm rounded-lg"
+                  className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={glassInput}
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="eu-email" className="text-sm font-medium">Email Address</Label>
-              <Input
+              <label htmlFor="eu-email" className="text-sm font-medium text-slate-300">Email Address</label>
+              <input
                 id="eu-email"
                 type="email"
                 value={editUserForm.email}
                 onChange={e => setEditUserForm(p => ({ ...p, email: e.target.value }))}
-                className="mt-1.5 h-9 text-sm rounded-lg"
+                className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={glassInput}
               />
             </div>
             <div>
-              <Label className="text-sm font-medium">Role</Label>
+              <label className="text-sm font-medium text-slate-300">Role</label>
               <Select value={editUserForm.role} onValueChange={(v: any) => setEditUserForm(p => ({ ...p, role: v }))}>
-                <SelectTrigger className="mt-1.5 h-9 text-sm rounded-lg">
+                <SelectTrigger className="mt-1.5 h-10 text-sm rounded-xl text-white border-0" style={glassInput}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="hr">HR</SelectItem>
-                  <SelectItem value="hiring_manager">Hiring Manager</SelectItem>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
+                  <SelectItem value="admin" className="text-slate-200 focus:bg-white/10 focus:text-white">Admin</SelectItem>
+                  <SelectItem value="hr" className="text-slate-200 focus:bg-white/10 focus:text-white">HR</SelectItem>
+                  <SelectItem value="hiring_manager" className="text-slate-200 focus:bg-white/10 focus:text-white">Hiring Manager</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <Label className="text-sm font-medium">Active Status</Label>
+            <div className="flex items-center justify-between rounded-lg p-3" style={{ border: '1px solid var(--orbis-border)' }}>
+              <label className="text-sm font-medium text-slate-300">Active Status</label>
               <Switch checked={editUserForm.is_active} onCheckedChange={v => setEditUserForm(p => ({ ...p, is_active: v }))} />
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setEditUserOpen(false)} className="rounded-lg">Cancel</Button>
-            <Button onClick={handleEditUser} disabled={editUserLoading} className="rounded-lg">
-              {editUserLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Saving...</> : 'Save Changes'}
-            </Button>
+            <button onClick={() => setEditUserOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:bg-white/5" style={{ ...glassCard }}>Cancel</button>
+            <button onClick={handleEditUser} disabled={editUserLoading} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+              {editUserLoading ? <span className="flex items-center gap-1.5"><Loader2 className="h-4 w-4 animate-spin" /> Saving...</span> : 'Save Changes'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete User Confirm Dialog */}
       <Dialog open={deleteUserOpen} onOpenChange={setDeleteUserOpen}>
-        <DialogContent className="sm:max-w-sm rounded-xl">
+        <DialogContent className="sm:max-w-sm border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/40 mb-2">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full mb-2" style={{ background: 'rgba(239,68,68,0.1)' }}>
+              <AlertTriangle className="h-5 w-5 text-red-400" />
             </div>
-            <DialogTitle className="text-lg font-semibold">Delete User</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete <strong>{deleteUserTarget?.first_name} {deleteUserTarget?.last_name}</strong> ({deleteUserTarget?.email})? This action cannot be undone.
+            <DialogTitle className="text-white text-lg font-semibold">Delete User</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Are you sure you want to delete <strong className="text-white">{deleteUserTarget?.first_name} {deleteUserTarget?.last_name}</strong> ({deleteUserTarget?.email})? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteUserOpen(false)} className="rounded-lg">Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteUser} disabled={deleteUserLoading} className="rounded-lg">
-              {deleteUserLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Deleting...</> : 'Delete User'}
-            </Button>
+            <button onClick={() => setDeleteUserOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:bg-white/5" style={{ ...glassCard }}>Cancel</button>
+            <button onClick={handleDeleteUser} disabled={deleteUserLoading} className="px-4 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+              {deleteUserLoading ? <span className="flex items-center gap-1.5"><Loader2 className="h-4 w-4 animate-spin" /> Deleting...</span> : 'Delete User'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Reset Password Confirm Dialog */}
       <Dialog open={resetPwdOpen} onOpenChange={setResetPwdOpen}>
-        <DialogContent className="sm:max-w-sm rounded-xl">
+        <DialogContent className="sm:max-w-sm border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40 mb-2">
-              <KeyRound className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full mb-2" style={{ background: 'rgba(245,158,11,0.1)' }}>
+              <KeyRound className="h-5 w-5 text-amber-400" />
             </div>
-            <DialogTitle className="text-lg font-semibold">Reset Password</DialogTitle>
-            <DialogDescription>
-              Set a new password for <strong>{resetPwdTarget?.first_name} {resetPwdTarget?.last_name}</strong>. They will be required to change it on next login.
+            <DialogTitle className="text-white text-lg font-semibold">Reset Password</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Set a new password for <strong className="text-white">{resetPwdTarget?.first_name} {resetPwdTarget?.last_name}</strong>. They will be required to change it on next login.
             </DialogDescription>
           </DialogHeader>
           <div className="py-2">
-            <label className="text-sm font-medium text-foreground">New Password</label>
-            <Input
+            <label className="text-sm font-medium text-slate-300">New Password</label>
+            <input
               type="password"
               placeholder="Enter new password"
               value={resetPwdNewPassword}
               onChange={(e) => setResetPwdNewPassword(e.target.value)}
-              className="mt-1.5"
+              className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+              style={glassInput}
             />
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => { setResetPwdOpen(false); setResetPwdNewPassword(''); }} className="rounded-lg">Cancel</Button>
-            <Button onClick={handleResetPassword} disabled={resetPwdLoading || !resetPwdNewPassword.trim()} className="bg-amber-600 hover:bg-amber-700 text-white rounded-lg">
-              {resetPwdLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Resetting...</> : 'Reset Password'}
-            </Button>
+            <button onClick={() => { setResetPwdOpen(false); setResetPwdNewPassword(''); }} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:bg-white/5" style={{ ...glassCard }}>Cancel</button>
+            <button onClick={handleResetPassword} disabled={resetPwdLoading || !resetPwdNewPassword.trim()} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+              {resetPwdLoading ? <span className="flex items-center gap-1.5"><Loader2 className="h-4 w-4 animate-spin" /> Resetting...</span> : 'Reset Password'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Create Template Dialog */}
       <Dialog open={createTemplateOpen} onOpenChange={setCreateTemplateOpen}>
-        <DialogContent className="sm:max-w-lg rounded-xl">
+        <DialogContent className="sm:max-w-lg border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Create Template</DialogTitle>
-            <DialogDescription>Add a new offer or document template.</DialogDescription>
+            <DialogTitle className="text-white text-lg font-semibold">Create Template</DialogTitle>
+            <DialogDescription className="text-slate-400">Add a new offer or document template.</DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-3">
             <div>
-              <Label htmlFor="ct-name" className="text-sm font-medium">Template Name</Label>
-              <Input
+              <label htmlFor="ct-name" className="text-sm font-medium text-slate-300">Template Name</label>
+              <input
                 id="ct-name"
                 value={createTemplateForm.name}
                 onChange={e => setCreateTemplateForm(p => ({ ...p, name: e.target.value }))}
-                className="mt-1.5 h-9 text-sm rounded-lg"
+                className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={glassInput}
                 placeholder="e.g. Standard Offer Letter"
               />
             </div>
             <div>
-              <Label className="text-sm font-medium">Category</Label>
+              <label className="text-sm font-medium text-slate-300">Category</label>
               <Select value={createTemplateForm.category} onValueChange={v => setCreateTemplateForm(p => ({ ...p, category: v }))}>
-                <SelectTrigger className="mt-1.5 h-9 text-sm rounded-lg">
+                <SelectTrigger className="mt-1.5 h-10 text-sm rounded-xl text-white border-0" style={glassInput}>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
                   {templateCategories.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    <SelectItem key={cat} value={cat} className="text-slate-200 focus:bg-white/10 focus:text-white">{cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="ct-content" className="text-sm font-medium">Content</Label>
-              <Textarea
+              <label htmlFor="ct-content" className="text-sm font-medium text-slate-300">Content</label>
+              <textarea
                 id="ct-content"
                 value={createTemplateForm.content}
                 onChange={e => setCreateTemplateForm(p => ({ ...p, content: e.target.value }))}
-                className="mt-1.5 text-sm min-h-[150px] rounded-lg"
+                className="mt-1.5 w-full min-h-[150px] px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all resize-y"
+                style={glassInput}
                 placeholder="Enter template content..."
               />
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreateTemplateOpen(false)} className="rounded-lg">Cancel</Button>
-            <Button onClick={handleCreateTemplate} disabled={createTemplateLoading} className="rounded-lg">
-              {createTemplateLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Creating...</> : 'Create Template'}
-            </Button>
+            <button onClick={() => setCreateTemplateOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:bg-white/5" style={{ ...glassCard }}>Cancel</button>
+            <button onClick={handleCreateTemplate} disabled={createTemplateLoading} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+              {createTemplateLoading ? <span className="flex items-center gap-1.5"><Loader2 className="h-4 w-4 animate-spin" /> Creating...</span> : 'Create Template'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Edit Template Dialog */}
       <Dialog open={editTemplateOpen} onOpenChange={setEditTemplateOpen}>
-        <DialogContent className="sm:max-w-lg rounded-xl">
+        <DialogContent className="sm:max-w-lg border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">Edit Template</DialogTitle>
-            <DialogDescription>Update the template "{editTemplateTarget?.name}".</DialogDescription>
+            <DialogTitle className="text-white text-lg font-semibold">Edit Template</DialogTitle>
+            <DialogDescription className="text-slate-400">Update the template "{editTemplateTarget?.name}".</DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-3">
             <div>
-              <Label htmlFor="et-name" className="text-sm font-medium">Template Name</Label>
-              <Input
+              <label htmlFor="et-name" className="text-sm font-medium text-slate-300">Template Name</label>
+              <input
                 id="et-name"
                 value={editTemplateForm.name}
                 onChange={e => setEditTemplateForm(p => ({ ...p, name: e.target.value }))}
-                className="mt-1.5 h-9 text-sm rounded-lg"
+                className="mt-1.5 w-full h-10 px-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={glassInput}
               />
             </div>
             <div>
-              <Label className="text-sm font-medium">Category</Label>
+              <label className="text-sm font-medium text-slate-300">Category</label>
               <Select value={editTemplateForm.category} onValueChange={v => setEditTemplateForm(p => ({ ...p, category: v }))}>
-                <SelectTrigger className="mt-1.5 h-9 text-sm rounded-lg">
+                <SelectTrigger className="mt-1.5 h-10 text-sm rounded-xl text-white border-0" style={glassInput}>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-0" style={selectDrop}>
                   {templateCategories.map(cat => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    <SelectItem key={cat} value={cat} className="text-slate-200 focus:bg-white/10 focus:text-white">{cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="et-content" className="text-sm font-medium">Content</Label>
-              <Textarea
+              <label htmlFor="et-content" className="text-sm font-medium text-slate-300">Content</label>
+              <textarea
                 id="et-content"
                 value={editTemplateForm.content}
                 onChange={e => setEditTemplateForm(p => ({ ...p, content: e.target.value }))}
-                className="mt-1.5 text-sm min-h-[150px] rounded-lg"
+                className="mt-1.5 w-full min-h-[150px] px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 transition-all resize-y"
+                style={glassInput}
               />
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setEditTemplateOpen(false)} className="rounded-lg">Cancel</Button>
-            <Button onClick={handleEditTemplate} disabled={editTemplateLoading} className="rounded-lg">
-              {editTemplateLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Saving...</> : 'Save Changes'}
-            </Button>
+            <button onClick={() => setEditTemplateOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:bg-white/5" style={{ ...glassCard }}>Cancel</button>
+            <button onClick={handleEditTemplate} disabled={editTemplateLoading} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+              {editTemplateLoading ? <span className="flex items-center gap-1.5"><Loader2 className="h-4 w-4 animate-spin" /> Saving...</span> : 'Save Changes'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Template Confirm Dialog */}
       <Dialog open={deleteTemplateOpen} onOpenChange={setDeleteTemplateOpen}>
-        <DialogContent className="sm:max-w-sm rounded-xl">
+        <DialogContent className="sm:max-w-sm border-0 rounded-2xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
           <DialogHeader>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/40 mb-2">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-full mb-2" style={{ background: 'rgba(239,68,68,0.1)' }}>
+              <AlertTriangle className="h-5 w-5 text-red-400" />
             </div>
-            <DialogTitle className="text-lg font-semibold">Delete Template</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete <strong>{deleteTemplateTarget?.name}</strong>? This action cannot be undone.
+            <DialogTitle className="text-white text-lg font-semibold">Delete Template</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Are you sure you want to delete <strong className="text-white">{deleteTemplateTarget?.name}</strong>? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDeleteTemplateOpen(false)} className="rounded-lg">Cancel</Button>
-            <Button variant="destructive" onClick={handleDeleteTemplate} disabled={deleteTemplateLoading} className="rounded-lg">
-              {deleteTemplateLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-1.5" /> Deleting...</> : 'Delete Template'}
-            </Button>
+            <button onClick={() => setDeleteTemplateOpen(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all hover:bg-white/5" style={{ ...glassCard }}>Cancel</button>
+            <button onClick={handleDeleteTemplate} disabled={deleteTemplateLoading} className="px-4 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-50" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+              {deleteTemplateLoading ? <span className="flex items-center gap-1.5"><Loader2 className="h-4 w-4 animate-spin" /> Deleting...</span> : 'Delete Template'}
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

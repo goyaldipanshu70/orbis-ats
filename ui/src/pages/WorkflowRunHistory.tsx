@@ -6,9 +6,6 @@ import { PaginatedResponse } from '@/types/pagination';
 import { Workflow, WorkflowRun, WorkflowNodeRun } from '@/types/workflow';
 import AppLayout from '@/components/layout/AppLayout';
 import { DataPagination } from '@/components/DataPagination';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableHeader,
@@ -59,14 +56,19 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  running: 'bg-blue-100 text-blue-800 border-blue-300 animate-pulse',
-  completed: 'bg-green-100 text-green-800 border-green-300',
-  completed_with_errors: 'bg-orange-100 text-orange-800 border-orange-300',
-  failed: 'bg-red-100 text-red-800 border-red-300',
-  cancelled: 'bg-gray-100 text-gray-800 border-gray-300',
-  skipped: 'bg-gray-100 text-gray-500 border-gray-300',
+// ── Design-system constants ───────────────────────────────────────────
+const glassCard: React.CSSProperties = { background: 'var(--orbis-card)', backdropFilter: 'blur(12px)', border: '1px solid var(--orbis-border)' };
+const glassInput: React.CSSProperties = { background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' };
+const selectDrop: React.CSSProperties = { background: 'var(--orbis-card)', border: '1px solid var(--orbis-border-strong)' };
+
+const STATUS_BADGE: Record<string, string> = {
+  pending: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+  running: 'bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse',
+  completed: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  completed_with_errors: 'bg-orange-500/10 text-orange-400 border border-orange-500/20',
+  failed: 'bg-red-500/10 text-red-400 border border-red-500/20',
+  cancelled: 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
+  skipped: 'bg-slate-500/10 text-slate-500 border border-slate-500/20',
 };
 
 function formatDuration(startedAt: string | null, completedAt: string | null): string {
@@ -108,7 +110,7 @@ function formatDateTime(dateStr: string | null): string {
 function NodeRunsTable({ nodeRuns }: { nodeRuns: WorkflowNodeRun[] }) {
   if (!nodeRuns || nodeRuns.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-2 px-4">
+      <p className="text-sm text-slate-500 py-2 px-4">
         No node execution data available.
       </p>
     );
@@ -118,32 +120,32 @@ function NodeRunsTable({ nodeRuns }: { nodeRuns: WorkflowNodeRun[] }) {
     <div className="px-4 pb-4">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Node ID</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Execution Time</TableHead>
-            <TableHead>Error</TableHead>
+          <TableRow className="border-white/5 hover:bg-transparent">
+            <TableHead className="text-slate-400">Node ID</TableHead>
+            <TableHead className="text-slate-400">Type</TableHead>
+            <TableHead className="text-slate-400">Status</TableHead>
+            <TableHead className="text-slate-400">Execution Time</TableHead>
+            <TableHead className="text-slate-400">Error</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {nodeRuns.map((node) => (
-            <TableRow key={node.id}>
-              <TableCell className="font-mono text-xs">{node.node_id}</TableCell>
-              <TableCell>{node.node_type}</TableCell>
+            <TableRow key={node.id} className="border-white/5 hover:bg-white/[0.02]">
+              <TableCell className="font-mono text-xs text-slate-300">{node.node_id}</TableCell>
+              <TableCell className="text-slate-300">{node.node_type}</TableCell>
               <TableCell>
-                <Badge variant="outline" className={STATUS_STYLES[node.status] || ''}>
+                <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[node.status] || 'bg-slate-500/10 text-slate-400 border border-slate-500/20'}`}>
                   {node.status}
-                </Badge>
+                </span>
               </TableCell>
-              <TableCell>
+              <TableCell className="text-slate-300">
                 {node.execution_time_ms != null
                   ? node.execution_time_ms < 1000
                     ? `${node.execution_time_ms}ms`
                     : `${(node.execution_time_ms / 1000).toFixed(1)}s`
                   : '-'}
               </TableCell>
-              <TableCell className="max-w-[300px] text-xs text-red-600">
+              <TableCell className="max-w-[300px] text-xs text-red-400">
                 {node.error_message ? (
                   <TooltipProvider>
                     <Tooltip>
@@ -152,7 +154,7 @@ function NodeRunsTable({ nodeRuns }: { nodeRuns: WorkflowNodeRun[] }) {
                           {node.error_message}
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[400px] whitespace-pre-wrap">
+                      <TooltipContent side="top" className="max-w-[400px] whitespace-pre-wrap" style={selectDrop}>
                         {node.error_message}
                       </TooltipContent>
                     </Tooltip>
@@ -206,18 +208,18 @@ function RunRow({
   return (
     <Collapsible open={expanded} onOpenChange={setExpanded}>
       <CollapsibleTrigger asChild>
-        <TableRow className="cursor-pointer hover:bg-muted/50">
-          <TableCell className="w-8">
+        <TableRow className="cursor-pointer border-white/5 hover:bg-white/[0.02]">
+          <TableCell className="w-8 text-slate-400">
             {expanded ? (
               <ChevronDown className="h-4 w-4" />
             ) : (
               <ChevronRight className="h-4 w-4" />
             )}
           </TableCell>
-          <TableCell className="font-mono text-xs">#{run.id}</TableCell>
-          <TableCell className="font-medium">{workflowName}</TableCell>
+          <TableCell className="font-mono text-xs text-slate-300">#{run.id}</TableCell>
+          <TableCell className="font-medium text-white">{workflowName}</TableCell>
           <TableCell>
-            <Badge variant="outline" className={STATUS_STYLES[run.status] || ''}>
+            <span className={`inline-flex items-center text-xs px-2 py-0.5 rounded-full ${STATUS_BADGE[run.status] || ''}`}>
               {run.status === 'running' && (
                 <Play className="h-3 w-3 mr-1 inline-block" />
               )}
@@ -228,12 +230,12 @@ function RunRow({
                 <AlertTriangle className="h-3 w-3 mr-1 inline-block" />
               )}
               {run.status.replace(/_/g, ' ')}
-            </Badge>
+            </span>
           </TableCell>
-          <TableCell>{run.trigger_type}</TableCell>
-          <TableCell>{formatDateTime(run.started_at)}</TableCell>
+          <TableCell className="text-slate-300">{run.trigger_type}</TableCell>
+          <TableCell className="text-slate-300">{formatDateTime(run.started_at)}</TableCell>
           <TableCell>
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1 text-slate-300">
               <Clock className="h-3 w-3" />
               {formatDuration(run.started_at, run.completed_at)}
             </span>
@@ -243,27 +245,27 @@ function RunRow({
               {isActive && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                    <button
+                      className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-slate-300 hover:text-white disabled:opacity-50 transition-colors"
+                      style={glassCard}
                       disabled={cancelMutation.isPending}
                     >
-                      <XCircle className="h-3 w-3 mr-1" />
+                      <XCircle className="h-3 w-3" />
                       Cancel
-                    </Button>
+                    </button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Cancel this run?</AlertDialogTitle>
-                      <AlertDialogDescription>
+                      <AlertDialogTitle className="text-white">Cancel this run?</AlertDialogTitle>
+                      <AlertDialogDescription className="text-slate-400">
                         This will stop execution and mark all pending nodes as skipped. This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Keep Running</AlertDialogCancel>
+                      <AlertDialogCancel className="border-white/10 text-slate-300 hover:text-white hover:bg-white/5">Keep Running</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => cancelMutation.mutate()}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        className="bg-red-600 text-white hover:bg-red-700"
                       >
                         Cancel Run
                       </AlertDialogAction>
@@ -271,27 +273,27 @@ function RunRow({
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-              <Button
-                variant="outline"
-                size="sm"
+              <button
+                className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-slate-300 hover:text-white transition-colors"
+                style={glassCard}
                 onClick={() => navigate(`/workflows/runs/${run.id}/leads`)}
               >
-                <Users className="h-3 w-3 mr-1" />
+                <Users className="h-3 w-3" />
                 Leads
-              </Button>
+              </button>
             </div>
           </TableCell>
         </TableRow>
       </CollapsibleTrigger>
       <CollapsibleContent asChild>
         <tr>
-          <td colSpan={8} className="p-0 bg-muted/30">
+          <td colSpan={8} className="p-0" style={{ background: 'var(--orbis-subtle)' }}>
             {detailError ? (
-              <p className="text-sm text-red-500 py-3 px-4">Failed to load node details</p>
+              <p className="text-sm text-red-400 py-3 px-4">Failed to load node details</p>
             ) : detailedRun ? (
               <NodeRunsTable nodeRuns={detailedRun.node_runs || []} />
             ) : (
-              <p className="text-sm text-muted-foreground py-3 px-4">Loading...</p>
+              <p className="text-sm text-slate-500 py-3 px-4">Loading...</p>
             )}
           </td>
         </tr>
@@ -362,19 +364,19 @@ export default function WorkflowRunHistory() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">Run History</h1>
+            <h1 className="text-2xl font-bold text-white">Run History</h1>
             {hasActiveRuns && isFetching && !isLoading && (
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-xs text-slate-500">
                 <Loader2 className="h-3 w-3 animate-spin" />
                 Auto-updating
               </span>
             )}
           </div>
           <Select value={selectedWorkflowId} onValueChange={setSelectedWorkflowId}>
-            <SelectTrigger className="w-[280px]">
+            <SelectTrigger className="w-[280px] border-white/10 bg-white/5 text-white">
               <SelectValue placeholder="All Workflows" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent style={selectDrop}>
               <SelectItem value="all">All Workflows</SelectItem>
               {workflows.map((w) => (
                 <SelectItem key={w.id} value={String(w.id)}>
@@ -385,52 +387,54 @@ export default function WorkflowRunHistory() {
           </Select>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
+        <div className="rounded-xl overflow-hidden" style={glassCard}>
+          <div className="px-5 pt-5 pb-3">
+            <h2 className="text-lg font-semibold text-white">
               {activeWorkflowId
                 ? `Runs for ${workflowNameMap[Number(activeWorkflowId)] || `Workflow #${activeWorkflowId}`}`
                 : 'Recent Runs'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h2>
+          </div>
+          <div className="px-5 pb-5">
             {isLoading ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground">
+              <div className="flex items-center justify-center py-12 text-slate-500">
                 Loading runs...
               </div>
             ) : runs.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <div className="flex flex-col items-center justify-center py-12 text-slate-500">
                 <Clock className="h-10 w-10 mb-3 opacity-40" />
                 <p>No runs found</p>
               </div>
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-8" />
-                      <TableHead>Run ID</TableHead>
-                      <TableHead>Workflow</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Trigger</TableHead>
-                      <TableHead>Started</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {runs.map((run) => (
-                      <RunRow
-                        key={run.id}
-                        run={run}
-                        workflowName={
-                          workflowNameMap[run.workflow_id] ||
-                          `Workflow #${run.workflow_id}`
-                        }
-                      />
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--orbis-border)' }}>
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-white/5 hover:bg-transparent" style={{ background: 'var(--orbis-card)' }}>
+                        <TableHead className="w-8 text-slate-400" />
+                        <TableHead className="text-slate-400">Run ID</TableHead>
+                        <TableHead className="text-slate-400">Workflow</TableHead>
+                        <TableHead className="text-slate-400">Status</TableHead>
+                        <TableHead className="text-slate-400">Trigger</TableHead>
+                        <TableHead className="text-slate-400">Started</TableHead>
+                        <TableHead className="text-slate-400">Duration</TableHead>
+                        <TableHead className="text-slate-400">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {runs.map((run) => (
+                        <RunRow
+                          key={run.id}
+                          run={run}
+                          workflowName={
+                            workflowNameMap[run.workflow_id] ||
+                            `Workflow #${run.workflow_id}`
+                          }
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
                 {runsData && (
                   <DataPagination
@@ -443,8 +447,8 @@ export default function WorkflowRunHistory() {
                 )}
               </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );

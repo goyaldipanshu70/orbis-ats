@@ -83,6 +83,7 @@ async def submit_all_data(
     salary_visibility: str = Form("hidden"),
     location_type: Optional[str] = Form(None),
     hiring_close_date: Optional[str] = Form(None),
+    auto_ai_interview: Optional[bool] = Form(None),
     rubric_file: UploadFile = File(None),
     model_answer_file: UploadFile = File(None),
     user: dict = Depends(require_employee),
@@ -187,6 +188,7 @@ async def submit_all_data(
         salary_visibility=salary_visibility,
         location_type=location_type,
         hiring_close_date=hiring_close_date,
+        auto_ai_interview=auto_ai_interview,
     )
 
     return JDSubmitResponse(
