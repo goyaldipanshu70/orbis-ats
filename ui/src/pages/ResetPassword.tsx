@@ -28,7 +28,7 @@ const leftPanel = (
     animate={{ opacity: 1 }}
     transition={{ duration: 0.8, ease: 'easeOut' }}
     className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center relative overflow-hidden"
-    style={{ background: 'linear-gradient(135deg, #0B0822 0%, var(--orbis-page) 40%, #1a1145 100%)' }}
+    style={{ background: 'linear-gradient(135deg, #0B0822 0%, #0c1a2e 40%, #1a1145 100%)' }}
   >
     <div className="absolute top-[-100px] right-[-60px] w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none" style={{ background: 'rgba(27,142,229,0.15)' }} />
     <div className="absolute bottom-[-80px] left-[-80px] w-[400px] h-[400px] rounded-full blur-[120px] pointer-events-none" style={{ background: 'rgba(22,118,192,0.12)' }} />
@@ -48,7 +48,7 @@ const mobileLogo = (
     <div className="flex h-9 w-9 items-center justify-center rounded-lg shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
       <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
     </div>
-    <span className="font-bold text-xl text-white tracking-tight">Orbis</span>
+    <span className="font-bold text-xl text-foreground tracking-tight">Orbis</span>
   </div>
 );
 
@@ -76,8 +76,8 @@ export default function ResetPassword() {
                 <AlertCircle className="w-8 h-8 text-rose-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Invalid Reset Link</h2>
-                <p className="mt-2 text-slate-400 text-[15px]">This password reset link is invalid or missing. Please request a new one.</p>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Invalid Reset Link</h2>
+                <p className="mt-2 text-muted-foreground text-[15px]">This password reset link is invalid or missing. Please request a new one.</p>
               </div>
               <Link
                 to="/forgot-password"
@@ -118,8 +118,8 @@ export default function ResetPassword() {
                   <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">Password Reset!</h2>
-                  <p className="mt-2 text-slate-400 text-[15px]">Your password has been updated successfully.</p>
+                  <h2 className="text-2xl font-bold text-foreground tracking-tight">Password Reset!</h2>
+                  <p className="mt-2 text-muted-foreground text-[15px]">Your password has been updated successfully.</p>
                 </div>
               </div>
               <RippleButton
@@ -137,8 +137,8 @@ export default function ResetPassword() {
                   <KeyRound className="w-7 h-7" style={{ color: '#4db5f0' }} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">Set new password</h2>
-                  <p className="mt-2 text-slate-400 text-[15px]">Enter your new password below.</p>
+                  <h2 className="text-2xl font-bold text-foreground tracking-tight">Set new password</h2>
+                  <p className="mt-2 text-muted-foreground text-[15px]">Enter your new password below.</p>
                 </div>
               </div>
 
@@ -150,7 +150,7 @@ export default function ResetPassword() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium text-slate-300">New password</label>
+                  <label htmlFor="password" className="text-sm font-medium text-muted-foreground">New password</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                     <input
@@ -166,14 +166,14 @@ export default function ResetPassword() {
                       onFocus={handleFocus}
                       onBlur={handleBlur}
                     />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors" tabIndex={-1}>
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
                       {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="confirm" className="text-sm font-medium text-slate-300">Confirm new password</label>
+                  <label htmlFor="confirm" className="text-sm font-medium text-muted-foreground">Confirm new password</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                     <input
@@ -203,7 +203,7 @@ export default function ResetPassword() {
                 </RippleButton>
               </form>
 
-              <Link to="/login" className="block text-center text-sm text-slate-400 hover:text-white font-medium transition-colors duration-150">
+              <Link to="/login" className="block text-center text-sm text-muted-foreground hover:text-foreground font-medium transition-colors duration-150">
                 Back to Sign In
               </Link>
             </>

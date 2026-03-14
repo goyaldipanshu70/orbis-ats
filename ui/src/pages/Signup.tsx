@@ -69,7 +69,7 @@ const Signup = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
         className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0B0822 0%, var(--orbis-page) 40%, #1a1145 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #0B0822 0%, #0c1a2e 40%, #1a1145 100%)' }}
       >
         <div className="absolute top-[-100px] right-[-60px] w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none" style={{ background: 'rgba(27,142,229,0.15)' }} />
         <div className="absolute bottom-[-80px] left-[-80px] w-[400px] h-[400px] rounded-full blur-[120px] pointer-events-none" style={{ background: 'rgba(22,118,192,0.12)' }} />
@@ -98,12 +98,12 @@ const Signup = () => {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
               <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-bold text-xl text-white tracking-tight">Orbis</span>
+            <span className="font-bold text-xl text-foreground tracking-tight">Orbis</span>
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">Create your account</h2>
-            <p className="mt-2 text-slate-400 text-[15px]">Join the AI-powered hiring platform</p>
+            <h2 className="text-2xl font-bold text-foreground tracking-tight">Create your account</h2>
+            <p className="mt-2 text-muted-foreground text-[15px]">Join the AI-powered hiring platform</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -113,7 +113,7 @@ const Signup = () => {
                 { id: 'lastName', icon: User, value: lastName, set: setLastName, placeholder: 'Last name', label: 'Last name' },
               ].map(f => (
                 <div key={f.id} className="space-y-2">
-                  <label htmlFor={f.id} className="text-sm font-medium text-slate-300">{f.label}</label>
+                  <label htmlFor={f.id} className="text-sm font-medium text-muted-foreground">{f.label}</label>
                   <div className="relative">
                     <f.icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                     <input
@@ -134,7 +134,7 @@ const Signup = () => {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-slate-300">Email address</label>
+              <label htmlFor="email" className="text-sm font-medium text-muted-foreground">Email address</label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                 <input
@@ -154,7 +154,7 @@ const Signup = () => {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-slate-300">Password</label>
+              <label htmlFor="password" className="text-sm font-medium text-muted-foreground">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                 <input
@@ -173,7 +173,7 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors duration-150"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors duration-150"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
@@ -199,7 +199,7 @@ const Signup = () => {
               <div className="w-full" style={{ borderTop: '1px solid var(--orbis-hover)' }} />
             </div>
             <div className="relative flex justify-center">
-              <span className="px-4 text-xs text-slate-500 font-medium uppercase tracking-wider" style={{ background: 'var(--orbis-page)' }}>or continue with</span>
+              <span className="px-4 text-xs text-muted-foreground font-medium uppercase tracking-wider" style={{ background: 'var(--orbis-page)' }}>or continue with</span>
             </div>
           </div>
 
@@ -207,7 +207,7 @@ const Signup = () => {
           <button
             type="button"
             onClick={handleGoogleSignup}
-            className="w-full h-12 rounded-xl font-medium text-slate-300 transition-all hover:text-white flex items-center justify-center gap-2"
+            className="w-full h-12 rounded-xl font-medium text-foreground transition-all flex items-center justify-center gap-2"
             style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
@@ -222,9 +222,9 @@ const Signup = () => {
           </button>
 
           <div className="text-center">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="font-semibold transition-colors duration-150" style={{ color: '#4db5f0' }}>Sign in</Link>
+              <Link to="/login" className="font-semibold transition-colors duration-150 text-[#1B8EE5] hover:text-[#1676c0]">Sign in</Link>
             </p>
           </div>
         </motion.div>

@@ -131,7 +131,7 @@ const CandidateSignup = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
         className="hidden lg:flex lg:w-1/2 flex-col justify-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0B0822 0%, var(--orbis-page) 40%, #1a1145 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #0B0822 0%, #0c1a2e 40%, #1a1145 100%)' }}
       >
         <div className="absolute top-[-100px] right-[-60px] w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none" style={{ background: 'rgba(27,142,229,0.15)' }} />
         <div className="absolute bottom-[-80px] left-[-80px] w-[400px] h-[400px] rounded-full blur-[120px] pointer-events-none" style={{ background: 'rgba(22,118,192,0.12)' }} />
@@ -180,7 +180,7 @@ const CandidateSignup = () => {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
               <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-bold text-xl text-white tracking-tight">Orbis Careers</span>
+            <span className="font-bold text-xl text-foreground tracking-tight">Orbis Careers</span>
           </div>
 
           {/* Step indicator */}
@@ -203,7 +203,7 @@ const CandidateSignup = () => {
                     >
                       {done ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
                     </div>
-                    <span className={`text-xs font-medium ${active ? 'text-white' : 'text-slate-500'}`}>{label}</span>
+                    <span className={`text-xs font-medium ${active ? 'text-foreground' : 'text-muted-foreground'}`}>{label}</span>
                     {i < 2 && <div className="w-8 h-0.5" style={{ background: done ? '#059669' : 'var(--orbis-border)' }} />}
                   </div>
                 );
@@ -217,8 +217,8 @@ const CandidateSignup = () => {
             <motion.div key="register" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
               <div className="space-y-8">
               <div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Create your account</h2>
-                <p className="mt-2 text-slate-400 text-[15px]">Sign up as a candidate to start applying</p>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Create your account</h2>
+                <p className="mt-2 text-muted-foreground text-[15px]">Sign up as a candidate to start applying</p>
               </div>
 
               <form onSubmit={handleInitiate} className="space-y-5">
@@ -228,7 +228,7 @@ const CandidateSignup = () => {
                     { id: 'lastName', icon: User, value: lastName, set: setLastName, label: 'Last name' },
                   ].map(f => (
                     <div key={f.id} className="space-y-2">
-                      <label htmlFor={f.id} className="text-sm font-medium text-slate-300">{f.label}</label>
+                      <label htmlFor={f.id} className="text-sm font-medium text-muted-foreground">{f.label}</label>
                       <div className="relative">
                         <f.icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                         <input id={f.id} value={f.value} onChange={e => f.set(e.target.value)} required placeholder={f.label} className="w-full pl-11 h-12 rounded-xl text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} onFocus={handleFocus} onBlur={handleBlur} />
@@ -242,7 +242,7 @@ const CandidateSignup = () => {
                   { id: 'phone', icon: Phone, type: 'tel', value: phone, set: setPhone, label: 'Phone number', placeholder: '+1 (555) 000-0000' },
                 ].map(f => (
                   <div key={f.id} className="space-y-2">
-                    <label htmlFor={f.id} className="text-sm font-medium text-slate-300">{f.label}</label>
+                    <label htmlFor={f.id} className="text-sm font-medium text-muted-foreground">{f.label}</label>
                     <div className="relative">
                       <f.icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                       <input id={f.id} type={f.type} value={f.value} onChange={e => f.set(e.target.value)} required placeholder={f.placeholder} autoComplete={f.autoComplete} className="w-full pl-11 h-12 rounded-xl text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} onFocus={handleFocus} onBlur={handleBlur} />
@@ -251,11 +251,11 @@ const CandidateSignup = () => {
                 ))}
 
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium text-slate-300">Password</label>
+                  <label htmlFor="password" className="text-sm font-medium text-muted-foreground">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                     <input id="password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} required placeholder="At least 6 characters" autoComplete="new-password" className="w-full pl-11 pr-11 h-12 rounded-xl text-sm outline-none transition-all placeholder:text-slate-500" style={glassInput} onFocus={handleFocus} onBlur={handleBlur} />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors" tabIndex={-1}>
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors" tabIndex={-1}>
                       {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                     </button>
                   </div>
@@ -276,14 +276,14 @@ const CandidateSignup = () => {
               {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center"><div className="w-full" style={{ borderTop: '1px solid var(--orbis-hover)' }} /></div>
-                <div className="relative flex justify-center"><span className="px-4 text-xs text-slate-500 font-medium uppercase tracking-wider" style={{ background: 'var(--orbis-page)' }}>or continue with</span></div>
+                <div className="relative flex justify-center"><span className="px-4 text-xs text-muted-foreground font-medium uppercase tracking-wider" style={{ background: 'var(--orbis-page)' }}>or continue with</span></div>
               </div>
 
               {/* LinkedIn */}
               <button
                 type="button"
                 onClick={() => loginWithLinkedIn()}
-                className="w-full h-12 rounded-xl font-medium text-slate-300 transition-all hover:text-white flex items-center justify-center gap-3"
+                className="w-full h-12 rounded-xl font-medium text-foreground transition-all flex items-center justify-center gap-3"
                 style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
@@ -301,15 +301,15 @@ const CandidateSignup = () => {
           {step === 'verify-email' && (
             <motion.div key="verify-email" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.3 }}>
             <div className="space-y-6">
-              <button onClick={() => setStep('register')} className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white font-medium transition-colors">
+              <button onClick={() => setStep('register')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors">
                 <ArrowLeft className="h-4 w-4" /> Back
               </button>
               <div className="text-center space-y-3">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl mx-auto" style={{ background: 'rgba(59,130,246,0.1)' }}>
                   <Mail className="h-8 w-8 text-blue-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Verify your email</h2>
-                <p className="text-slate-400 text-[15px]">We sent a 6-digit code to <span className="font-medium text-white">{maskedEmail}</span></p>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Verify your email</h2>
+                <p className="text-muted-foreground text-[15px]">We sent a 6-digit code to <span className="font-medium text-foreground">{maskedEmail}</span></p>
               </div>
 
               <OTPInput onComplete={handleVerifyEmail} disabled={isSubmitting} />
@@ -321,7 +321,7 @@ const CandidateSignup = () => {
               )}
 
               <div className="text-center">
-                <button onClick={handleResend} disabled={resendCooldown > 0} className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-slate-500' : 'font-medium hover:text-white'}`} style={resendCooldown > 0 ? {} : { color: '#4db5f0' }}>
+                <button onClick={handleResend} disabled={resendCooldown > 0} className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-muted-foreground' : 'font-medium hover:text-foreground'}`} style={resendCooldown > 0 ? {} : { color: '#4db5f0' }}>
                   {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                 </button>
               </div>
@@ -337,8 +337,8 @@ const CandidateSignup = () => {
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl mx-auto" style={{ background: 'rgba(52,211,153,0.1)' }}>
                   <Phone className="h-8 w-8 text-emerald-400" />
                 </div>
-                <h2 className="text-2xl font-bold text-white tracking-tight">Verify your phone</h2>
-                <p className="text-slate-400 text-[15px]">We sent a 6-digit code to <span className="font-medium text-white">{maskedPhone}</span></p>
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Verify your phone</h2>
+                <p className="text-muted-foreground text-[15px]">We sent a 6-digit code to <span className="font-medium text-foreground">{maskedPhone}</span></p>
               </div>
 
               <OTPInput onComplete={handleVerifyPhone} disabled={isSubmitting} />
@@ -350,7 +350,7 @@ const CandidateSignup = () => {
               )}
 
               <div className="text-center">
-                <button onClick={handleResend} disabled={resendCooldown > 0} className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-slate-500' : 'font-medium hover:text-white'}`} style={resendCooldown > 0 ? {} : { color: '#4db5f0' }}>
+                <button onClick={handleResend} disabled={resendCooldown > 0} className={`text-sm transition-colors ${resendCooldown > 0 ? 'text-muted-foreground' : 'font-medium hover:text-foreground'}`} style={resendCooldown > 0 ? {} : { color: '#4db5f0' }}>
                   {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
                 </button>
               </div>
@@ -360,13 +360,13 @@ const CandidateSignup = () => {
           </AnimatePresence>
 
           <div className="text-center space-y-2">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="font-semibold transition-colors" style={{ color: '#4db5f0' }}>Sign In</Link>
+              <Link to="/login" className="font-semibold transition-colors text-[#1B8EE5] hover:text-[#1676c0]">Sign In</Link>
             </p>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Are you an employee?{' '}
-              <Link to="/signup" className="font-medium transition-colors" style={{ color: '#4db5f0' }}>Employee Sign Up</Link>
+              <Link to="/signup" className="font-medium transition-colors text-[#1B8EE5] hover:text-[#1676c0]">Employee Sign Up</Link>
             </p>
           </div>
         </motion.div>

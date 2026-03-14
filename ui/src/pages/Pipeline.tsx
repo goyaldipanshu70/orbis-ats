@@ -21,7 +21,10 @@ import { PipelineSummary, PipelineCandidate, PipelineStage, CandidateDocument, L
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimeEvents } from '@/hooks/useRealtimeEvents';
-import { ArrowLeft, RefreshCw, Search, X, SlidersHorizontal, Settings2, Users, FileText, Loader2 } from 'lucide-react';
+import AddCandidateModal from '@/components/AddCandidateModal';
+import BulkCandidateModal from '@/components/BulkCandidateModal';
+import ImportCandidatesModal from '@/components/ImportCandidatesModal';
+import { ArrowLeft, RefreshCw, Search, X, SlidersHorizontal, Settings2, Users, FileText, Loader2, UserPlus, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /* ── Glass Design System ───────────────────────────────── */
@@ -82,6 +85,11 @@ export default function Pipeline() {
   const [aiInterviewCandidate, setAiInterviewCandidate] = useState<PipelineCandidate | null>(null);
   const [aiResultsSessionId, setAiResultsSessionId] = useState<number | null>(null);
   const [locationVacancies, setLocationVacancies] = useState<LocationVacancy[]>([]);
+
+  // Add / Import candidate modals
+  const [showAddCandidate, setShowAddCandidate] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   // Documents panel state
   const [docsCandidate, setDocsCandidate] = useState<{ id: number; name: string } | null>(null);
@@ -330,6 +338,37 @@ export default function Pipeline() {
 
               {/* Right */}
               <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => setShowAddCandidate(true)}
+                  className="inline-flex items-center gap-2 h-9 px-3.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Add Candidate
+                </button>
+                <button
+                  onClick={() => setShowBulkUpload(true)}
+                  className="inline-flex items-center gap-2 h-9 px-3 rounded-xl text-xs font-bold text-slate-300 transition-all hover:text-white"
+                  style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-hover)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-grid)'; }}
+                >
+                  <Upload className="h-4 w-4" />
+                  Bulk Upload
+                </button>
+                <button
+                  onClick={() => setShowImportModal(true)}
+                  className="inline-flex items-center gap-2 h-9 px-3 rounded-xl text-xs font-bold text-slate-300 transition-all hover:text-white"
+                  style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-hover)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-grid)'; }}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Import
+                </button>
+
+                <div className="h-6 w-px" style={{ background: 'var(--orbis-border)' }} />
+
                 {[
                   { label: 'Candidates', icon: Users, onClick: () => navigate(`/jobs/${jobId}/candidates`) },
                   { label: 'Stages', icon: Settings2, onClick: () => setShowConfigModal(true) },
@@ -698,6 +737,37 @@ export default function Pipeline() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ── Add / Bulk / Import Modals ──────────────────────── */}
+      {showAddCandidate && (
+        <AddCandidateModal
+          jobId={jobId || ''}
+          isOpen={showAddCandidate}
+          onClose={() => setShowAddCandidate(false)}
+          onSuccess={() => { setShowAddCandidate(false); fetchPipeline(); }}
+        />
+      )}
+      {showBulkUpload && (
+        <BulkCandidateModal
+          jobId={jobId || ''}
+          isOpen={showBulkUpload}
+          onClose={() => setShowBulkUpload(false)}
+          onSuccess={() => { setShowBulkUpload(false); fetchPipeline(); toast({ title: 'Success', description: 'Candidates uploaded!' }); }}
+        />
+      )}
+      {showImportModal && (
+        <ImportCandidatesModal
+          currentJobId={jobId || ''}
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={async (ids: string[]) => {
+            await apiClient.importCandidates(jobId!, ids);
+            setShowImportModal(false);
+            fetchPipeline();
+            toast({ title: 'Success', description: `${ids.length} candidate(s) imported` });
+          }}
+        />
+      )}
     </AppLayout>
   );
 }

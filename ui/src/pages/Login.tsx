@@ -145,7 +145,7 @@ const Login = () => {
         >
           <div
             className="rounded-3xl p-8 shadow-2xl flex flex-col gap-4 transform hover:-translate-y-1 transition-transform duration-500"
-            style={{ background: 'var(--orbis-card)', backdropFilter: 'blur(20px) saturate(180%)', border: '1px solid var(--orbis-border)' }}
+            style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px) saturate(180%)', border: '1px solid rgba(255,255,255,0.12)' }}
           >
             <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
               <Users className="w-5 h-5 text-cyan-300" />
@@ -158,7 +158,7 @@ const Login = () => {
 
           <div
             className="rounded-3xl p-8 shadow-2xl flex flex-col gap-4 translate-y-12 transform hover:translate-y-11 transition-transform duration-500"
-            style={{ background: 'var(--orbis-card)', backdropFilter: 'blur(20px) saturate(180%)', border: '1px solid var(--orbis-border)' }}
+            style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px) saturate(180%)', border: '1px solid rgba(255,255,255,0.12)' }}
           >
             <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-amber-300" />
@@ -171,7 +171,7 @@ const Login = () => {
 
           <div
             className="col-span-2 rounded-3xl p-8 shadow-2xl flex items-center justify-between group cursor-default"
-            style={{ background: 'var(--orbis-card)', backdropFilter: 'blur(20px) saturate(180%)', border: '1px solid var(--orbis-border)' }}
+            style={{ background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px) saturate(180%)', border: '1px solid rgba(255,255,255,0.12)' }}
           >
             <div className="flex flex-col gap-1">
               <p className="text-white text-4xl font-bold tracking-tight">50% Faster</p>
@@ -210,20 +210,20 @@ const Login = () => {
             >
               <div className="w-4 h-4 rounded-full border-2 border-white" />
             </div>
-            <h1 className="text-white text-2xl font-black tracking-tight uppercase">Orbis</h1>
+            <h1 className="text-foreground text-2xl font-black tracking-tight uppercase">Orbis</h1>
           </div>
 
           {/* Heading */}
           <div className="mb-10">
-            <h2 className="text-white text-4xl font-extrabold tracking-tight mb-3">Welcome back</h2>
-            <p className="text-blue-300/50 text-lg">Enter your credentials to access Orbis.</p>
+            <h2 className="text-foreground text-4xl font-extrabold tracking-tight mb-3">Welcome back</h2>
+            <p className="text-muted-foreground text-lg">Enter your credentials to access Orbis.</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div className="space-y-2">
-              <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-400 ml-1">
+              <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
                 Work Email
               </label>
               <input
@@ -234,7 +234,7 @@ const Login = () => {
                 required
                 placeholder="name@company.com"
                 autoComplete="email"
-                className="w-full h-14 px-5 rounded-2xl text-white placeholder:text-slate-500 outline-none transition-all duration-300"
+                className="w-full h-14 px-5 rounded-2xl text-foreground placeholder:text-muted-foreground/50 outline-none transition-all duration-300"
                 style={{
                   background: 'var(--orbis-input)',
                   backdropFilter: 'blur(8px)',
@@ -256,12 +256,12 @@ const Login = () => {
             {/* Password */}
             <div className="space-y-2">
               <div className="flex justify-between items-center px-1">
-                <label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                <label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                   Password
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-widest"
+                  className="text-xs font-bold text-[#1B8EE5] hover:text-[#1676c0] transition-colors uppercase tracking-widest"
                 >
                   Forgot?
                 </Link>
@@ -275,7 +275,7 @@ const Login = () => {
                   required
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="w-full h-14 px-5 pr-12 rounded-2xl text-white placeholder:text-slate-500 outline-none transition-all duration-300"
+                  className="w-full h-14 px-5 pr-12 rounded-2xl text-foreground placeholder:text-muted-foreground/50 outline-none transition-all duration-300"
                   style={{
                     background: 'var(--orbis-input)',
                     backdropFilter: 'blur(8px)',
@@ -295,7 +295,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors duration-150"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -330,11 +330,11 @@ const Login = () => {
 
           {/* Divider */}
           <div className="relative flex items-center my-10">
-            <div className="flex-grow border-t border-white/5" />
-            <span className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+            <div className="flex-grow border-t" style={{ borderColor: 'var(--orbis-border)' }} />
+            <span className="px-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
               Or continue with
             </span>
-            <div className="flex-grow border-t border-white/5" />
+            <div className="flex-grow border-t" style={{ borderColor: 'var(--orbis-border)' }} />
           </div>
 
           {/* Social Login Buttons */}
@@ -351,7 +351,7 @@ const Login = () => {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              <span className="text-sm font-bold text-slate-300">Google</span>
+              <span className="text-sm font-bold text-foreground">Google</span>
             </button>
 
             <button
@@ -363,21 +363,22 @@ const Login = () => {
               <svg aria-hidden="true" className="w-5 h-5 opacity-80 group-hover:opacity-100 transition-opacity" fill="#0A66C2" viewBox="0 0 24 24">
                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
               </svg>
-              <span className="text-sm font-bold text-slate-300">LinkedIn</span>
+              <span className="text-sm font-bold text-foreground">LinkedIn</span>
             </button>
           </div>
 
           {/* Sign Up Links */}
           <div className="mt-12 flex flex-col items-center gap-3 text-sm">
-            <p className="text-slate-500">
+            <p className="text-muted-foreground">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-blue-400 font-bold hover:text-blue-300 transition-colors">
+              <Link to="/signup" className="text-[#1B8EE5] font-bold hover:text-[#1676c0] transition-colors">
                 Sign up
               </Link>
             </p>
             <Link
               to="/careers"
-              className="px-8 h-10 flex items-center justify-center rounded-full border border-blue-500/20 text-blue-400 hover:bg-blue-500/10 transition-colors font-bold uppercase tracking-widest text-[10px]"
+              className="px-8 h-10 flex items-center justify-center rounded-full border text-[#1B8EE5] hover:bg-[#1B8EE5]/10 transition-colors font-bold uppercase tracking-widest text-[10px]"
+              style={{ borderColor: 'var(--orbis-border)' }}
             >
               Browse Careers
             </Link>

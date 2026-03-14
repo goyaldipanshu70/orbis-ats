@@ -104,6 +104,8 @@ const navGroups: NavGroup[] = [
     items: [
       { icon: Workflow, label: 'AI Orchestrator', path: '/admin/orchestrator', description: 'AI model config', adminOnly: true },
       { icon: Shield, label: 'Admin Panel', path: '/admin', description: 'System administration', adminOnly: true },
+      { icon: ShieldCheck, label: 'Roles & Permissions', path: '/admin/roles', description: 'Manage roles & access', adminOnly: true },
+      { icon: Users, label: 'Org Hierarchy', path: '/admin/org-hierarchy', description: 'Reporting structure', adminOnly: true },
       { icon: Settings, label: 'Settings', path: '/account-settings', description: 'Account preferences' },
     ],
   },

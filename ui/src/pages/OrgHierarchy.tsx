@@ -44,14 +44,17 @@ export default function OrgHierarchy() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [treeData, usersData] = await Promise.all([
+      const [treeResult, usersResult] = await Promise.allSettled([
         apiClient.getOrgTree(),
-        apiClient.getAdminUsers(),
+        apiClient.getAdminUsers(1, 500),
       ]);
-      setNodes(treeData);
-      setAllUsers(usersData);
+      setNodes(treeResult.status === 'fulfilled' && Array.isArray(treeResult.value) ? treeResult.value : []);
+      if (usersResult.status === 'fulfilled') {
+        const val = usersResult.value;
+        setAllUsers(Array.isArray(val) ? val : (val as any)?.items || []);
+      }
     } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+      toast({ title: 'Error', description: typeof err?.message === 'string' ? err.message : 'Failed to load data', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

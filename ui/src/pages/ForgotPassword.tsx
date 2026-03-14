@@ -44,7 +44,7 @@ export default function ForgotPassword() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, ease: 'easeOut' }}
         className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0B0822 0%, var(--orbis-page) 40%, #1a1145 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #0B0822 0%, #0c1a2e 40%, #1a1145 100%)' }}
       >
         <div className="absolute top-[-100px] right-[-60px] w-[500px] h-[500px] rounded-full blur-[140px] pointer-events-none" style={{ background: 'rgba(27,142,229,0.15)' }} />
         <div className="absolute bottom-[-80px] left-[-80px] w-[400px] h-[400px] rounded-full blur-[120px] pointer-events-none" style={{ background: 'rgba(22,118,192,0.12)' }} />
@@ -72,7 +72,7 @@ export default function ForgotPassword() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
               <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
             </div>
-            <span className="font-bold text-xl text-white tracking-tight">Orbis</span>
+            <span className="font-bold text-xl text-foreground tracking-tight">Orbis</span>
           </div>
 
           {sent ? (
@@ -87,25 +87,25 @@ export default function ForgotPassword() {
                   <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">Check your email</h2>
-                  <p className="mt-2 text-slate-400 text-[15px] leading-relaxed">
-                    If an account exists for <strong className="text-white">{email}</strong>, we've sent a password reset link. It expires in 1 hour.
+                  <h2 className="text-2xl font-bold text-foreground tracking-tight">Check your email</h2>
+                  <p className="mt-2 text-muted-foreground text-[15px] leading-relaxed">
+                    If an account exists for <strong className="text-foreground">{email}</strong>, we've sent a password reset link. It expires in 1 hour.
                   </p>
                 </div>
-                <p className="text-xs text-slate-500">Don't see it? Check your spam folder.</p>
+                <p className="text-xs text-muted-foreground">Don't see it? Check your spam folder.</p>
               </div>
 
               <div className="space-y-3">
                 <button
                   onClick={() => { setSent(false); setEmail(''); }}
-                  className="w-full h-12 rounded-xl font-bold text-slate-300 transition-all hover:text-white"
+                  className="w-full h-12 rounded-xl font-bold text-foreground transition-all"
                   style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
                   onMouseEnter={e => { e.currentTarget.style.background = 'var(--orbis-hover)'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'var(--orbis-card)'; }}
                 >
                   Try a different email
                 </button>
-                <Link to="/login" className="flex items-center justify-center gap-1.5 text-sm font-medium transition-colors duration-150" style={{ color: '#4db5f0' }}>
+                <Link to="/login" className="flex items-center justify-center gap-1.5 text-sm font-medium transition-colors duration-150 text-[#1B8EE5] hover:text-[#1676c0]">
                   <ArrowLeft className="w-4 h-4" /> Back to Sign In
                 </Link>
               </div>
@@ -117,14 +117,14 @@ export default function ForgotPassword() {
                   <ShieldQuestion className="w-7 h-7" style={{ color: '#4db5f0' }} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">Forgot password?</h2>
-                  <p className="mt-2 text-slate-400 text-[15px]">Enter your email and we'll send you a link to reset your password.</p>
+                  <h2 className="text-2xl font-bold text-foreground tracking-tight">Forgot password?</h2>
+                  <p className="mt-2 text-muted-foreground text-[15px]">Enter your email and we'll send you a link to reset your password.</p>
                 </div>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-slate-300">Email address</label>
+                  <label htmlFor="email" className="text-sm font-medium text-muted-foreground">Email address</label>
                   <div className="relative">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-[18px] h-[18px] pointer-events-none" />
                     <input
@@ -156,7 +156,7 @@ export default function ForgotPassword() {
                 </RippleButton>
               </form>
 
-              <Link to="/login" className="flex items-center justify-center gap-1.5 text-sm text-slate-400 hover:text-white font-medium transition-colors duration-150">
+              <Link to="/login" className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-medium transition-colors duration-150">
                 <ArrowLeft className="w-4 h-4" /> Back to Sign In
               </Link>
             </>
