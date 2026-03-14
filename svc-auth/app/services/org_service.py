@@ -1,4 +1,5 @@
 # svc-auth/app/services/org_service.py
+from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 from app.db.models import OrgRelationship, User
