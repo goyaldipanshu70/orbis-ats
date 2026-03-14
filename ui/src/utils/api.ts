@@ -26,7 +26,7 @@ export interface AdminUser {
   email: string;
   first_name: string;
   last_name: string;
-  role: 'admin' | 'hr' | 'hiring_manager' | 'interviewer' | 'candidate';
+  role: 'admin' | 'hr' | 'hiring_manager' | 'interviewer' | 'candidate' | 'manager';
   created_at: string;
   last_login?: string;
   is_active: boolean;
@@ -2425,6 +2425,78 @@ class ApiClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
+  }
+
+  // ── RBAC ──────────────────────────────────────────────────────────────
+
+  async listRoles() { return this.request<any[]>('/api/auth/roles'); }
+
+  async getPermissionSchema() { return this.request<Record<string, string[]>>('/api/auth/roles/permissions-schema'); }
+
+  async getRole(id: number) { return this.request<any>(`/api/auth/roles/${id}`); }
+
+  async createRole(data: any) {
+    return this.request<any>('/api/auth/roles', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  async updateRole(id: number, data: any) {
+    return this.request<any>(`/api/auth/roles/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  async deleteRole(id: number) {
+    return this.request<any>(`/api/auth/roles/${id}`, { method: 'DELETE' });
+  }
+
+  // ── Org Hierarchy ─────────────────────────────────────────────────────
+
+  async getOrgTree() { return this.request<any[]>('/api/auth/org-hierarchy'); }
+
+  async getDirectReports(userId: number) { return this.request<any[]>(`/api/auth/org-hierarchy/${userId}/reports`); }
+
+  async getReportingChain(userId: number) { return this.request<any[]>(`/api/auth/org-hierarchy/${userId}/chain`); }
+
+  async setReporting(data: { user_id: number; reports_to: number | null; department?: string; title?: string }) {
+    return this.request<any>('/api/auth/org-hierarchy', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  async removeFromOrg(userId: number) {
+    return this.request<any>(`/api/auth/org-hierarchy/${userId}`, { method: 'DELETE' });
+  }
+
+  // ── Job Delegation ────────────────────────────────────────────────────
+
+  async getJobMembers(jobId: string) { return this.request<any[]>(`/api/job/${jobId}/members`); }
+
+  async addJobMember(jobId: string, data: { user_id: number; role: string }) {
+    return this.request<any>(`/api/job/${jobId}/members`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  async updateJobMember(jobId: string, memberId: number, data: { role: string }) {
+    return this.request<any>(`/api/job/${jobId}/members/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  async removeJobMember(jobId: string, memberId: number) {
+    return this.request<any>(`/api/job/${jobId}/members/${memberId}`, { method: 'DELETE' });
   }
 }
 
