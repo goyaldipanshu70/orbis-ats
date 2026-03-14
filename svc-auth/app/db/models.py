@@ -94,3 +94,32 @@ class PendingSignup(Base):
     hashed_password = Column(Text, nullable=False)
     expires_at = Column(DateTime, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class RoleDefinition(Base):
+    """Configurable roles with permission sets."""
+    __tablename__ = "role_definitions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), unique=True, nullable=False, index=True)
+    display_name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    color = Column(String(7), nullable=True, default="#1B8EE5")
+    is_system = Column(Boolean, nullable=False, default=False)
+    is_active = Column(Boolean, nullable=False, default=True)
+    permissions = Column(JSONB, nullable=False, default=dict)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+
+class OrgRelationship(Base):
+    """Adjacency list for org hierarchy: who reports to whom."""
+    __tablename__ = "org_relationships"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, nullable=False, unique=True, index=True)
+    reports_to = Column(Integer, nullable=True, index=True)
+    department = Column(String(100), nullable=True, index=True)
+    title = Column(String(200), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)

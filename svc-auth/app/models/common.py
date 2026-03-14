@@ -6,3 +6,4 @@ class Role(str, Enum):
     HIRING_MANAGER = "hiring_manager"
     INTERVIEWER = "interviewer"
     CANDIDATE = "candidate"
+    MANAGER = "manager"  # Department Manager
