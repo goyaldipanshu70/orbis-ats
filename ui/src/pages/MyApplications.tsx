@@ -299,7 +299,24 @@ const MyApplications = () => {
   }, [applications]);
 
   const upcomingInterviews = useMemo(() => {
-    return applications.filter(a => a.status === 'interview');
+    return applications
+      .filter(a => a.status === 'interview' && a.interview_schedules?.length > 0)
+      .flatMap(a =>
+        (a.interview_schedules || []).map((s: any) => ({
+          ...s,
+          app_id: a.id,
+          job_title: a.job_title,
+        }))
+      )
+      .sort((a: any, b: any) => {
+        const da = new Date(`${a.scheduled_date}T${a.scheduled_time || '00:00'}`).getTime();
+        const db = new Date(`${b.scheduled_date}T${b.scheduled_time || '00:00'}`).getTime();
+        return da - db;
+      });
+  }, [applications]);
+
+  const interviewAppCount = useMemo(() => {
+    return applications.filter(a => a.status === 'interview').length;
   }, [applications]);
 
   const formatDate = (dateStr: string) => {
@@ -918,9 +935,17 @@ const MyApplications = () => {
                   </motion.div>
                 ) : (
                   <div className="space-y-2">
-                    {upcomingInterviews.map((app) => (
+                    {upcomingInterviews.map((interview: any) => {
+                      const timeStr = interview.scheduled_time
+                        ? (() => {
+                            const [h, m] = interview.scheduled_time.split(':').map(Number);
+                            const ampm = h >= 12 ? 'PM' : 'AM';
+                            return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+                          })()
+                        : '';
+                      return (
                       <motion.div
-                        key={app.id}
+                        key={interview.schedule_id}
                         variants={fadeSlideUp}
                         className="p-3 rounded-lg transition-all duration-200 group/int"
                         style={{ background: 'var(--orbis-input)', border: '1px solid transparent' }}
@@ -934,7 +959,7 @@ const MyApplications = () => {
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <h4 className="text-sm font-semibold text-white truncate group-hover/int:text-blue-300 transition-colors">
-                              {app.job_title}
+                              {interview.job_title}
                             </h4>
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                               {/* Date badge */}
@@ -943,24 +968,50 @@ const MyApplications = () => {
                                 style={{ background: 'rgba(27,142,229,0.1)' }}
                               >
                                 <CalendarClock className="h-3 w-3 text-blue-400" />
-                                {app.estimated_next_step_date
-                                  ? formatShortDate(app.estimated_next_step_date)
+                                {interview.scheduled_date
+                                  ? formatShortDate(interview.scheduled_date)
                                   : 'Date TBD'}
+                                {timeStr && <span className="ml-1">{timeStr}</span>}
                               </span>
-                              {/* AI Interview badge */}
-                              <span
-                                className="inline-flex items-center gap-1 text-[11px] text-purple-300 px-2 py-0.5 rounded"
-                                style={{ background: 'rgba(168,85,247,0.1)' }}
-                              >
-                                <Sparkles className="h-3 w-3" />
-                                AI Interview
-                              </span>
+                              {/* Round type badge */}
+                              {interview.round_type && (
+                                <span
+                                  className="inline-flex items-center gap-1 text-[11px] text-blue-300 px-2 py-0.5 rounded capitalize"
+                                  style={{ background: 'rgba(59,130,246,0.1)' }}
+                                >
+                                  Round {interview.round_number}: {interview.round_type}
+                                </span>
+                              )}
+                              {/* Duration */}
+                              {interview.duration_minutes && (
+                                <span className="text-[11px] text-slate-500">
+                                  {interview.duration_minutes} min
+                                </span>
+                              )}
                             </div>
+                            {/* Interviewers */}
+                            {interview.interviewer_names?.length > 0 && (
+                              <p className="text-[11px] text-slate-500 mt-1">
+                                Panel: {interview.interviewer_names.join(', ')}
+                              </p>
+                            )}
                           </div>
                         </div>
-                        <div className="mt-2.5 flex items-center justify-end">
+                        <div className="mt-2.5 flex items-center justify-end gap-2">
+                          {interview.meeting_link && (
+                            <a
+                              href={interview.meeting_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-md"
+                              style={{ background: 'rgba(16,185,129,0.1)' }}
+                            >
+                              Join Meeting
+                              <ArrowRight className="h-3 w-3" />
+                            </a>
+                          )}
                           <button
-                            onClick={() => navigate(`/my-applications/${app.id}`)}
+                            onClick={() => navigate(`/my-applications/${interview.app_id}`)}
                             className="text-[11px] font-medium text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 px-2.5 py-1 rounded-md"
                             style={{ background: 'rgba(27,142,229,0.1)' }}
                           >
@@ -969,7 +1020,8 @@ const MyApplications = () => {
                           </button>
                         </div>
                       </motion.div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

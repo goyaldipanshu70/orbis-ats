@@ -7,7 +7,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update as sql_update
 
-from app.db.models import JobApplication, JobDescription, CandidateJobEntry
+from app.db.models import JobApplication, JobDescription, CandidateJobEntry, InterviewSchedule
 from app.services.email_templates import STATUS_MESSAGES
 
 logger = logging.getLogger("svc-recruiting")
@@ -176,6 +176,29 @@ async def get_my_applications(
         cand_result = await db.execute(select(CandidateJobEntry).where(CandidateJobEntry.id.in_(candidate_ids)))
         cand_map = {c.id: c for c in cand_result.scalars().all()}
 
+    # Batch-load interview schedules for candidates in interview stage
+    interview_map: dict = {}
+    interview_candidate_ids = {app.candidate_id for app in applications if app.candidate_id and app.status in ("interview", "screening")}
+    if interview_candidate_ids:
+        sched_result = await db.execute(
+            select(InterviewSchedule).where(
+                InterviewSchedule.candidate_id.in_(interview_candidate_ids),
+                InterviewSchedule.status == "scheduled",
+            ).order_by(InterviewSchedule.scheduled_date, InterviewSchedule.scheduled_time)
+        )
+        for s in sched_result.scalars().all():
+            interview_map.setdefault(s.candidate_id, []).append({
+                "schedule_id": s.id,
+                "round_number": s.round_number,
+                "round_type": s.round_type,
+                "scheduled_date": s.scheduled_date,
+                "scheduled_time": s.scheduled_time,
+                "duration_minutes": s.duration_minutes,
+                "interview_type": s.interview_type,
+                "meeting_link": s.meeting_link,
+                "interviewer_names": s.interviewer_names or [],
+            })
+
     items = []
     for app in applications:
         job = jd_map.get(app.jd_id)
@@ -213,6 +236,7 @@ async def get_my_applications(
             "ai_score": ai_score,
             "recommendation": recommendation,
             "candidate_id": app.candidate_id,
+            "interview_schedules": interview_map.get(app.candidate_id, []) if app.candidate_id else [],
         })
 
     return {

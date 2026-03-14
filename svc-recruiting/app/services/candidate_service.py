@@ -1074,6 +1074,31 @@ async def move_candidate_stage(db: AsyncSession, candidate_id: int, new_stage: s
     db.add(history_entry)
     await db.commit()
 
+    # Sync linked JobApplication status with pipeline stage
+    try:
+        app_id = getattr(entry, 'application_id', None)
+        if app_id:
+            stage_to_app_status = {
+                "applied": "submitted", "screening": "screening", "ai_interview": "screening",
+                "interview": "interview", "offer": "offered", "hired": "hired", "rejected": "rejected",
+            }
+            app_status = stage_to_app_status.get(new_stage)
+            if app_status:
+                from app.db.models import JobApplication
+                await db.execute(
+                    update(JobApplication)
+                    .where(JobApplication.id == app_id)
+                    .values(
+                        status=app_status,
+                        pipeline_stage=new_stage,
+                        last_status_updated_at=now,
+                        updated_at=now,
+                    )
+                )
+                await db.commit()
+    except Exception:
+        pass  # non-fatal — pipeline stage already saved
+
     # Publish real-time event
     try:
         from app.services.event_bus import publish_broadcast_event

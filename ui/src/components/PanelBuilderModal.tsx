@@ -143,16 +143,16 @@ export default function PanelBuilderModal({
 
   const addInterviewer = (roundIndex: number, interviewer: Interviewer) => {
     const round = rounds[roundIndex];
-    if (round.interviewer_ids.includes(interviewer.id)) return;
+    if (round.interviewer_ids.includes(interviewer.user_id)) return;
     updateRound(roundIndex, {
-      interviewer_ids: [...round.interviewer_ids, interviewer.id],
+      interviewer_ids: [...round.interviewer_ids, interviewer.user_id],
       interviewer_names: [...round.interviewer_names, interviewer.full_name],
     });
   };
 
-  const removeInterviewer = (roundIndex: number, interviewerId: number) => {
+  const removeInterviewer = (roundIndex: number, interviewerUserId: number) => {
     const round = rounds[roundIndex];
-    const idx = round.interviewer_ids.indexOf(interviewerId);
+    const idx = round.interviewer_ids.indexOf(interviewerUserId);
     if (idx === -1) return;
     updateRound(roundIndex, {
       interviewer_ids: round.interviewer_ids.filter((_, i) => i !== idx),
@@ -323,7 +323,7 @@ export default function PanelBuilderModal({
                       <p className="text-xs text-slate-500 p-3 text-center">No interviewers found</p>
                     ) : (
                       filteredInterviewers.map(iv => {
-                        const selected = round.interviewer_ids.includes(iv.id);
+                        const selected = round.interviewer_ids.includes(iv.user_id);
                         return (
                           <button
                             key={iv.id}
