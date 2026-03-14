@@ -1139,18 +1139,10 @@ async def _check_and_close_job_if_filled(db: AsyncSession, jd_id: int):
     from app.services.jd_service import get_location_vacancies
     loc_vacancies = await get_location_vacancies(db, jd_id)
 
+    should_close = False
     if loc_vacancies:
-        # Close when ALL locations are full
-        all_full = all(lv["is_full"] for lv in loc_vacancies)
-        if all_full:
-            await db.execute(
-                update(JobDescription)
-                .where(JobDescription.id == jd_id)
-                .values(status="Closed", updated_at=datetime.utcnow())
-            )
-            await db.commit()
+        should_close = all(lv["is_full"] for lv in loc_vacancies)
     else:
-        # Fallback to legacy number_of_vacancies
         vacancies = job.number_of_vacancies or 1
         hired_result = await db.execute(
             select(func.count()).select_from(CandidateJobEntry).where(
@@ -1160,13 +1152,32 @@ async def _check_and_close_job_if_filled(db: AsyncSession, jd_id: int):
             )
         )
         hired_count = hired_result.scalar() or 0
-        if hired_count >= vacancies:
-            await db.execute(
-                update(JobDescription)
-                .where(JobDescription.id == jd_id)
-                .values(status="Closed", updated_at=datetime.utcnow())
+        should_close = hired_count >= vacancies
+
+    if should_close:
+        now = datetime.utcnow()
+        await db.execute(
+            update(JobDescription)
+            .where(JobDescription.id == jd_id)
+            .values(status="Closed", updated_at=now)
+        )
+        # Update non-terminal JobApplications: reject candidates still in pipeline
+        from app.db.models import JobApplication
+        await db.execute(
+            update(JobApplication)
+            .where(
+                JobApplication.jd_id == jd_id,
+                JobApplication.status.in_(["submitted", "screening", "interview"]),
+                JobApplication.deleted_at.is_(None),
             )
-            await db.commit()
+            .values(
+                status="rejected",
+                status_message="Position has been filled.",
+                last_status_updated_at=now,
+                updated_at=now,
+            )
+        )
+        await db.commit()
 
 
 async def get_candidates_by_pipeline(db: AsyncSession, jd_id: str) -> dict:

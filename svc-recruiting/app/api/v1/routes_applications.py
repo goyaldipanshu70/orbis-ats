@@ -216,7 +216,7 @@ async def list_my_applications(
     db: AsyncSession = Depends(get_db),
 ):
     """List current candidate's applications."""
-    return await get_my_applications(db, int(user["sub"]), page, page_size)
+    return await get_my_applications(db, int(user["sub"]), page, page_size, user_email=user.get("email"))
 
 
 @router.get("/{application_id}")

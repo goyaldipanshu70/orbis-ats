@@ -7,7 +7,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update as sql_update
 
-from app.db.models import JobApplication, JobDescription, CandidateJobEntry, InterviewSchedule
+from app.db.models import JobApplication, JobDescription, CandidateJobEntry, CandidateProfile, InterviewSchedule, Offer
 from app.services.email_templates import STATUS_MESSAGES
 
 logger = logging.getLogger("svc-recruiting")
@@ -146,8 +146,13 @@ async def get_my_applications(
     user_id: int,
     page: int = 1,
     page_size: int = 20,
+    user_email: str = None,
 ) -> dict:
-    """Return paginated applications for a candidate user."""
+    """Return paginated applications for a candidate user.
+
+    Includes both portal applications (JobApplication) and HR-uploaded
+    candidates matched by email (CandidateJobEntry without JobApplication).
+    """
     count_q = select(func.count()).select_from(JobApplication).where(JobApplication.user_id == user_id, JobApplication.deleted_at.is_(None))
     total = (await db.execute(count_q)).scalar_one()
 
@@ -199,6 +204,31 @@ async def get_my_applications(
                 "interviewer_names": s.interviewer_names or [],
             })
 
+    # Batch-load offers for candidates in offer/hired stage
+    offer_map: dict = {}
+    offer_candidate_ids = {app.candidate_id for app in applications if app.candidate_id and app.status in ("offered", "hired")}
+    if offer_candidate_ids:
+        offer_result = await db.execute(
+            select(Offer).where(
+                Offer.candidate_id.in_(offer_candidate_ids),
+                Offer.deleted_at.is_(None),
+                Offer.status.in_(["sent", "accepted"]),
+            ).order_by(Offer.created_at.desc())
+        )
+        for o in offer_result.scalars().all():
+            if o.candidate_id not in offer_map:  # keep latest only
+                offer_map[o.candidate_id] = {
+                    "offer_id": o.id,
+                    "salary": float(o.salary) if o.salary else None,
+                    "salary_currency": o.salary_currency,
+                    "start_date": o.start_date,
+                    "position_title": o.position_title,
+                    "department": o.department,
+                    "status": o.status,
+                    "sent_at": str(o.sent_at) if o.sent_at else None,
+                    "expires_at": str(o.expires_at) if o.expires_at else None,
+                }
+
     items = []
     for app in applications:
         job = jd_map.get(app.jd_id)
@@ -237,7 +267,92 @@ async def get_my_applications(
             "recommendation": recommendation,
             "candidate_id": app.candidate_id,
             "interview_schedules": interview_map.get(app.candidate_id, []) if app.candidate_id else [],
+            "offer": offer_map.get(app.candidate_id) if app.candidate_id else None,
         })
+
+    # Include HR-uploaded candidates (CandidateJobEntry without JobApplication) via email match
+    if user_email:
+        linked_candidate_ids = {app.candidate_id for app in applications if app.candidate_id}
+        profile_result = await db.execute(
+            select(CandidateProfile).where(
+                func.lower(CandidateProfile.email) == user_email.lower(),
+                CandidateProfile.deleted_at.is_(None),
+            )
+        )
+        profiles = profile_result.scalars().all()
+        profile_ids = [p.id for p in profiles]
+
+        if profile_ids:
+            entries_result = await db.execute(
+                select(CandidateJobEntry).where(
+                    CandidateJobEntry.profile_id.in_(profile_ids),
+                    CandidateJobEntry.deleted_at.is_(None),
+                )
+            )
+            entries = entries_result.scalars().all()
+            unlinked_entries = [e for e in entries if e.id not in linked_candidate_ids]
+
+            if unlinked_entries:
+                entry_jd_ids = {e.jd_id for e in unlinked_entries}
+                jd_result2 = await db.execute(select(JobDescription).where(JobDescription.id.in_(entry_jd_ids)))
+                jd_map2 = {jd.id: jd for jd in jd_result2.scalars().all()}
+
+                # Interview schedules for unlinked entries
+                unlinked_ids = [e.id for e in unlinked_entries]
+                sched_result2 = await db.execute(
+                    select(InterviewSchedule).where(
+                        InterviewSchedule.candidate_id.in_(unlinked_ids),
+                        InterviewSchedule.status == "scheduled",
+                    ).order_by(InterviewSchedule.scheduled_date, InterviewSchedule.scheduled_time)
+                )
+                int_map2: dict = {}
+                for s in sched_result2.scalars().all():
+                    int_map2.setdefault(s.candidate_id, []).append({
+                        "schedule_id": s.id, "round_number": s.round_number, "round_type": s.round_type,
+                        "scheduled_date": s.scheduled_date, "scheduled_time": s.scheduled_time,
+                        "duration_minutes": s.duration_minutes, "interview_type": s.interview_type,
+                        "meeting_link": s.meeting_link, "interviewer_names": s.interviewer_names or [],
+                    })
+
+                stage_to_status = {
+                    "applied": "submitted", "screening": "screening", "ai_interview": "screening",
+                    "interview": "interview", "offer": "offered", "hired": "hired", "rejected": "rejected",
+                }
+                for entry in unlinked_entries:
+                    jd = jd_map2.get(entry.jd_id)
+                    ai = jd.ai_result if jd else {}
+                    job_title = ai.get("job_title", "Untitled") if isinstance(ai, dict) else "Untitled"
+                    ai_data = entry.ai_resume_analysis or {}
+                    scores = ai_data.get("category_scores", {})
+                    raw_total = scores.get("total_score", 0)
+                    ai_score = raw_total if isinstance(raw_total, (int, float)) else (raw_total.get("obtained_score", 0) if isinstance(raw_total, dict) else 0)
+                    stage = entry.pipeline_stage or "applied"
+
+                    items.append({
+                        "id": f"entry-{entry.id}",
+                        "jd_id": entry.jd_id,
+                        "job_title": job_title,
+                        "status": stage_to_status.get(stage, "submitted"),
+                        "status_message": "",
+                        "pipeline_stage": stage,
+                        "estimated_next_step_date": None,
+                        "rejection_reason": None,
+                        "last_status_updated_at": str(entry.stage_changed_at) if entry.stage_changed_at else None,
+                        "applied_at": str(entry.created_at) if entry.created_at else None,
+                        "updated_at": str(entry.created_at) if entry.created_at else None,
+                        "resume_url": None,
+                        "phone": None,
+                        "linkedin_url": None,
+                        "github_url": None,
+                        "portfolio_url": None,
+                        "cover_letter": None,
+                        "ai_score": ai_score or None,
+                        "recommendation": ai_data.get("ai_recommendation"),
+                        "candidate_id": entry.id,
+                        "interview_schedules": int_map2.get(entry.id, []),
+                        "source": "hr_upload",
+                    })
+                    total += 1
 
     return {
         "items": items,

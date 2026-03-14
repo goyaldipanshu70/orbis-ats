@@ -663,7 +663,7 @@ const MyApplications = () => {
                   return (
                     <motion.div key={app.id} variants={cardFadeIn}>
                       <button
-                        onClick={() => navigate(`/my-applications/${app.id}`)}
+                        onClick={() => { if (typeof app.id === 'number') navigate(`/my-applications/${app.id}`); }}
                         className="group w-full text-left rounded-xl p-6 transition-all duration-300"
                         style={{
                           background: 'var(--orbis-card)',
@@ -753,6 +753,32 @@ const MyApplications = () => {
                                 Next step: {formatDate(app.estimated_next_step_date)}
                               </span>
                             )}
+                          </div>
+                        )}
+
+                        {/* Offer details */}
+                        {app.offer && (
+                          <div className="mt-3 rounded-lg px-3 py-2.5" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)' }}>
+                            <div className="flex items-center gap-3 flex-wrap text-xs">
+                              {app.offer.position_title && (
+                                <span className="text-emerald-300 font-medium">{app.offer.position_title}</span>
+                              )}
+                              {app.offer.salary && (
+                                <span className="flex items-center gap-1 text-emerald-400">
+                                  <DollarSign className="h-3 w-3" />
+                                  {Number(app.offer.salary).toLocaleString()} {app.offer.salary_currency}
+                                </span>
+                              )}
+                              {app.offer.start_date && (
+                                <span className="flex items-center gap-1 text-slate-400">
+                                  <Calendar className="h-3 w-3" />
+                                  Starts {formatShortDate(app.offer.start_date)}
+                                </span>
+                              )}
+                              {app.offer.department && (
+                                <span className="text-slate-500">{app.offer.department}</span>
+                              )}
+                            </div>
                           </div>
                         )}
 
