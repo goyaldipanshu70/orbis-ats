@@ -6,7 +6,7 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
-  role: 'admin' | 'hr' | 'hiring_manager' | 'interviewer' | 'candidate';
+  role: 'admin' | 'hr' | 'hiring_manager' | 'interviewer' | 'candidate' | 'manager';
   avatar_url?: string;
   picture?: string;
   phone?: string;
@@ -16,6 +16,7 @@ export interface User {
   profile_complete?: boolean;
   created_at: string;
   last_login?: string;
+  permissions?: Record<string, boolean>;
 }
 
 interface AuthContextType {
@@ -32,8 +33,11 @@ interface AuthContextType {
   isHR: () => boolean;
   isHiringManager: () => boolean;
   isInterviewer: () => boolean;
+  isManager: () => boolean;
   canAccessHiring: () => boolean;
   canAccessInterviews: () => boolean;
+  canAccessManager: () => boolean;
+  hasPermission: (perm: string) => boolean;
   setTokenAndFetchUser: (token: string) => Promise<void>;
 }
 
@@ -191,8 +195,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const isHR = () => user?.role === 'hr';
   const isHiringManager = () => user?.role === 'hiring_manager';
   const isInterviewer = () => user?.role === 'interviewer';
-  const canAccessHiring = () => !!user && ['admin', 'hr', 'hiring_manager'].includes(user.role);
+  const isManager = () => user?.role === 'manager';
+  const canAccessHiring = () => !!user && ['admin', 'hr', 'hiring_manager', 'manager'].includes(user.role);
   const canAccessInterviews = () => !!user && ['admin', 'hr', 'hiring_manager', 'interviewer'].includes(user.role);
+  const canAccessManager = () => !!user && ['admin', 'manager'].includes(user.role);
+  const hasPermission = (perm: string) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    return user.permissions?.[perm] === true;
+  };
 
   const setTokenAndFetchUser = async (token: string) => {
     localStorage.setItem('access_token', token);
@@ -214,8 +225,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       isHR,
       isHiringManager,
       isInterviewer,
+      isManager,
       canAccessHiring,
       canAccessInterviews,
+      canAccessManager,
+      hasPermission,
       setTokenAndFetchUser,
     }}>
       {children}
