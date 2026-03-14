@@ -30,6 +30,7 @@ from app.core.security import (
     revoke_refresh_token,
     ACCESS_TOKEN_EXPIRE_MINUTES,
 )
+from app.services.rbac_service import get_permissions_for_role
 from app.core.rate_limit import limiter
 from app.db.postgres import get_db
 from app.db.models import User
@@ -48,6 +49,7 @@ async def login(request: Request, form_data: LoginRequest, db: AsyncSession = De
     if user.must_change_password:
         raise HTTPException(status_code=403, detail="Password change required on first login")
 
+    permissions = await get_permissions_for_role(db, user.role)
     token_data = {
         "sub": str(user.id),
         "email": user.email,
@@ -57,7 +59,8 @@ async def login(request: Request, form_data: LoginRequest, db: AsyncSession = De
         "profile_complete": user.profile_complete,
         "resume_url": user.resume_url or "",
         "phone": user.phone or "",
-        "created_at": str(user.created_at)
+        "created_at": str(user.created_at),
+        "permissions": permissions,
     }
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token_value()
@@ -105,6 +108,7 @@ async def signup_candidate(data: CandidateSignUpRequest, db: AsyncSession = Depe
         "role": user.role,
         "profile_complete": False,
         "created_at": str(user.created_at),
+        "permissions": {},
     }
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token_value()
@@ -119,7 +123,8 @@ async def signup_candidate(data: CandidateSignUpRequest, db: AsyncSession = Depe
 
 
 @router.get("/me")
-async def get_me(user: User = Depends(get_current_user)):
+async def get_me(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    permissions = await get_permissions_for_role(db, user.role)
     return {
         "id": str(user.id),
         "email": user.email,
@@ -134,6 +139,7 @@ async def get_me(user: User = Depends(get_current_user)):
         "created_at": str(user.created_at),
         "last_login": str(user.last_login) if user.last_login else "",
         "picture": user.picture,
+        "permissions": permissions,
     }
 
 
@@ -145,6 +151,7 @@ class RefreshTokenRequest(BaseModel):
 async def refresh_access(body: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
     """Exchange refresh_token for a new access_token."""
     user = await validate_refresh_token(db, body.refresh_token)
+    permissions = await get_permissions_for_role(db, user.role)
     token_data = {
         "sub": str(user.id),
         "email": user.email,
@@ -155,6 +162,7 @@ async def refresh_access(body: RefreshTokenRequest, db: AsyncSession = Depends(g
         "resume_url": user.resume_url or "",
         "phone": user.phone or "",
         "created_at": str(user.created_at),
+        "permissions": permissions,
     }
     access_token = create_access_token(token_data)
     return {

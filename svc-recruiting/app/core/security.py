@@ -50,6 +50,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict:
             "role": payload.get("role"),
             "first_name": payload.get("first_name"),
             "last_name": payload.get("last_name"),
+            "permissions": payload.get("permissions", {}),
         }
     except JWTError as e:
         logger.warning("JWT decode failed: %s", e)
@@ -110,3 +111,19 @@ async def verify_internal_key(x_internal_key: Optional[str] = Header(None)):
     if not x_internal_key or x_internal_key != settings.INTERNAL_API_KEY:
         raise HTTPException(status_code=403, detail="Invalid or missing internal API key")
     return x_internal_key
+
+
+def require_permission(permission: str):
+    """FastAPI dependency factory: require a specific permission key."""
+    async def checker(user: dict = Depends(get_current_user)):
+        role = user.get("role", "")
+        if role == "admin":
+            return user  # Admin bypasses all permission checks
+        perms = user.get("permissions", {})
+        if not perms.get(permission, False):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Permission required: {permission}"
+            )
+        return user
+    return checker
