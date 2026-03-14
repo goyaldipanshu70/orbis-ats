@@ -109,7 +109,7 @@ const emptyForm = (): CreateForm => ({
 
 export default function JobRequests() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -125,7 +125,7 @@ export default function JobRequests() {
   const [reviewComments, setReviewComments] = useState('');
   const [reviewing, setReviewing] = useState(false);
 
-  const canReview = user?.role === 'admin' || user?.role === 'hr';
+  const canReview = hasPermission('requisitions.approve');
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ['job-requests', statusFilter],
