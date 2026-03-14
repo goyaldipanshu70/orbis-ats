@@ -22,6 +22,7 @@ import {
   Cell, LineChart, Line, PieChart, Pie, FunnelChart, Funnel, LabelList,
 } from 'recharts';
 import type { Job, AnalyticsSummary } from '@/types/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 /* -------------------------------------------------------------------------- */
 /*  Types                                                                     */
@@ -188,6 +189,7 @@ function KpiCard({ title, value, suffix = '', changePct, trend, icon: Icon, grad
 /* -------------------------------------------------------------------------- */
 
 export default function Analytics() {
+  const { hasPermission } = useAuth();
   // ---- filters ----
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>('all');
@@ -356,13 +358,15 @@ export default function Analytics() {
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg text-slate-300 transition-colors hover:text-white"
-              style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
-            >
-              <Download className="h-3.5 w-3.5" /> Export CSV
-            </button>
+            {hasPermission('reports.export') && (
+              <button
+                onClick={exportCSV}
+                className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg text-slate-300 transition-colors hover:text-white"
+                style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)' }}
+              >
+                <Download className="h-3.5 w-3.5" /> Export CSV
+              </button>
+            )}
             <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-medium rounded-lg text-slate-300 transition-colors hover:text-white"

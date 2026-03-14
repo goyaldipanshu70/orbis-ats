@@ -626,7 +626,7 @@ const ProviderSettingsPanel = () => {
 // ---------------------------------------------------------------------------
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { toast } = useToast();
 
   // --- global state ---
@@ -1123,15 +1123,17 @@ const AdminDashboard = () => {
                       <SelectItem value="candidate" className="text-slate-200 focus:bg-white/10 focus:text-white">Candidate</SelectItem>
                     </SelectContent>
                   </Select>
-                  {selectedUserIds.size > 0 && (
+                  {selectedUserIds.size > 0 && hasPermission('admin.manage_users') && (
                     <button onClick={handleBulkDelete} className="px-3 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
                       <Trash2 className="h-3.5 w-3.5" /> Delete ({selectedUserIds.size})
                     </button>
                   )}
                 </div>
-                <button onClick={() => setCreateUserOpen(true)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all flex items-center gap-1.5" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
-                  <UserPlus className="h-4 w-4" /> Create User
-                </button>
+                {hasPermission('admin.manage_users') && (
+                  <button onClick={() => setCreateUserOpen(true)} className="px-4 py-2 rounded-xl text-sm font-medium text-white transition-all flex items-center gap-1.5" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+                    <UserPlus className="h-4 w-4" /> Create User
+                  </button>
+                )}
               </div>
 
               {/* Users table */}

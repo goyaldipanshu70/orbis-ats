@@ -35,6 +35,7 @@ import { useRealtimeEvents } from "@/hooks/useRealtimeEvents";
 import { DataPagination } from "@/components/DataPagination";
 import { scaleIn, fadeInUp } from "@/lib/animations";
 import { StaggerGrid } from "@/components/ui/stagger-grid";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ── Glass Design System ───────────────────────────────── */
 const glassCard: React.CSSProperties = {
@@ -226,6 +227,7 @@ const CandidateEvaluation = () => {
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showAddCandidateModal, setShowAddCandidateModal] = useState(false);
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
   const [filters, setFilters] = useState({ recommendation: "All", interviewStatus: "All", pipelineStage: "All" });
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
@@ -577,13 +579,15 @@ const CandidateEvaluation = () => {
               >
                 <Kanban className="w-3.5 h-3.5 mr-1.5" /> Pipeline
               </button>
-              <button
-                onClick={() => setShowAddCandidateModal(true)}
-                className="inline-flex items-center rounded-xl text-sm font-semibold text-white px-3 h-9 transition-all hover:brightness-110"
-                style={gradientBtn}
-              >
-                <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Add Candidate
-              </button>
+              {hasPermission('candidates.add') && (
+                <button
+                  onClick={() => setShowAddCandidateModal(true)}
+                  className="inline-flex items-center rounded-xl text-sm font-semibold text-white px-3 h-9 transition-all hover:brightness-110"
+                  style={gradientBtn}
+                >
+                  <UserPlus className="w-3.5 h-3.5 mr-1.5" /> Add Candidate
+                </button>
+              )}
               <button
                 onClick={() => setShowBulkUploadModal(true)}
                 className="inline-flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground px-3 h-9 transition-colors"
@@ -605,13 +609,15 @@ const CandidateEvaluation = () => {
               >
                 <BarChart3 className="w-3.5 h-3.5 mr-1.5" /> Interviews
               </button>
-              <button
-                onClick={downloadExcel}
-                className="inline-flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground px-3 h-9 transition-colors"
-                style={outlineBtn}
-              >
-                <Download className="w-3.5 h-3.5 mr-1.5" /> Export
-              </button>
+              {hasPermission('candidates.export') && (
+                <button
+                  onClick={downloadExcel}
+                  className="inline-flex items-center rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground px-3 h-9 transition-colors"
+                  style={outlineBtn}
+                >
+                  <Download className="w-3.5 h-3.5 mr-1.5" /> Export
+                </button>
+              )}
             </div>
           </motion.div>
 

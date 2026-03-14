@@ -83,7 +83,7 @@ export default function AppSidebar() {
   const { collapsed, setCollapsed, autoHide, setAutoHide, pinned, setPinned, navGuardActive } = useSidebar();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, isAdmin, isHR } = useAuth();
+  const { user, logout, isAdmin, isHR, hasPermission } = useAuth();
 
   // Announcement badge count — track "last seen" via localStorage
   const { data: announcementCount = 0 } = useQuery({
@@ -107,14 +107,17 @@ export default function AppSidebar() {
     return location.pathname.startsWith(path);
   };
 
-  // Hide sidebar for candidates
-  if (user?.role === 'candidate') return null;
+  // Hide sidebar for candidates and managers (managers use ManagerLayout)
+  if (user?.role === 'candidate' || user?.role === 'manager') return null;
 
   const filteredItems = navItems.filter(item => {
     if (item.adminOnly && !isAdmin()) return false;
     if (item.hrOnly && !isAdmin() && !isHR()) return false;
     if (user?.role === 'interviewer' && ['Recruitment', 'Sourcing', 'AI & Tools'].includes(item.section) && item.path !== '/interviews') return false;
     if (user?.role === 'interviewer' && item.section === 'Company') return false;
+    // Permission-based filtering for RBAC nav items
+    if (item.path === '/admin/roles' && !hasPermission('admin.manage_roles')) return false;
+    if (item.path === '/admin/job-delegation' && !hasPermission('org.delegate_jobs')) return false;
     return true;
   });
   const itemsWithBadges = filteredItems.map(item => {

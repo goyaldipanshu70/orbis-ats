@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '@/lib/animations';
+import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { Button } from '@/components/ui/button';
@@ -113,6 +114,7 @@ export default function Jobs() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { hasPermission } = useAuth();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -203,17 +205,19 @@ export default function Jobs() {
             <h1 className="text-4xl font-bold tracking-tight text-foreground">Jobs</h1>
             <p className="text-muted-foreground text-base font-medium mt-1">Manage all job postings</p>
           </div>
-          <button
-            onClick={() => navigate('/jobs/create')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-bold transition-opacity hover:opacity-90"
-            style={{
-              background: 'linear-gradient(to right, #1B8EE5, #1676c0)',
-              boxShadow: '0 8px 24px rgba(27,142,229,0.2)',
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Create Job
-          </button>
+          {hasPermission('jobs.create') && (
+            <button
+              onClick={() => navigate('/jobs/create')}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-bold transition-opacity hover:opacity-90"
+              style={{
+                background: 'linear-gradient(to right, #1B8EE5, #1676c0)',
+                boxShadow: '0 8px 24px rgba(27,142,229,0.2)',
+              }}
+            >
+              <Plus className="w-4 h-4" />
+              Create Job
+            </button>
+          )}
         </div>
 
         {/* ── Filter Bar ──────────────────────────────────────────── */}
@@ -468,30 +472,32 @@ export default function Jobs() {
                           >
                             <Kanban className="w-3.5 h-3.5" /> View Pipeline
                           </button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <button
-                                className="p-1.5 text-slate-500 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete this job?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete "{job.job_title}" and all associated data.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteJob(job.job_id)} className="bg-rose-600 hover:bg-rose-700 text-white">
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          {hasPermission('jobs.delete') && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  className="p-1.5 text-slate-500 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete this job?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete "{job.job_title}" and all associated data.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteJob(job.job_id)} className="bg-rose-600 hover:bg-rose-700 text-white">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </div>
                     </div>
