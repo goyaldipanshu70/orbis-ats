@@ -11,6 +11,8 @@ import HiringRoute from "@/components/HiringRoute";
 import HRRoute from "@/components/HRRoute";
 import CandidateRoute from "@/components/CandidateRoute";
 import InterviewerRoute from "@/components/InterviewerRoute";
+import ManagerRoute from "@/components/ManagerRoute";
+import ManagerLayout from "@/components/layout/ManagerLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -71,6 +73,8 @@ const CandidateProfile = lazy(() => import("./pages/CandidateProfile"));
 const AIAssessment = lazy(() => import("./pages/AIAssessment"));
 const RolesPermissions = lazy(() => import("./pages/RolesPermissions"));
 const OrgHierarchy = lazy(() => import("./pages/OrgHierarchy"));
+const ManagerDashboard = lazy(() => import("./pages/ManagerDashboard"));
+const ManagerRequisitionForm = lazy(() => import("./pages/ManagerRequisitionForm"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -89,6 +93,7 @@ const HomeRedirect = () => {
   if (!user) return <Navigate to="/login" replace />;
   if (user.role === 'interviewer') return <Navigate to="/interviews" replace />;
   if (user.role === 'candidate') return <Navigate to="/my-applications" replace />;
+  if (user.role === 'manager') return <Navigate to="/manager/requisitions" replace />;
   return <Navigate to="/dashboard" replace />;
 };
 
@@ -164,6 +169,10 @@ const App = () => (
             <Route path="/interviews/:scheduleId/feedback" element={<InterviewerRoute><Suspense fallback={null}><FeedbackForm /></Suspense></InterviewerRoute>} />
             <Route path="/interviewers" element={<HRRoute><Suspense fallback={null}><InterviewerManagement /></Suspense></HRRoute>} />
             <Route path="/jobs/:jobId/candidates/:candidateId/feedback" element={<HiringRoute><Suspense fallback={null}><CandidateFeedbackDetail /></Suspense></HiringRoute>} />
+
+            {/* Manager Portal */}
+            <Route path="/manager/requisitions" element={<ManagerRoute><ManagerLayout><Suspense fallback={null}><ManagerDashboard /></Suspense></ManagerLayout></ManagerRoute>} />
+            <Route path="/manager/requisitions/new" element={<ManagerRoute><ManagerLayout><Suspense fallback={null}><ManagerRequisitionForm /></Suspense></ManagerLayout></ManagerRoute>} />
 
             {/* Settings & Admin */}
             <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
