@@ -679,27 +679,27 @@ async def import_candidates_to_job(db: AsyncSession, target_job_id: str, candida
     new_entries = []
     int_ids = [int(cid) for cid in candidate_ids]
 
-    # First try as profile IDs
-    profiles_result = await db.execute(
-        select(CandidateProfile).where(CandidateProfile.id.in_(int_ids))
+    # First try as entry IDs (frontend sends CandidateJobEntry IDs)
+    entries_result = await db.execute(
+        select(CandidateJobEntry).where(CandidateJobEntry.id.in_(int_ids))
     )
-    profiles = {p.id: p for p in profiles_result.scalars().all()}
+    entries = entries_result.scalars().all()
 
-    # If none found as profiles, try as entry IDs
-    if not profiles:
-        entries_result = await db.execute(
-            select(CandidateJobEntry).where(CandidateJobEntry.id.in_(int_ids))
-        )
-        entries = entries_result.scalars().all()
-        if not entries:
-            from fastapi import HTTPException
-            raise HTTPException(status_code=404, detail="No matching candidates found")
-
+    if entries:
         profile_ids = {e.profile_id for e in entries}
         profiles_result = await db.execute(
             select(CandidateProfile).where(CandidateProfile.id.in_(profile_ids))
         )
         profiles = {p.id: p for p in profiles_result.scalars().all()}
+    else:
+        # Fall back to profile IDs
+        profiles_result = await db.execute(
+            select(CandidateProfile).where(CandidateProfile.id.in_(int_ids))
+        )
+        profiles = {p.id: p for p in profiles_result.scalars().all()}
+        if not profiles:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=404, detail="No matching candidates found")
 
     # Check which profiles already have entries for the target job
     existing_result = await db.execute(
