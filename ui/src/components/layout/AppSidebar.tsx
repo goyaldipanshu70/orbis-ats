@@ -60,6 +60,7 @@ const navItems: NavItem[] = [
   { icon: Workflow, label: 'AI Orchestrator', path: '/admin/orchestrator', adminOnly: true, section: 'Settings' },
   { icon: Shield, label: 'Admin Panel', path: '/admin', adminOnly: true, section: 'Settings' },
   { icon: Shield, label: 'Roles & Permissions', path: '/admin/roles', adminOnly: true, section: 'Settings' },
+  { icon: Users, label: 'Org Hierarchy', path: '/admin/org-hierarchy', adminOnly: true, section: 'Settings' },
   { icon: Settings, label: 'Settings', path: '/account-settings', section: 'Settings' },
 ];
 

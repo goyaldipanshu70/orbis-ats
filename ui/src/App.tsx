@@ -70,6 +70,7 @@ const CandidateOnboarding = lazy(() => import("./pages/CandidateOnboarding"));
 const CandidateProfile = lazy(() => import("./pages/CandidateProfile"));
 const AIAssessment = lazy(() => import("./pages/AIAssessment"));
 const RolesPermissions = lazy(() => import("./pages/RolesPermissions"));
+const OrgHierarchy = lazy(() => import("./pages/OrgHierarchy"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -170,6 +171,7 @@ const App = () => (
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/orchestrator" element={<AdminRoute><OrchestratorDashboard /></AdminRoute>} />
             <Route path="/admin/roles" element={<AdminRoute><Suspense fallback={null}><RolesPermissions /></Suspense></AdminRoute>} />
+            <Route path="/admin/org-hierarchy" element={<AdminRoute><Suspense fallback={null}><OrgHierarchy /></Suspense></AdminRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
