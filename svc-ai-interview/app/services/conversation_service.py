@@ -139,13 +139,25 @@ def _chat_completion(messages: list, temperature: float = 0.7, json_mode: bool =
 
 
 def _safe_parse_json(text: str) -> dict:
-    """Parse JSON, stripping markdown fences if present."""
+    """Parse JSON, stripping markdown fences if present. Returns empty dict on failure."""
     cleaned = text.strip()
     if cleaned.startswith("```"):
         lines = cleaned.split("\n")
         lines = [l for l in lines if not l.strip().startswith("```")]
         cleaned = "\n".join(lines)
-    return json.loads(cleaned)
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        # Try to extract JSON object from the text
+        import re
+        match = re.search(r'\{[\s\S]*\}', cleaned)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+        logger.error(f"Failed to parse LLM JSON response: {cleaned[:200]}")
+        return {}
 
 
 # ---------------------------------------------------------------------------
@@ -225,6 +237,10 @@ def _determine_rounds(
             excess -= cut
             if excess <= 0:
                 break
+
+    # Add round_number to each round
+    for i, r in enumerate(rounds):
+        r["round_number"] = i + 1
 
     return rounds
 
@@ -509,6 +525,18 @@ def generate_adaptive_response(
 
     result = _chat_completion(messages, temperature=0.7, json_mode=True)
     parsed = _safe_parse_json(result)
+
+    # Fallback if LLM returned unparseable response
+    if not parsed or "message" not in parsed:
+        parsed = {
+            "message": result if isinstance(result, str) and len(result) > 10
+                else "Could you elaborate on that? I'd like to understand your perspective better.",
+            "message_type": "follow_up",
+            "move_to_next": False,
+            "advance_round": False,
+            "code_prompt": None,
+            "state_updates": {},
+        }
 
     # Apply state updates
     state_updates = parsed.get("state_updates", {})

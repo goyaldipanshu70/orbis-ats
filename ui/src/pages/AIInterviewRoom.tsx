@@ -194,9 +194,12 @@ export default function AIInterviewRoom() {
   const isMountedRef = useRef(true);
   const endTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleEndRef = useRef<() => void>(() => {});
+  const isProcessingRef = useRef(false);
+  const ttsWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep ref in sync with state
+  // Keep refs in sync with state
   useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
+  useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
 
   // Start webcam
   useEffect(() => {
@@ -223,6 +226,8 @@ export default function AIInterviewRoom() {
   const speakText = useCallback((text: string, onEnd?: () => void) => {
     if (!synthRef.current || !voiceEnabledRef.current) { onEnd?.(); return; }
     synthRef.current.cancel();
+    if (ttsWatchdogRef.current) clearTimeout(ttsWatchdogRef.current);
+
     const utterance = new SpeechSynthesisUtterance(text);
     // Pick a natural English voice
     const voices = synthRef.current.getVoices();
@@ -233,9 +238,24 @@ export default function AIInterviewRoom() {
     if (preferred) utterance.voice = preferred;
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
-    utterance.onstart = () => setIsAiSpeaking(true);
-    utterance.onend = () => { setIsAiSpeaking(false); onEnd?.(); };
-    utterance.onerror = () => { setIsAiSpeaking(false); onEnd?.(); };
+
+    let ended = false;
+    const handleEnd = () => {
+      if (ended) return;
+      ended = true;
+      if (ttsWatchdogRef.current) clearTimeout(ttsWatchdogRef.current);
+      setIsAiSpeaking(false);
+      onEnd?.();
+    };
+
+    utterance.onstart = () => {
+      setIsAiSpeaking(true);
+      // Watchdog: force end if onend never fires (Chrome TTS bug)
+      const maxDuration = Math.max(15000, text.length * 80); // ~80ms per char
+      ttsWatchdogRef.current = setTimeout(handleEnd, maxDuration);
+    };
+    utterance.onend = handleEnd;
+    utterance.onerror = handleEnd;
     synthRef.current.speak(utterance);
   }, []);
 
@@ -275,7 +295,21 @@ export default function AIInterviewRoom() {
       setIsListening(false);
       const text = finalTranscript.trim();
       setInterimTranscript('');
-      if (text) sendMessageRef.current(text);
+      if (text) {
+        // If still processing previous message, wait until ready then send
+        if (isProcessingRef.current) {
+          const waitAndSend = () => {
+            if (!isProcessingRef.current) {
+              sendMessageRef.current(text);
+            } else {
+              setTimeout(waitAndSend, 200);
+            }
+          };
+          setTimeout(waitAndSend, 200);
+        } else {
+          sendMessageRef.current(text);
+        }
+      }
     };
 
     recognitionRef.current = recognition;
@@ -299,13 +333,18 @@ export default function AIInterviewRoom() {
 
     if (voiceEnabledRef.current) {
       speakText(lastMsg.content, () => {
-        // Auto-start listening after AI finishes speaking
-        if (state === 'active' && !isProcessing) {
+        // Auto-start listening after AI finishes speaking — use ref for current value
+        if (state === 'active' && !isProcessingRef.current) {
           setTimeout(() => startListening(), 400);
         }
       });
+    } else {
+      // Voice disabled — still auto-listen if not processing
+      if (!isProcessingRef.current) {
+        setTimeout(() => startListening(), 400);
+      }
     }
-  }, [messages, state, isProcessing, speakText, startListening]);
+  }, [messages, state, speakText, startListening]);
 
   // Cleanup voice + timers on unmount
   useEffect(() => {
@@ -315,6 +354,7 @@ export default function AIInterviewRoom() {
       if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
       if (endTimeoutRef.current) clearTimeout(endTimeoutRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
+      if (ttsWatchdogRef.current) clearTimeout(ttsWatchdogRef.current);
     };
   }, []);
 

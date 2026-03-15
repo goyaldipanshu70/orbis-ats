@@ -335,8 +335,8 @@ async def process_candidate_message(
         conversation_history.append({"role": role, "content": m.content})
 
     # Truncate conversation history to prevent prompt bloat / timeout
-    # Keep only last 12 messages (6 Q&A pairs) — older context lives in interview_state
-    MAX_HISTORY_MESSAGES = 12
+    # Keep last 20 messages (10 Q&A pairs) — older context lives in interview_state
+    MAX_HISTORY_MESSAGES = 20
     if len(conversation_history) > MAX_HISTORY_MESSAGES:
         conversation_history = conversation_history[-MAX_HISTORY_MESSAGES:]
 
@@ -384,7 +384,9 @@ async def process_candidate_message(
     ai_response = resp.json()
     ai_message = ai_response.get("message", "")
     ai_msg_type = ai_response.get("message_type", "question")
-    move_to_next = ai_response.get("move_to_next", True)
+    # Default move_to_next based on message type — follow-ups should NOT advance counter
+    default_move = ai_msg_type not in ("follow_up", "follow-up", "clarification")
+    move_to_next = ai_response.get("move_to_next", default_move)
     code_prompt = ai_response.get("code_prompt")
     advance_round = ai_response.get("advance_round", False)
 
@@ -750,6 +752,8 @@ async def _async_end_interview(token: str):
     """Fire-and-forget wrapper for end_interview (needs its own session)."""
     # This is called as a background task after the last question
     # In practice, the candidate will call /end explicitly, but this is a safety net
+    # Wait a few seconds to let the frontend's explicit /end call arrive first
+    await asyncio.sleep(5)
     try:
         from app.db.postgres import AsyncSessionLocal
         async with AsyncSessionLocal() as db:
