@@ -564,9 +564,10 @@ class AIInterviewSession(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     token = Column(String(64), unique=True, index=True, nullable=False)
-    candidate_id = Column(Integer, ForeignKey("candidate_job_entries.id"), nullable=False, index=True)
-    jd_id = Column(Integer, ForeignKey("job_descriptions.id"), nullable=False, index=True)
+    candidate_id = Column(Integer, ForeignKey("candidate_job_entries.id"), nullable=True, index=True)
+    jd_id = Column(Integer, ForeignKey("job_descriptions.id"), nullable=True, index=True)
     application_id = Column(Integer, ForeignKey("job_applications.id"), nullable=True)
+    user_id = Column(Integer, nullable=True, index=True)  # auth user ID for candidate-initiated profiling sessions
 
     # Config
     interview_type = Column(String(20), nullable=False, default="mixed")  # behavioral, technical, mixed
@@ -586,12 +587,17 @@ class AIInterviewSession(Base):
     resume_context = Column(JSONB, nullable=True)
     questions_plan = Column(JSONB, nullable=True)
 
+    # Multi-round adaptive interview state
+    interview_plan = Column(JSONB, nullable=True)       # Multi-round plan with round structure
+    interview_state = Column(JSONB, nullable=True)      # Adaptive state: difficulty, topics, strengths, weaknesses
+    recruiter_report = Column(JSONB, nullable=True)     # Structured recruiter-friendly report
+
     # Results
     transcript = Column(JSONB, nullable=True)
     evaluation = Column(JSONB, nullable=True)
     overall_score = Column(Float, nullable=True)
     proctoring_score = Column(Float, nullable=True)
-    ai_recommendation = Column(String(30), nullable=True)  # Hire, Manual Review, Do Not Recommend
+    ai_recommendation = Column(String(30), nullable=True)  # strong_hire, hire, maybe, no_hire
 
     # Invite
     created_by = Column(String(50), nullable=False)
@@ -610,9 +616,11 @@ class AIInterviewMessage(Base):
     session_id = Column(Integer, ForeignKey("ai_interview_sessions.id", ondelete="CASCADE"), nullable=False, index=True)
     role = Column(String(15), nullable=False)  # ai, candidate
     content = Column(Text, nullable=False)
-    message_type = Column(String(20), nullable=False)  # question, answer, follow_up, code_prompt, code_answer, system
+    message_type = Column(String(20), nullable=False)  # question, answer, follow_up, code_prompt, code_answer, system, round_transition
     code_content = Column(Text, nullable=True)
     code_language = Column(String(30), nullable=True)
+    round_number = Column(Integer, nullable=True)       # Which interview round this message belongs to
+    round_type = Column(String(20), nullable=True)      # screening, technical, coding, system_design, behavioral
     sequence = Column(Integer, nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 

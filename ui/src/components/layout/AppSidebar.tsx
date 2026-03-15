@@ -5,11 +5,12 @@ import { useSidebar } from './AppLayout';
 import { apiClient } from '@/utils/api';
 import {
   LayoutDashboard, Bot, Settings, Shield, BarChart3,
-  LogOut, Zap, Plus, FileText, UserCheck, Workflow, Calendar, Users, Briefcase,
+  LogOut, Plus, FileText, UserCheck, Workflow, Calendar, Users, Briefcase,
   Megaphone, ClipboardCheck, Share2, Mail, ShieldCheck,
   GitPullRequest, FileStack, Globe2, Target, Inbox, Activity,
   Pin, PinOff, Blocks, Lock,
 } from 'lucide-react';
+import { OrbisLogoIcon } from '@/components/Logo';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -139,13 +140,11 @@ export default function AppSidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 px-4" style={{ borderBottom: '1px solid var(--orbis-border)' }}>
         <motion.div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-          style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 500, damping: 25 }}
         >
-          <Zap className="h-5 w-5 text-white" />
+          <OrbisLogoIcon size="md" />
         </motion.div>
         <AnimatePresence mode="wait">
           {!collapsed && (
@@ -286,7 +285,7 @@ export default function AppSidebar() {
       {/* User profile */}
       <div className="p-3" style={{ borderTop: '1px solid var(--orbis-border)' }}>
         <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))' }}>
             {user?.first_name?.[0]}{user?.last_name?.[0]}
           </div>
           <AnimatePresence>

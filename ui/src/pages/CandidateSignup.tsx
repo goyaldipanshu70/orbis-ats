@@ -8,9 +8,10 @@ import DuplicateDetectedModal from '@/components/DuplicateDetectedModal';
 import { RippleButton } from '@/components/ui/ripple-button';
 import { toast } from 'sonner';
 import {
-  Eye, EyeOff, Mail, Lock, User, Zap, Briefcase, FileCheck, BarChart3, Loader2,
+  Eye, EyeOff, Mail, Lock, User, Briefcase, FileCheck, BarChart3, Loader2,
   Phone, ArrowLeft, CheckCircle2,
 } from 'lucide-react';
+import { OrbisLogoIcon } from '@/components/Logo';
 
 const glassInput: React.CSSProperties = {
   background: 'var(--orbis-input)',
@@ -139,9 +140,7 @@ const CandidateSignup = () => {
 
         <div className="relative z-10 px-12 xl:px-20">
           <div className="flex items-center gap-3 mb-10">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl shadow-2xl" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 20px 40px rgba(27,142,229,0.3)' }}>
-              <Zap className="w-7 h-7 text-white" strokeWidth={2} />
-            </div>
+            <OrbisLogoIcon size="lg" />
             <div>
               <h1 className="text-3xl font-black text-white tracking-tight">Orbis</h1>
               <p className="text-slate-500 text-sm font-medium">Careers Portal</p>
@@ -177,9 +176,7 @@ const CandidateSignup = () => {
         >
           {/* Mobile Logo */}
           <div className="flex lg:hidden items-center gap-2.5 mb-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
-              <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
+            <OrbisLogoIcon size="md" />
             <span className="font-bold text-xl text-foreground tracking-tight">Orbis Careers</span>
           </div>
 
@@ -197,7 +194,7 @@ const CandidateSignup = () => {
                       className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-colors"
                       style={
                         done ? { background: '#059669', color: 'hsl(var(--foreground))' }
-                        : active ? { background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', color: 'hsl(var(--foreground))', boxShadow: '0 0 12px rgba(27,142,229,0.4)' }
+                        : active ? { background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))', color: 'hsl(var(--foreground))', boxShadow: '0 0 12px rgba(27,142,229,0.4)' }
                         : { background: 'var(--orbis-input)', color: 'var(--orbis-border-strong)' }
                       }
                     >
@@ -265,7 +262,7 @@ const CandidateSignup = () => {
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full h-12 rounded-xl text-[15px] font-bold text-white transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 8px 24px rgba(27,142,229,0.25)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))', boxShadow: '0 8px 24px rgba(27,142,229,0.25)' }}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2.5"><Loader2 className="w-[18px] h-[18px] animate-spin" /> Sending verification code...</span>

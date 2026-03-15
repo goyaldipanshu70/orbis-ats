@@ -1896,6 +1896,16 @@ class ApiClient {
     return await this.request<void>(`/api/ai-interview/${sessionId}`, { method: 'DELETE' });
   }
 
+  async startAssessment() {
+    return await this.request<{ session_id: number; token: string; interview_url: string; status: string }>('/api/ai-interview/start-assessment', {
+      method: 'POST',
+    });
+  }
+
+  async getMyAssessments() {
+    return await this.request<any[]>('/api/ai-interview/my-assessments');
+  }
+
   // ── Ad-hoc Email ────────────────────────────────────────────────────────
 
   async sendAdhocEmail(to: string, subject: string, body: string, candidateId?: number) {

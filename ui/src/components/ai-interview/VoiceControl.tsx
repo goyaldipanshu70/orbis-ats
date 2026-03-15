@@ -100,7 +100,7 @@ export default function VoiceControl({ onTranscript, autoSpeak = true, disabled 
         className="p-2.5 rounded-xl transition-colors"
         style={{
           background: ttsEnabled ? 'rgba(27,142,229,0.15)' : 'var(--orbis-input)',
-          color: ttsEnabled ? '#b68aff' : '#94a3b8',
+          color: ttsEnabled ? '#1B8EE5' : 'var(--orbis-text-muted)',
         }}
         title={ttsEnabled ? 'Mute AI voice' : 'Enable AI voice'}
       >
@@ -138,12 +138,12 @@ export default function VoiceControl({ onTranscript, autoSpeak = true, disabled 
           </div>
         )}
         {interimText && (
-          <p className="text-xs text-slate-500 italic truncate max-w-[200px]">{interimText}...</p>
+          <p className="text-xs italic truncate max-w-[200px]" style={{ color: 'var(--orbis-text-muted)' }}>{interimText}...</p>
         )}
         {isSpeaking && (
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: '#1B8EE5' }} />
-            <span className="text-sm font-medium" style={{ color: '#b68aff' }}>Aria speaking...</span>
+            <span className="text-sm font-medium" style={{ color: '#1B8EE5' }}>Aria speaking...</span>
           </div>
         )}
       </div>

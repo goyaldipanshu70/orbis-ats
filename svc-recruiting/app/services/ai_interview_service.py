@@ -60,6 +60,16 @@ async def create_interview_session(
     )).scalar_one_or_none()
 
     jd_context = job.ai_result or {}
+    # Flatten nested skills to top-level for AI interviewer compatibility
+    if isinstance(jd_context, dict):
+        rubric = jd_context.get("extracted_rubric", {})
+        if rubric and not jd_context.get("required_skills"):
+            jd_context["required_skills"] = (
+                rubric.get("core_skills", []) +
+                rubric.get("preferred_skills", [])
+            )
+            jd_context["soft_skills"] = rubric.get("soft_skills", [])
+
     resume_context = entry.ai_resume_analysis or {}
     if profile and profile.parsed_metadata:
         resume_context["profile_metadata"] = profile.parsed_metadata
@@ -146,7 +156,7 @@ async def get_session_by_token(db: AsyncSession, token: str) -> Optional[AIInter
 
 
 async def start_interview(db: AsyncSession, token: str) -> dict:
-    """Validate token, generate question plan, return opening message."""
+    """Validate token, generate multi-round interview plan, return opening message."""
     session = await get_session_by_token(db, token)
     if not session:
         raise ValueError("Invalid interview token")
@@ -159,10 +169,10 @@ async def start_interview(db: AsyncSession, token: str) -> dict:
         await db.commit()
         raise ValueError("This interview link has expired")
 
-    # Call svc-ai-interview to generate question plan
+    # Call svc-ai-interview to generate multi-round plan
     client = get_ai_client()
     resp = await client.post(
-        f"{settings.AI_INTERVIEW_URL}/conversation/plan",
+        f"{settings.AI_INTERVIEW_URL}/conversation/plan/multi-round",
         json={
             "parsed_jd": session.jd_context or {},
             "parsed_resume": session.resume_context or {},
@@ -174,14 +184,45 @@ async def start_interview(db: AsyncSession, token: str) -> dict:
         timeout=60,
     )
     if resp.status_code != 200:
-        raise ValueError(f"AI service error: {resp.text}")
+        # Fallback to legacy plan endpoint
+        resp = await client.post(
+            f"{settings.AI_INTERVIEW_URL}/conversation/plan",
+            json={
+                "parsed_jd": session.jd_context or {},
+                "parsed_resume": session.resume_context or {},
+                "interview_type": session.interview_type,
+                "include_coding": session.include_coding,
+                "coding_language": session.coding_language,
+                "max_questions": session.max_questions,
+            },
+            timeout=60,
+        )
+        if resp.status_code != 200:
+            raise ValueError(f"AI service error: {resp.text}")
 
-    plan = resp.json()
+    result = resp.json()
 
-    # Update session
+    # Extract plan and interview state (multi-round format)
+    plan = result.get("plan", result)
+    interview_state = result.get("interview_state", {
+        "current_round": 1,
+        "current_round_type": "screening",
+        "round_question_number": 1,
+        "questions_asked": [],
+        "topics_covered": [],
+        "difficulty_level": "medium",
+        "candidate_strengths": [],
+        "candidate_weaknesses": [],
+        "follow_up_count": 0,
+        "round_scores": {},
+    })
+
+    # Update session with multi-round data
     session.status = "in_progress"
     session.started_at = datetime.utcnow()
     session.questions_plan = plan
+    session.interview_plan = plan
+    session.interview_state = interview_state
     session.current_question = 1
     session.transcript = []
     await db.commit()
@@ -197,18 +238,40 @@ async def start_interview(db: AsyncSession, token: str) -> dict:
     )
     db.add(msg)
 
-    # Store first question
+    # Get first question from the plan
     questions = plan.get("questions", [])
+    if not questions and plan.get("rounds"):
+        # Extract from rounds format
+        for rnd in plan["rounds"]:
+            for q in rnd.get("questions", []):
+                questions.append(q)
+
     first_q = questions[0]["question"] if questions else "Tell me about yourself."
+    first_round_type = None
+    if plan.get("rounds"):
+        first_round_type = plan["rounds"][0].get("type", "screening")
+
     first_msg = AIInterviewMessage(
         session_id=session.id,
         role="ai",
         content=first_q,
         message_type="question",
+        round_number=1,
+        round_type=first_round_type,
         sequence=1,
     )
     db.add(first_msg)
     await db.commit()
+
+    # Build rounds info for frontend
+    rounds_info = []
+    if plan.get("rounds"):
+        for rnd in plan["rounds"]:
+            rounds_info.append({
+                "round_number": rnd.get("round_number"),
+                "type": rnd.get("type"),
+                "question_count": len(rnd.get("questions", [])),
+            })
 
     return {
         "opening_message": opening,
@@ -217,6 +280,11 @@ async def start_interview(db: AsyncSession, token: str) -> dict:
         "time_limit_minutes": session.time_limit_minutes,
         "include_coding": session.include_coding,
         "interview_type": session.interview_type,
+        "rounds": rounds_info,
+        "current_round": 1,
+        "current_round_type": first_round_type,
+        "seniority_level": plan.get("seniority_level"),
+        "key_topics": plan.get("key_topics", []),
     }
 
 
@@ -266,22 +334,50 @@ async def process_candidate_message(
         role = "assistant" if m.role == "ai" else "user"
         conversation_history.append({"role": role, "content": m.content})
 
-    # Call AI to get response
+    # Truncate conversation history to prevent prompt bloat / timeout
+    # Keep only last 12 messages (6 Q&A pairs) — older context lives in interview_state
+    MAX_HISTORY_MESSAGES = 12
+    if len(conversation_history) > MAX_HISTORY_MESSAGES:
+        conversation_history = conversation_history[-MAX_HISTORY_MESSAGES:]
+
+    # Determine whether to use adaptive or legacy mode
+    use_adaptive = session.interview_plan is not None and session.interview_state is not None
     client = get_ai_client()
-    resp = await client.post(
-        f"{settings.AI_INTERVIEW_URL}/conversation/respond",
-        json={
-            "conversation_history": conversation_history,
-            "current_question": session.current_question,
-            "questions_plan": session.questions_plan or {},
-            "parsed_jd": session.jd_context or {},
-            "parsed_resume": session.resume_context or {},
-            "interview_type": session.interview_type,
-            "max_questions": session.max_questions,
-            "stream": False,
-        },
-        timeout=60,
-    )
+
+    if use_adaptive:
+        # Use adaptive multi-round endpoint
+        resp = await client.post(
+            f"{settings.AI_INTERVIEW_URL}/conversation/respond/adaptive",
+            json={
+                "conversation_history": conversation_history,
+                "current_question": session.current_question,
+                "interview_plan": session.interview_plan or {},
+                "interview_state": session.interview_state or {},
+                "parsed_jd": session.jd_context or {},
+                "parsed_resume": session.resume_context or {},
+                "interview_type": session.interview_type,
+                "max_questions": session.max_questions,
+                "stream": False,
+            },
+            timeout=120,
+        )
+    else:
+        # Legacy mode
+        resp = await client.post(
+            f"{settings.AI_INTERVIEW_URL}/conversation/respond",
+            json={
+                "conversation_history": conversation_history,
+                "current_question": session.current_question,
+                "questions_plan": session.questions_plan or {},
+                "parsed_jd": session.jd_context or {},
+                "parsed_resume": session.resume_context or {},
+                "interview_type": session.interview_type,
+                "max_questions": session.max_questions,
+                "stream": False,
+            },
+            timeout=120,
+        )
+
     if resp.status_code != 200:
         raise ValueError(f"AI service error: {resp.text}")
 
@@ -290,6 +386,19 @@ async def process_candidate_message(
     ai_msg_type = ai_response.get("message_type", "question")
     move_to_next = ai_response.get("move_to_next", True)
     code_prompt = ai_response.get("code_prompt")
+    advance_round = ai_response.get("advance_round", False)
+
+    # Update interview state if adaptive mode returned it
+    new_interview_state = ai_response.get("interview_state")
+    if new_interview_state and use_adaptive:
+        session.interview_state = new_interview_state
+
+    # Get current round info for message storage
+    current_round_num = None
+    current_round_type = None
+    if session.interview_state:
+        current_round_num = session.interview_state.get("current_round")
+        current_round_type = session.interview_state.get("current_round_type")
 
     # Store AI response
     ai_msg = AIInterviewMessage(
@@ -297,6 +406,8 @@ async def process_candidate_message(
         role="ai",
         content=ai_message,
         message_type=ai_msg_type,
+        round_number=current_round_num,
+        round_type=current_round_type,
         sequence=max_seq + 2,
     )
     db.add(ai_msg)
@@ -305,10 +416,23 @@ async def process_candidate_message(
     if move_to_next:
         session.current_question = (session.current_question or 0) + 1
 
-    # Update transcript
+    # Update transcript with round info
     transcript = session.transcript or []
-    transcript.append({"role": "candidate", "content": message, "timestamp": datetime.utcnow().isoformat()})
-    transcript.append({"role": "ai", "content": ai_message, "timestamp": datetime.utcnow().isoformat()})
+    transcript.append({
+        "role": "candidate",
+        "content": message,
+        "timestamp": datetime.utcnow().isoformat(),
+        "round": current_round_num,
+        "round_type": current_round_type,
+    })
+    transcript.append({
+        "role": "ai",
+        "content": ai_message,
+        "message_type": ai_msg_type,
+        "timestamp": datetime.utcnow().isoformat(),
+        "round": current_round_num,
+        "round_type": current_round_type,
+    })
     session.transcript = transcript
 
     await db.commit()
@@ -324,6 +448,10 @@ async def process_candidate_message(
         "current_question": session.current_question,
         "is_complete": is_closing or is_last_question,
         "code_prompt": code_prompt,
+        "advance_round": advance_round,
+        "current_round": current_round_num,
+        "current_round_type": current_round_type,
+        "difficulty_level": session.interview_state.get("difficulty_level") if session.interview_state else None,
     }
 
     if is_closing or is_last_question:
@@ -441,22 +569,33 @@ async def calculate_proctoring_score(db: AsyncSession, session_id: int) -> dict:
         return {"integrity_score": 100.0, "cheating_flags": [], "risk_level": "low"}
 
     tab_away_count = sum(1 for e in events if e.event_type in ("tab_away", "window_blur"))
-    total_away_ms = sum(e.duration_ms or 0 for e in events if e.event_type == "tab_away")
+    total_away_ms = sum(e.duration_ms or 0 for e in events if e.event_type == "tab_return")
     copy_paste_count = sum(1 for e in events if e.event_type == "copy_paste")
     multi_face_count = sum(1 for e in events if e.event_type == "multiple_faces")
     long_silence_count = sum(1 for e in events if e.event_type == "long_silence")
     external_device_count = sum(1 for e in events if e.event_type == "external_device")
     code_plagiarism_count = sum(1 for e in events if e.event_type == "code_plagiarism")
+    window_resize_count = sum(1 for e in events if e.event_type == "window_resize")
+
+    # Detect suspicious paste patterns (large code blocks)
+    large_paste_count = 0
+    for e in events:
+        if e.event_type == "copy_paste" and isinstance(e.extra_data, dict):
+            content_len = e.extra_data.get("content_length", 0)
+            if content_len > 200:
+                large_paste_count += 1
 
     # Scoring: start at 100, deduct for issues
     score = 100.0
-    score -= min(tab_away_count * 3, 30)      # -3 per tab switch, max -30
-    score -= min(total_away_ms / 10000, 20)    # -1 per 10s away, max -20
-    score -= min(copy_paste_count * 5, 15)     # -5 per copy/paste, max -15
-    score -= min(multi_face_count * 10, 20)    # -10 per multi-face detection, max -20
-    score -= min(long_silence_count * 2, 10)   # -2 per long silence, max -10
-    score -= min(external_device_count * 8, 15)  # -8 per external device, max -15
-    score -= min(code_plagiarism_count * 15, 30) # -15 per plagiarism flag, max -30
+    score -= min(tab_away_count * 3, 30)          # -3 per tab switch, max -30
+    score -= min(total_away_ms / 10000, 20)        # -1 per 10s away, max -20
+    score -= min(copy_paste_count * 5, 15)         # -5 per copy/paste, max -15
+    score -= min(large_paste_count * 8, 20)        # -8 per large paste (>200 chars), max -20
+    score -= min(multi_face_count * 10, 20)        # -10 per multi-face detection, max -20
+    score -= min(long_silence_count * 2, 10)       # -2 per long silence, max -10
+    score -= min(external_device_count * 8, 15)    # -8 per external device, max -15
+    score -= min(code_plagiarism_count * 15, 30)   # -15 per plagiarism flag, max -30
+    score -= min(window_resize_count * 1, 5)       # -1 per window resize, max -5
 
     integrity_score = max(0.0, round(score, 1))
 
@@ -474,6 +613,8 @@ async def calculate_proctoring_score(db: AsyncSession, session_id: int) -> dict:
         cheating_flags.append({"type": "external_device", "count": external_device_count, "severity": "high"})
     if code_plagiarism_count > 0:
         cheating_flags.append({"type": "code_plagiarism", "count": code_plagiarism_count, "severity": "critical"})
+    if large_paste_count > 0:
+        cheating_flags.append({"type": "large_paste", "count": large_paste_count, "severity": "high"})
     if total_away_ms > 60000:
         cheating_flags.append({"type": "extended_absence", "duration_ms": total_away_ms, "severity": "medium"})
 
@@ -511,35 +652,76 @@ async def end_interview(db: AsyncSession, token: str) -> dict:
     proctor_score = proctor_result["integrity_score"]
     session.proctoring_score = proctor_score
 
-    # Call AI for final evaluation
+    # Call AI for deep evaluation (try new endpoint, fallback to legacy)
+    proctoring_summary = {
+        "integrity_score": proctor_score,
+        "cheating_flags": proctor_result.get("cheating_flags", []),
+        "risk_level": proctor_result.get("risk_level", "low"),
+    }
+    use_deep = session.interview_plan is not None
     try:
         client = get_ai_client()
-        resp = await client.post(
-            f"{settings.AI_INTERVIEW_URL}/conversation/evaluate",
-            json={
-                "transcript": session.transcript or [],
-                "parsed_jd": session.jd_context or {},
-                "parsed_resume": session.resume_context or {},
-                "questions_plan": session.questions_plan or {},
-                "proctoring_summary": {
-                    "integrity_score": proctor_score,
-                    "cheating_flags": proctor_result.get("cheating_flags", []),
-                    "risk_level": proctor_result.get("risk_level", "low"),
+        if use_deep:
+            resp = await client.post(
+                f"{settings.AI_INTERVIEW_URL}/conversation/evaluate/deep",
+                json={
+                    "transcript": session.transcript or [],
+                    "parsed_jd": session.jd_context or {},
+                    "parsed_resume": session.resume_context or {},
+                    "interview_plan": session.interview_plan or {},
+                    "interview_state": session.interview_state or {},
+                    "proctoring_summary": proctoring_summary,
                 },
-            },
-            timeout=120,
-        )
+                timeout=120,
+            )
+        else:
+            resp = await client.post(
+                f"{settings.AI_INTERVIEW_URL}/conversation/evaluate",
+                json={
+                    "transcript": session.transcript or [],
+                    "parsed_jd": session.jd_context or {},
+                    "parsed_resume": session.resume_context or {},
+                    "questions_plan": session.questions_plan or {},
+                    "proctoring_summary": proctoring_summary,
+                },
+                timeout=120,
+            )
+
         if resp.status_code == 200:
             evaluation = resp.json()
             session.evaluation = evaluation
 
-            # Extract overall score
-            score_breakdown = evaluation.get("score_breakdown", {})
-            total = sum(v for v in score_breakdown.values() if isinstance(v, (int, float)))
-            session.overall_score = total
-            session.ai_recommendation = evaluation.get("ai_recommendation", "Manual Review")
+            # Extract overall score — deep eval uses 0-10 scale overall_score
+            if "overall_score" in evaluation:
+                session.overall_score = evaluation["overall_score"]
+            else:
+                score_breakdown = evaluation.get("score_breakdown", {})
+                total = sum(v for v in score_breakdown.values() if isinstance(v, (int, float)))
+                session.overall_score = total
+
+            session.ai_recommendation = evaluation.get("hire_recommendation") or evaluation.get("ai_recommendation", "maybe")
         else:
             logger.error("AI evaluation failed: %s", resp.text)
+
+        # Generate recruiter report (fire-and-forget, don't block on failure)
+        if resp.status_code == 200 and session.evaluation:
+            try:
+                report_resp = await client.post(
+                    f"{settings.AI_INTERVIEW_URL}/conversation/report",
+                    json={
+                        "evaluation": session.evaluation,
+                        "parsed_jd": session.jd_context or {},
+                        "parsed_resume": session.resume_context or {},
+                        "transcript": session.transcript or [],
+                        "interview_plan": session.interview_plan or session.questions_plan or {},
+                        "proctoring_summary": proctoring_summary,
+                    },
+                    timeout=60,
+                )
+                if report_resp.status_code == 200:
+                    session.recruiter_report = report_resp.json()
+            except Exception as report_err:
+                logger.warning("Recruiter report generation failed: %s", report_err)
     except Exception as e:
         logger.error("AI evaluation error: %s", e)
 
@@ -619,6 +801,9 @@ async def get_session_results(db: AsyncSession, session_id: int) -> Optional[dic
         "proctoring_score": session.proctoring_score,
         "ai_recommendation": session.ai_recommendation,
         "evaluation": session.evaluation,
+        "interview_plan": session.interview_plan,
+        "interview_state": session.interview_state,
+        "recruiter_report": session.recruiter_report,
         "cheating_flags": proctor_analysis.get("cheating_flags", []),
         "risk_level": proctor_analysis.get("risk_level", "low"),
         "transcript": [
@@ -628,6 +813,8 @@ async def get_session_results(db: AsyncSession, session_id: int) -> Optional[dic
                 "message_type": m.message_type,
                 "code_content": m.code_content,
                 "code_language": m.code_language,
+                "round_number": m.round_number,
+                "round_type": m.round_type,
                 "timestamp": m.created_at.isoformat() if m.created_at else None,
             }
             for m in messages
@@ -766,3 +953,85 @@ async def auto_create_interview_for_application(
         await send_interview_invite(db, session.id, app.user_email)
 
     return session
+
+
+async def create_profiling_session(
+    db: AsyncSession,
+    user_id: int,
+    user_email: str,
+    user_name: str,
+    resume_url: Optional[str] = None,
+) -> AIInterviewSession:
+    """Create a candidate-initiated profiling interview (no job required).
+
+    The AI asks about experience, skills, and career goals based on the
+    candidate's resume.  Results feed job-match recommendations.
+    """
+    # Check for existing pending/in-progress profiling session
+    existing = (await db.execute(
+        select(AIInterviewSession).where(
+            AIInterviewSession.user_id == user_id,
+            AIInterviewSession.jd_id.is_(None),
+            AIInterviewSession.status.in_(["pending", "in_progress"]),
+        )
+    )).scalar_one_or_none()
+    if existing:
+        return existing  # reuse instead of creating duplicates
+
+    # Gather resume context from CandidateProfile (if any)
+    resume_context: dict = {}
+    profile = (await db.execute(
+        select(CandidateProfile).where(CandidateProfile.email == user_email)
+    )).scalar_one_or_none()
+    if profile:
+        if profile.parsed_metadata:
+            resume_context["profile_metadata"] = profile.parsed_metadata
+        if profile.resume_url:
+            resume_url = resume_url or profile.resume_url
+
+    if resume_url:
+        resume_context["resume_url"] = resume_url
+
+    session = AIInterviewSession(
+        token=_generate_token(),
+        user_id=user_id,
+        candidate_id=None,
+        jd_id=None,
+        interview_type="profiling",
+        max_questions=8,
+        time_limit_minutes=20,
+        include_coding=False,
+        status="pending",
+        jd_context={"job_title": "Profile Assessment", "description": "General candidate profiling interview"},
+        resume_context=resume_context,
+        created_by=str(user_id),
+        expires_at=datetime.utcnow() + timedelta(days=30),
+    )
+    db.add(session)
+    await db.commit()
+    await db.refresh(session)
+    return session
+
+
+async def get_profiling_sessions(db: AsyncSession, user_id: int) -> list:
+    """Return all profiling sessions for a candidate user."""
+    sessions = (await db.execute(
+        select(AIInterviewSession)
+        .where(AIInterviewSession.user_id == user_id, AIInterviewSession.jd_id.is_(None))
+        .order_by(AIInterviewSession.created_at.desc())
+    )).scalars().all()
+
+    return [
+        {
+            "id": s.id,
+            "token": s.token,
+            "status": s.status,
+            "interview_type": s.interview_type,
+            "overall_score": s.overall_score,
+            "evaluation": s.evaluation,
+            "started_at": s.started_at.isoformat() if s.started_at else None,
+            "completed_at": s.completed_at.isoformat() if s.completed_at else None,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+        for s in sessions
+    ]

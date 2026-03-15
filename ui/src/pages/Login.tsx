@@ -11,6 +11,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { OrbisLogoIcon } from '@/components/Logo';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -107,12 +108,7 @@ const Login = () => {
         {/* Top — Logo + Brand */}
         <div className="relative z-10">
           <div className="flex items-center gap-5">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl"
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', boxShadow: '0 8px 32px rgba(245,158,11,0.2)' }}
-            >
-              <div className="w-7 h-7 rounded-full border-[5px] border-white/90" />
-            </div>
+            <OrbisLogoIcon size="lg" />
             <div className="flex flex-col">
               <span className="text-white text-4xl font-black tracking-tighter leading-none">ORBIS</span>
               <span className="text-blue-200/60 text-xs font-bold tracking-[0.2em] uppercase mt-1">Enterprise ATS</span>
@@ -204,12 +200,7 @@ const Login = () => {
         >
           {/* Mobile-only Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-12">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
-              style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}
-            >
-              <div className="w-4 h-4 rounded-full border-2 border-white" />
-            </div>
+            <OrbisLogoIcon size="md" />
             <h1 className="text-foreground text-2xl font-black tracking-tight uppercase">Orbis</h1>
           </div>
 
@@ -313,7 +304,7 @@ const Login = () => {
               disabled={isSubmitting}
               className="w-full h-14 rounded-2xl font-bold text-lg text-white transform active:scale-[0.98] transition-all duration-200 mt-2 disabled:opacity-70 disabled:cursor-not-allowed"
               style={{
-                background: 'linear-gradient(to right, #1B8EE5, #1676c0)',
+                background: 'linear-gradient(to right, var(--orbis-accent), var(--orbis-accent-dark))',
                 boxShadow: '0 10px 30px rgba(27,142,229,0.3)',
               }}
             >

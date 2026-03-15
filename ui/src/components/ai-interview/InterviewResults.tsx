@@ -20,7 +20,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { AIInterviewResults, CheatingFlag } from '@/types/api';
+import { AIInterviewResults, CheatingFlag, RecruiterReport } from '@/types/api';
 
 interface InterviewResultsProps {
   results: AIInterviewResults;
@@ -35,11 +35,16 @@ interface InterviewResultsProps {
 function getRecBadge(rec: string | null) {
   switch (rec) {
     case 'Hire':
+    case 'hire':
       return { bg: 'rgba(34,197,94,0.12)', color: '#4ade80', label: 'Hire' };
+    case 'strong_hire':
+      return { bg: 'rgba(16,185,129,0.15)', color: '#34d399', label: 'Strong Hire' };
+    case 'maybe':
     case 'Manual Review':
-      return { bg: 'rgba(234,179,8,0.12)', color: '#facc15', label: 'Manual Review' };
+      return { bg: 'rgba(234,179,8,0.12)', color: '#facc15', label: 'Maybe / Review' };
+    case 'no_hire':
     case 'Do Not Recommend':
-      return { bg: 'rgba(239,68,68,0.12)', color: '#f87171', label: 'Do Not Recommend' };
+      return { bg: 'rgba(239,68,68,0.12)', color: '#f87171', label: 'No Hire' };
     default:
       return { bg: 'var(--orbis-border)', color: '#94a3b8', label: rec || 'Pending' };
   }
@@ -104,8 +109,8 @@ function ScoreBar({ label, score, max }: { label: string; score: number; max: nu
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
-        <span className="text-slate-400">{label}</span>
-        <span className="font-medium text-white">{score}/{max}</span>
+        <span style={{ color: 'var(--orbis-text-muted)' }}>{label}</span>
+        <span className="font-medium" style={{ color: 'var(--orbis-heading)' }}>{score}/{max}</span>
       </div>
       <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
         <div
@@ -157,9 +162,9 @@ function CheatingFlagRow({ flag }: { flag: CheatingFlag }) {
     >
       <div className="flex items-center gap-2">
         <EventIcon type={flag.type} />
-        <span className="text-sm font-medium text-white">{labels[flag.type] || flag.type.replace(/_/g, ' ')}</span>
-        {flag.count != null && <span className="text-xs text-slate-500">({flag.count}x)</span>}
-        {flag.duration_ms != null && <span className="text-xs text-slate-500">({(flag.duration_ms / 1000).toFixed(0)}s)</span>}
+        <span className="text-sm font-medium" style={{ color: 'var(--orbis-heading)' }}>{labels[flag.type] || flag.type.replace(/_/g, ' ')}</span>
+        {flag.count != null && <span className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>({flag.count}x)</span>}
+        {flag.duration_ms != null && <span className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>({(flag.duration_ms / 1000).toFixed(0)}s)</span>}
       </div>
       <GlassBadge bg={sev.bg} color={sev.color}>{flag.severity}</GlassBadge>
     </div>
@@ -167,28 +172,28 @@ function CheatingFlagRow({ flag }: { flag: CheatingFlag }) {
 }
 
 function EventIcon({ type }: { type: string }) {
-  const cls = "h-3.5 w-3.5 text-slate-500";
+  const cls = "h-3.5 w-3.5";
   switch (type) {
     case 'tab_away':
     case 'tab_return':
     case 'tab_switching':
     case 'window_blur':
     case 'window_focus':
-      return <Eye className={cls} />;
+      return <Eye className={cls} style={{ color: 'var(--orbis-text-muted)' }} />;
     case 'copy_paste':
-      return <Copy className={cls} />;
+      return <Copy className={cls} style={{ color: 'var(--orbis-text-muted)' }} />;
     case 'multiple_faces':
-      return <Monitor className={cls} />;
+      return <Monitor className={cls} style={{ color: 'var(--orbis-text-muted)' }} />;
     case 'long_silence':
-      return <Mic className={cls} />;
+      return <Mic className={cls} style={{ color: 'var(--orbis-text-muted)' }} />;
     case 'external_device':
-      return <Monitor className={cls} />;
+      return <Monitor className={cls} style={{ color: 'var(--orbis-text-muted)' }} />;
     case 'code_plagiarism':
-      return <FileWarning className={cls} />;
+      return <FileWarning className={cls} style={{ color: 'var(--orbis-text-muted)' }} />;
     case 'extended_absence':
-      return <Clock className={cls} />;
+      return <Clock className={cls} style={{ color: 'var(--orbis-text-muted)' }} />;
     default:
-      return <AlertTriangle className={cls} />;
+      return <AlertTriangle className={cls} style={{ color: 'var(--orbis-text-muted)' }} />;
   }
 }
 
@@ -271,12 +276,12 @@ function CategoryScoreCard({
             <div
               className="absolute inset-0 flex items-center justify-center"
             >
-              <span className="text-sm font-bold text-white">{Math.round(score)}</span>
+              <span className="text-sm font-bold" style={{ color: 'var(--orbis-heading)' }}>{Math.round(score)}</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <Icon className="h-4 w-4" style={{ color }} />
-            <span className="text-sm font-medium text-slate-300">{label}</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--orbis-text)' }}>{label}</span>
           </div>
           <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
             <motion.div
@@ -316,8 +321,8 @@ function MiniStatCard({
           <Icon className="h-4 w-4" style={{ color: iconColor }} />
         </div>
         <div className="min-w-0">
-          <p className="text-xs text-slate-500 truncate">{label}</p>
-          <p className="text-sm font-semibold text-white truncate">{value}</p>
+          <p className="text-xs truncate" style={{ color: 'var(--orbis-text-muted)' }}>{label}</p>
+          <p className="text-sm font-semibold truncate" style={{ color: 'var(--orbis-heading)' }}>{value}</p>
         </div>
       </div>
     </GlassCard>
@@ -337,6 +342,11 @@ export default function InterviewResults({
   const scores = eval_.score_breakdown || {};
   const supplementary = eval_.supplementary_scores || {};
   const rec = getRecBadge(results.ai_recommendation);
+  const recruiterReport: RecruiterReport | null = results.recruiter_report || eval_.recruiter_report || null;
+  const roundSummaries: any[] = eval_.round_summaries || [];
+
+  // Detect if this is a new 10-dimension evaluation (scores on 0-10 scale)
+  const isDeepEval = scores.technical_knowledge !== undefined || scores.adaptability !== undefined;
 
   const duration = results.started_at && results.completed_at
     ? Math.round((new Date(results.completed_at).getTime() - new Date(results.started_at).getTime()) / 60000)
@@ -346,10 +356,16 @@ export default function InterviewResults({
   const scoreColor = getScoreColor(overallScore);
   const scoreLabel = getScoreLabel(overallScore);
 
-  // Derived category scores (scaled to 100)
-  const communicationScore = Math.round(((scores.communication_skills || 0) / 20) * 100);
-  const technicalScore = Math.round(((scores.technical_competency || 0) / 25) * 100);
-  const problemSolvingScore = Math.round(((scores.problem_solving || 0) / 15) * 100);
+  // Derived category scores — support both old (weighted /25, /20, /15) and new (0-10) formats
+  const communicationScore = isDeepEval
+    ? Math.round(((scores.communication || 0) / 10) * 100)
+    : Math.round(((scores.communication_skills || 0) / 20) * 100);
+  const technicalScore = isDeepEval
+    ? Math.round(((scores.technical_knowledge || 0) / 10) * 100)
+    : Math.round(((scores.technical_competency || 0) / 25) * 100);
+  const problemSolvingScore = isDeepEval
+    ? Math.round(((scores.problem_solving || 0) / 10) * 100)
+    : Math.round(((scores.problem_solving || 0) / 15) * 100);
 
   // Questions count from transcript
   const aiMessages = results.transcript.filter(m => m.role === 'ai' && m.message_type === 'question');
@@ -430,9 +446,9 @@ export default function InterviewResults({
                 >
                   <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
                     <Sparkles className="h-5 w-5 text-amber-400" />
-                    <h2 className="text-2xl font-bold text-white">Interview Complete!</h2>
+                    <h2 className="text-2xl font-bold" style={{ color: 'var(--orbis-heading)' }}>Interview Complete!</h2>
                   </div>
-                  <p className="text-sm text-slate-400 mb-4">
+                  <p className="text-sm mb-4" style={{ color: 'var(--orbis-text-muted)' }}>
                     Great job! Here's how you did.
                   </p>
                 </motion.div>
@@ -467,7 +483,8 @@ export default function InterviewResults({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.4, delay: 0.5 }}
-                    className="text-xs text-slate-500 mt-3"
+                    className="text-xs mt-3"
+                    style={{ color: 'var(--orbis-text-muted)' }}
                   >
                     Completed in {duration} minutes
                   </motion.p>
@@ -489,10 +506,10 @@ export default function InterviewResults({
                     color={scoreColor}
                   />
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-white leading-none">
+                    <span className="text-2xl font-bold leading-none" style={{ color: 'var(--orbis-heading)' }}>
                       {results.overall_score ?? '\u2014'}
                     </span>
-                    <span className="text-[10px] text-slate-500 mt-0.5">/ 100</span>
+                    <span className="text-[10px] mt-0.5" style={{ color: 'var(--orbis-text-muted)' }}>/ 100</span>
                   </div>
                 </div>
                 <p
@@ -559,14 +576,14 @@ export default function InterviewResults({
               {strengths.length > 0 ? (
                 <ul className="space-y-2">
                   {strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--orbis-text)' }}>
                       <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0 mt-0.5" />
                       <span>{s}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-slate-500">No specific strengths identified.</p>
+                <p className="text-sm" style={{ color: 'var(--orbis-text-muted)' }}>No specific strengths identified.</p>
               )}
             </div>
           </GlassCard>
@@ -590,14 +607,14 @@ export default function InterviewResults({
               {improvements.length > 0 ? (
                 <ul className="space-y-2">
                   {improvements.map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--orbis-text)' }}>
                       <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-slate-500">No specific areas flagged for improvement.</p>
+                <p className="text-sm" style={{ color: 'var(--orbis-text-muted)' }}>No specific areas flagged for improvement.</p>
               )}
             </div>
           </GlassCard>
@@ -646,31 +663,74 @@ export default function InterviewResults({
         <Tabs defaultValue="scores">
           <TabsList>
             <TabsTrigger value="scores">Detailed Breakdown</TabsTrigger>
+            {recruiterReport && <TabsTrigger value="report">Recruiter Report</TabsTrigger>}
             <TabsTrigger value="transcript">Transcript</TabsTrigger>
             <TabsTrigger value="proctoring">Proctoring</TabsTrigger>
           </TabsList>
 
           <TabsContent value="scores" className="space-y-4 mt-4">
-            {/* Core scores */}
+            {/* Core scores — adaptive to evaluation format */}
             <GlassCard>
               <div className="p-5">
-                <h3 className="text-base font-semibold text-white mb-4">Score Breakdown</h3>
+                <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--orbis-heading)' }}>Score Breakdown</h3>
                 <div className="space-y-3">
-                  <ScoreBar label="Technical Competency" score={scores.technical_competency || 0} max={25} />
-                  <ScoreBar label="Core Qualifications" score={scores.core_qualifications || 0} max={15} />
-                  <ScoreBar label="Communication Skills" score={scores.communication_skills || 0} max={20} />
-                  <ScoreBar label="Problem Solving" score={scores.problem_solving || 0} max={15} />
-                  <ScoreBar label="Domain Knowledge" score={scores.domain_knowledge || 0} max={15} />
-                  <ScoreBar label="Teamwork & Culture Fit" score={scores.teamwork_culture_fit || 0} max={10} />
+                  {isDeepEval ? (
+                    <>
+                      <ScoreBar label="Technical Knowledge" score={scores.technical_knowledge || 0} max={10} />
+                      <ScoreBar label="Problem Solving" score={scores.problem_solving || 0} max={10} />
+                      <ScoreBar label="Communication" score={scores.communication || 0} max={10} />
+                      <ScoreBar label="System Design" score={scores.system_design || 0} max={10} />
+                      <ScoreBar label="Coding Skill" score={scores.coding_skill || 0} max={10} />
+                      <ScoreBar label="Confidence" score={scores.confidence || 0} max={10} />
+                      <ScoreBar label="Domain Expertise" score={scores.domain_expertise || 0} max={10} />
+                      <ScoreBar label="Leadership Potential" score={scores.leadership_potential || 0} max={10} />
+                      <ScoreBar label="Cultural Fit" score={scores.cultural_fit || 0} max={10} />
+                      <ScoreBar label="Adaptability" score={scores.adaptability || 0} max={10} />
+                    </>
+                  ) : (
+                    <>
+                      <ScoreBar label="Technical Competency" score={scores.technical_competency || 0} max={25} />
+                      <ScoreBar label="Core Qualifications" score={scores.core_qualifications || 0} max={15} />
+                      <ScoreBar label="Communication Skills" score={scores.communication_skills || 0} max={20} />
+                      <ScoreBar label="Problem Solving" score={scores.problem_solving || 0} max={15} />
+                      <ScoreBar label="Domain Knowledge" score={scores.domain_knowledge || 0} max={15} />
+                      <ScoreBar label="Teamwork & Culture Fit" score={scores.teamwork_culture_fit || 0} max={10} />
+                    </>
+                  )}
                 </div>
               </div>
             </GlassCard>
 
-            {/* Supplementary */}
-            {Object.keys(supplementary).length > 0 && (
+            {/* Round Summaries (from deep evaluation) */}
+            {roundSummaries.length > 0 && (
               <GlassCard>
                 <div className="p-5">
-                  <h3 className="text-base font-semibold text-white mb-4">Supplementary Metrics</h3>
+                  <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--orbis-heading)' }}>Round-by-Round Summary</h3>
+                  <div className="space-y-3">
+                    {roundSummaries.map((rs: any, i: number) => (
+                      <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'var(--orbis-input)' }}>
+                        <div className="flex items-center justify-center h-8 w-8 rounded-lg shrink-0" style={{ background: 'rgba(27,142,229,0.12)' }}>
+                          <span className="text-xs font-bold text-blue-400">R{rs.round_number || i + 1}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm font-medium capitalize" style={{ color: 'var(--orbis-heading)' }}>{(rs.round_type || rs.type || '').replace(/_/g, ' ')}</span>
+                            {rs.score != null && <span className="text-xs font-bold text-blue-400">{rs.score}/10</span>}
+                          </div>
+                          <p className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>{rs.summary || rs.notes || ''}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Supplementary (legacy format) */}
+            {!isDeepEval && Object.keys(supplementary).length > 0 && (
+              <GlassCard>
+                <div className="p-5">
+                  <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--orbis-heading)' }}>Supplementary Metrics</h3>
                   <div className="space-y-3">
                     <ScoreBar label="Answer Depth" score={supplementary.answer_depth || 0} max={10} />
                     <ScoreBar label="Resume Consistency" score={supplementary.consistency_with_resume || 0} max={10} />
@@ -685,14 +745,14 @@ export default function InterviewResults({
             <div className="grid grid-cols-2 gap-4">
               <GlassCard>
                 <div className="p-4">
-                  <p className="text-xs text-slate-500 mb-1">Strongest Area</p>
-                  <p className="font-medium text-white">{eval_.strongest_competency || '\u2014'}</p>
+                  <p className="text-xs mb-1" style={{ color: 'var(--orbis-text-muted)' }}>Strongest Area</p>
+                  <p className="font-medium" style={{ color: 'var(--orbis-heading)' }}>{eval_.strongest_competency || '\u2014'}</p>
                 </div>
               </GlassCard>
               <GlassCard>
                 <div className="p-4">
-                  <p className="text-xs text-slate-500 mb-1">Area for Development</p>
-                  <p className="font-medium text-white">{eval_.area_for_development || '\u2014'}</p>
+                  <p className="text-xs mb-1" style={{ color: 'var(--orbis-text-muted)' }}>Area for Development</p>
+                  <p className="font-medium" style={{ color: 'var(--orbis-heading)' }}>{eval_.area_for_development || '\u2014'}</p>
                 </div>
               </GlassCard>
             </div>
@@ -700,8 +760,23 @@ export default function InterviewResults({
             {eval_.overall_impression && (
               <GlassCard>
                 <div className="p-4">
-                  <p className="text-xs text-slate-500 mb-1">Overall Impression</p>
-                  <p className="text-sm text-slate-300">{eval_.overall_impression}</p>
+                  <p className="text-xs mb-1" style={{ color: 'var(--orbis-text-muted)' }}>Overall Impression</p>
+                  <p className="text-sm" style={{ color: 'var(--orbis-text)' }}>{eval_.overall_impression}</p>
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Hire recommendation with confidence (deep eval) */}
+            {eval_.hire_recommendation && (
+              <GlassCard>
+                <div className="p-4">
+                  <p className="text-xs mb-1" style={{ color: 'var(--orbis-text-muted)' }}>Hire Recommendation</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold capitalize" style={{ color: 'var(--orbis-heading)' }}>{eval_.hire_recommendation.replace(/_/g, ' ')}</span>
+                    {eval_.recommendation_confidence && (
+                      <span className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>({eval_.recommendation_confidence})</span>
+                    )}
+                  </div>
                 </div>
               </GlassCard>
             )}
@@ -723,43 +798,174 @@ export default function InterviewResults({
             )}
           </TabsContent>
 
+          {/* Recruiter Report Tab */}
+          {recruiterReport && (
+            <TabsContent value="report" className="space-y-4 mt-4">
+              {/* Summary */}
+              <GlassCard>
+                <div className="p-5">
+                  <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--orbis-heading)' }}>Candidate Summary</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--orbis-text)' }}>{recruiterReport.candidate_summary}</p>
+                </div>
+              </GlassCard>
+
+              {/* Assessment + Recommendation */}
+              <GlassCard style={{ border: '1px solid rgba(27,142,229,0.2)' }}>
+                <div className="p-5">
+                  <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--orbis-heading)' }}>Overall Assessment</h3>
+                  <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--orbis-text)' }}>{recruiterReport.overall_assessment}</p>
+                  <div className="flex items-center gap-3">
+                    <GlassBadge bg={rec.bg} color={rec.color}>{recruiterReport.recommendation?.replace(/_/g, ' ') || rec.label}</GlassBadge>
+                    {recruiterReport.recommendation_confidence && (
+                      <span className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>Confidence: {recruiterReport.recommendation_confidence}</span>
+                    )}
+                  </div>
+                </div>
+              </GlassCard>
+
+              {/* Strengths + Concerns side by side */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <GlassCard style={{ border: '1px solid rgba(34,197,94,0.25)' }}>
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Trophy className="h-3.5 w-3.5 text-green-400" />
+                      <h3 className="text-sm font-semibold text-green-400">Key Strengths</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {(recruiterReport.key_strengths || []).map((s, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--orbis-text)' }}>
+                          <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0 mt-0.5" />
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </GlassCard>
+                <GlassCard style={{ border: '1px solid rgba(245,158,11,0.25)' }}>
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                      <h3 className="text-sm font-semibold text-amber-400">Concerns</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {(recruiterReport.concerns || []).map((c, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--orbis-text)' }}>
+                          <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </GlassCard>
+              </div>
+
+              {/* Round Highlights */}
+              {recruiterReport.round_highlights && recruiterReport.round_highlights.length > 0 && (
+                <GlassCard>
+                  <div className="p-5">
+                    <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--orbis-heading)' }}>Round Highlights</h3>
+                    <div className="space-y-2">
+                      {recruiterReport.round_highlights.map((rh, i) => (
+                        <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'var(--orbis-input)' }}>
+                          <div className="flex items-center justify-center h-7 w-7 rounded-lg shrink-0" style={{ background: 'rgba(27,142,229,0.12)' }}>
+                            <span className="text-[10px] font-bold text-blue-400 uppercase">{rh.round?.slice(0, 3)}</span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between mb-0.5">
+                              <span className="text-sm font-medium capitalize" style={{ color: 'var(--orbis-heading)' }}>{rh.round?.replace(/_/g, ' ')}</span>
+                              {rh.score != null && <span className="text-xs font-bold text-blue-400">{rh.score}/10</span>}
+                            </div>
+                            <p className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>{rh.summary}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </GlassCard>
+              )}
+
+              {/* Suggested Next Steps */}
+              {recruiterReport.suggested_next_steps && recruiterReport.suggested_next_steps.length > 0 && (
+                <GlassCard style={{ border: '1px solid rgba(99,102,241,0.2)' }}>
+                  <div className="p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <ArrowRight className="h-3.5 w-3.5 text-indigo-400" />
+                      <h3 className="text-sm font-semibold text-indigo-400">Suggested Next Steps</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {recruiterReport.suggested_next_steps.map((step, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--orbis-text)' }}>
+                          <span className="h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>
+                            {i + 1}
+                          </span>
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </GlassCard>
+              )}
+            </TabsContent>
+          )}
+
           <TabsContent value="transcript" className="mt-4">
             <GlassCard>
               <ScrollArea className="h-[500px]">
                 <div className="p-4 space-y-4">
-                  {results.transcript.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
-                      <div
-                        className="max-w-[80%] rounded-lg px-4 py-2"
-                        style={
-                          msg.role === 'ai'
-                            ? { background: 'var(--orbis-input)', color: 'hsl(var(--foreground))' }
-                            : { background: 'rgba(27,142,229,0.25)', color: 'hsl(var(--foreground))' }
-                        }
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          {msg.role === 'ai' ? (
-                            <MessageSquare className="h-3 w-3 text-slate-400" />
-                          ) : null}
-                          <span className="text-xs font-medium text-slate-300">
-                            {msg.role === 'ai' ? 'AI Interviewer' : 'Candidate'}
-                          </span>
-                          <span
-                            className="text-[10px] h-4 inline-flex items-center px-1.5 rounded"
-                            style={{ background: 'var(--orbis-border)', color: '#94a3b8', border: '1px solid var(--orbis-hover)' }}
-                          >
-                            {msg.message_type}
-                          </span>
+                  {results.transcript.map((msg, i) => {
+                    // Round transition markers
+                    if (msg.message_type === 'round_transition') {
+                      return (
+                        <div key={i} className="flex items-center gap-3 py-1">
+                          <div className="flex-1 h-px bg-blue-500/20" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400 px-2">{msg.content}</span>
+                          <div className="flex-1 h-px bg-blue-500/20" />
                         </div>
-                        <p className="text-sm whitespace-pre-wrap text-slate-200">{msg.content}</p>
-                        {msg.code_content && (
-                          <pre className="mt-2 p-2 rounded text-xs overflow-x-auto" style={{ background: 'rgba(0,0,0,0.3)' }}>
-                            <code className="text-slate-300">{msg.code_content}</code>
-                          </pre>
-                        )}
+                      );
+                    }
+
+                    return (
+                      <div key={i} className={`flex ${msg.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+                        <div
+                          className="max-w-[80%] rounded-lg px-4 py-2"
+                          style={
+                            msg.role === 'ai'
+                              ? { background: 'var(--orbis-input)', color: 'hsl(var(--foreground))' }
+                              : { background: 'rgba(27,142,229,0.25)', color: 'hsl(var(--foreground))' }
+                          }
+                        >
+                          <div className="flex items-center gap-2 mb-1">
+                            {msg.role === 'ai' ? (
+                              <MessageSquare className="h-3 w-3" style={{ color: 'var(--orbis-text-muted)' }} />
+                            ) : null}
+                            <span className="text-xs font-medium" style={{ color: 'var(--orbis-text)' }}>
+                              {msg.role === 'ai' ? 'AI Interviewer' : 'Candidate'}
+                            </span>
+                            <span
+                              className="text-[10px] h-4 inline-flex items-center px-1.5 rounded"
+                              style={{ background: 'var(--orbis-border)', color: '#94a3b8', border: '1px solid var(--orbis-hover)' }}
+                            >
+                              {msg.message_type}
+                            </span>
+                            {msg.round_type && (
+                              <span
+                                className="text-[10px] h-4 inline-flex items-center px-1.5 rounded"
+                                style={{ background: 'rgba(27,142,229,0.1)', color: '#60a5fa', border: '1px solid rgba(27,142,229,0.15)' }}
+                              >
+                                R{msg.round_number} {msg.round_type}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--orbis-text)' }}>{msg.content}</p>
+                          {msg.code_content && (
+                            <pre className="mt-2 p-2 rounded text-xs overflow-x-auto" style={{ background: 'rgba(0,0,0,0.3)' }}>
+                              <code style={{ color: 'var(--orbis-text)' }}>{msg.code_content}</code>
+                            </pre>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </GlassCard>
@@ -770,7 +976,7 @@ export default function InterviewResults({
             <GlassCard>
               <div className="p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-semibold flex items-center gap-2 text-white">
+                  <h3 className="text-base font-semibold flex items-center gap-2" style={{ color: 'var(--orbis-heading)' }}>
                     <Shield className="h-4 w-4 text-blue-400" /> Proctoring Report
                   </h3>
                   <div className="flex items-center gap-3">
@@ -782,8 +988,8 @@ export default function InterviewResults({
                 <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-slate-400">Trust Score</span>
-                      <span className="font-medium text-white">{results.proctoring_score ?? '\u2014'}%</span>
+                      <span style={{ color: 'var(--orbis-text-muted)' }}>Trust Score</span>
+                      <span className="font-medium" style={{ color: 'var(--orbis-heading)' }}>{results.proctoring_score ?? '\u2014'}%</span>
                     </div>
                     <div className="w-full h-3 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
                       <div
@@ -805,8 +1011,8 @@ export default function InterviewResults({
                     >
                       <Eye className="h-4 w-4 text-amber-500" />
                       <div>
-                        <p className="text-xs text-slate-500">Tab Switches</p>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>Tab Switches</p>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--orbis-heading)' }}>
                           {results.proctoring_events.filter(e => e.event_type === 'tab_away' || e.event_type === 'window_blur').length}
                         </p>
                       </div>
@@ -817,8 +1023,8 @@ export default function InterviewResults({
                     >
                       <Copy className="h-4 w-4 text-red-500" />
                       <div>
-                        <p className="text-xs text-slate-500">Copy/Paste</p>
-                        <p className="text-sm font-semibold text-white">
+                        <p className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>Copy/Paste</p>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--orbis-heading)' }}>
                           {results.proctoring_events.filter(e => e.event_type === 'copy_paste').length}
                         </p>
                       </div>
@@ -829,8 +1035,8 @@ export default function InterviewResults({
                     >
                       <Monitor className="h-4 w-4 text-blue-400" />
                       <div>
-                        <p className="text-xs text-slate-500">Total Events</p>
-                        <p className="text-sm font-semibold text-white">{results.proctoring_events.length}</p>
+                        <p className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>Total Events</p>
+                        <p className="text-sm font-semibold" style={{ color: 'var(--orbis-heading)' }}>{results.proctoring_events.length}</p>
                       </div>
                     </div>
                   </div>
@@ -857,9 +1063,9 @@ export default function InterviewResults({
             {/* Event Timeline */}
             <GlassCard>
               <div className="p-5">
-                <h3 className="text-base font-semibold text-white mb-4">Event Timeline</h3>
+                <h3 className="text-base font-semibold mb-4" style={{ color: 'var(--orbis-heading)' }}>Event Timeline</h3>
                 {results.proctoring_events.length === 0 ? (
-                  <p className="text-sm text-slate-500">No suspicious activity detected.</p>
+                  <p className="text-sm" style={{ color: 'var(--orbis-text-muted)' }}>No suspicious activity detected.</p>
                 ) : (
                   <ScrollArea className="h-[200px]">
                     {results.proctoring_events.map((evt, i) => (
@@ -870,9 +1076,9 @@ export default function InterviewResults({
                       >
                         <div className="flex items-center gap-2">
                           <EventIcon type={evt.event_type} />
-                          <span className="text-slate-400 capitalize">{evt.event_type.replace(/_/g, ' ')}</span>
+                          <span className="capitalize" style={{ color: 'var(--orbis-text-muted)' }}>{evt.event_type.replace(/_/g, ' ')}</span>
                         </div>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>
                           {evt.duration_ms ? `${(evt.duration_ms / 1000).toFixed(1)}s` : ''}
                           {evt.timestamp && ` \u00b7 ${new Date(evt.timestamp).toLocaleTimeString()}`}
                         </span>
@@ -902,20 +1108,20 @@ export default function InterviewResults({
             <div className="flex-1 text-center sm:text-left">
               {canRetake ? (
                 <>
-                  <h3 className="text-base font-semibold text-white mb-1">
+                  <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--orbis-heading)' }}>
                     Want to improve your score?
                   </h3>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm" style={{ color: 'var(--orbis-text-muted)' }}>
                     You have {remainingRetakes} retake{remainingRetakes !== 1 ? 's' : ''} available.
                     Your best score will be used.
                   </p>
                 </>
               ) : (
                 <>
-                  <h3 className="text-base font-semibold text-white mb-1">
+                  <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--orbis-heading)' }}>
                     All attempts used
                   </h3>
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm" style={{ color: 'var(--orbis-text-muted)' }}>
                     You've used all {maxAttempts} attempts. Your best score has been recorded.
                   </p>
                 </>

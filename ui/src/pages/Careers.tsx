@@ -248,7 +248,7 @@ const Careers = () => {
                   placeholder="Search jobs by title, skill, or keyword..."
                   value={search}
                   onChange={e => { setSearch(e.target.value); setPage(1); }}
-                  className="w-full h-14 pl-13 pr-5 rounded-full text-base placeholder:text-slate-500 transition-all outline-none"
+                  className="w-full h-14 pl-14 pr-5 rounded-full text-base placeholder:text-slate-500 transition-all outline-none"
                   style={{
                     background: 'var(--orbis-input)',
                     border: '1px solid var(--orbis-border)',
@@ -523,57 +523,39 @@ const Careers = () => {
                         </span>
                       </div>
 
-                      {/* Top row: Title + Arrow + Quick Apply */}
-                      <div className="flex items-start justify-between gap-4 pr-20">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors leading-snug">
-                            {job.job_title}
-                          </h3>
+                      {/* Title row */}
+                      <div className="pr-28">
+                        <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors leading-snug">
+                          {job.job_title}
+                        </h3>
 
-                          {/* Badges row */}
-                          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
-                            {job.location && (
-                              <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                                <MapPin className="h-3 w-3 shrink-0" /> {job.location}
-                              </span>
-                            )}
-                            {job.location_type && (
-                              <span
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-slate-300"
-                                style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
-                              >
-                                {(() => { const Icon = LOCATION_TYPE_ICONS[job.location_type] || Globe2; return <Icon className="h-3 w-3" />; })()}
-                                {LOCATION_TYPE_LABELS[job.location_type] || job.location_type}
-                              </span>
-                            )}
-                            {job.job_type && (
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${JOB_TYPE_COLORS[job.job_type] || 'bg-white/5 text-slate-400 border border-white/10'}`}>
-                                {JOB_TYPE_LABELS[job.job_type] || job.job_type}
-                              </span>
-                            )}
-                            {job.salary_range && (job.salary_range.min || job.salary_range.max) && (
-                              <span className="inline-flex items-center gap-0.5 text-xs font-medium text-emerald-400">
-                                <DollarSign className="h-3 w-3" />
-                                {job.salary_range.min?.toLocaleString()} - {job.salary_range.max?.toLocaleString()} {job.salary_range.currency}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0 mt-0.5">
-                          {/* Quick Apply Button - visible on hover */}
-                          <span
-                            className="hidden group-hover:inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-all"
-                            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
-                          >
-                            Quick Apply
-                          </span>
-                          <div
-                            className="flex items-center justify-center w-10 h-10 rounded-full transition-colors"
-                            style={{ background: 'var(--orbis-input)' }}
-                          >
-                            <ArrowRight className="h-4 w-4 text-slate-500 group-hover:text-blue-400 transition-all group-hover:translate-x-0.5 transform duration-200" />
-                          </div>
+                        {/* Badges row */}
+                        <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                          {job.location && (
+                            <span className="inline-flex items-center gap-1 text-xs text-slate-500">
+                              <MapPin className="h-3 w-3 shrink-0" /> {job.location}
+                            </span>
+                          )}
+                          {job.location_type && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-slate-300"
+                              style={{ background: 'var(--orbis-border)', border: '1px solid var(--orbis-border)' }}
+                            >
+                              {(() => { const Icon = LOCATION_TYPE_ICONS[job.location_type] || Globe2; return <Icon className="h-3 w-3" />; })()}
+                              {LOCATION_TYPE_LABELS[job.location_type] || job.location_type}
+                            </span>
+                          )}
+                          {job.job_type && (
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${JOB_TYPE_COLORS[job.job_type] || 'bg-white/5 text-slate-400 border border-white/10'}`}>
+                              {JOB_TYPE_LABELS[job.job_type] || job.job_type}
+                            </span>
+                          )}
+                          {job.salary_range && (job.salary_range.min || job.salary_range.max) && (
+                            <span className="inline-flex items-center gap-0.5 text-xs font-medium text-emerald-400">
+                              <DollarSign className="h-3 w-3" />
+                              {job.salary_range.min?.toLocaleString()} - {job.salary_range.max?.toLocaleString()} {job.salary_range.currency}
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -601,12 +583,21 @@ const Careers = () => {
                       )}
 
                       {/* Footer meta - pushed to bottom */}
-                      <div className="flex items-center gap-4 mt-auto pt-4" style={{ borderTop: '1px solid var(--orbis-grid)', marginTop: 'auto', paddingTop: '1rem' }}>
-                        <span className="flex items-center gap-1 text-xs text-slate-400">
-                          <Clock className="h-3 w-3" /> Posted {formatDate(job.created_at)}
-                        </span>
-                        <span className="flex items-center gap-1 text-xs text-slate-400">
-                          <Users className="h-3 w-3" /> {job.applicant_count} applicant{job.applicant_count !== 1 ? 's' : ''}
+                      <div className="flex items-center justify-between mt-auto pt-4" style={{ borderTop: '1px solid var(--orbis-grid)', marginTop: 'auto', paddingTop: '1rem' }}>
+                        <div className="flex items-center gap-4">
+                          <span className="flex items-center gap-1 text-xs text-slate-400">
+                            <Clock className="h-3 w-3" /> Posted {formatDate(job.created_at)}
+                          </span>
+                          <span className="flex items-center gap-1 text-xs text-slate-400">
+                            <Users className="h-3 w-3" /> {job.applicant_count} applicant{job.applicant_count !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <span
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 group-hover:text-white transition-all"
+                          style={{ background: 'var(--orbis-input)' }}
+                        >
+                          <span className="hidden group-hover:inline">Quick Apply</span>
+                          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transform transition-transform duration-200" />
                         </span>
                       </div>
                     </div>

@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Sparkles, Brain, BarChart3, Target, Clock, MessageSquare,
   Mic, RefreshCw, CheckCircle, ArrowRight, Shield, Lightbulb,
-  Trophy, Eye,
+  Trophy, Eye, Loader2,
 } from 'lucide-react';
 import CandidateLayout from '@/components/layout/CandidateLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiClient } from '@/utils/api';
+import { useToast } from '@/hooks/use-toast';
 
 /* ─── Design tokens ─── */
 const glassCard: React.CSSProperties = {
@@ -120,22 +122,48 @@ function MiniProgressBar({ value, color }: { value: number; color: string }) {
 const AIAssessment = () => {
   const navigate = useNavigate();
   const { user: _user } = useAuth();
+  const { toast } = useToast();
 
-  // Toggle this to see both states
-  const [hasAssessment] = useState(true);
+  const [assessments, setAssessments] = useState<any[]>([]);
+  const [isStarting, setIsStarting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    apiClient.getMyAssessments()
+      .then(data => setAssessments(data || []))
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const latestCompleted = assessments.find(a => a.status === 'completed');
+  const hasAssessment = !!latestCompleted;
+  const completedCount = assessments.filter(a => a.status === 'completed').length;
+
+  const evaluation = latestCompleted?.evaluation || {};
+  const scoreBreakdownRaw = evaluation.score_breakdown || {};
+  const overallScore = latestCompleted?.overall_score || 0;
+
   const mockScore = {
-    overall: 85,
-    communication: 88,
-    technical: 82,
-    problemSolving: 85,
-    attempts: 1,
+    overall: Math.round(overallScore),
+    communication: Math.round(scoreBreakdownRaw.communication || scoreBreakdownRaw.Communication || 0),
+    technical: Math.round(scoreBreakdownRaw.technical_knowledge || scoreBreakdownRaw.technical || 0),
+    problemSolving: Math.round(scoreBreakdownRaw.problem_solving || scoreBreakdownRaw.analytical || 0),
+    attempts: completedCount,
     maxAttempts: 3,
-    lastTaken: '2026-03-12',
-    label: 'Excellent',
+    lastTaken: latestCompleted?.completed_at?.split('T')[0] || '',
+    label: getScoreLabel(Math.round(overallScore)),
   };
 
-  const handleStartAssessment = () => {
-    navigate('/ai-interview/demo-token');
+  const handleStartAssessment = async () => {
+    setIsStarting(true);
+    try {
+      const result = await apiClient.startAssessment();
+      navigate(`/ai-interview/${result.token}`);
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to start assessment', variant: 'destructive' });
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   const scoreBreakdown = [
@@ -316,22 +344,23 @@ const AIAssessment = () => {
                       <button
                         className="flex items-center gap-2 rounded-xl px-5 h-10 text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-white/5 active:scale-[0.97]"
                         style={{ border: '1px solid var(--orbis-border)' }}
-                        onClick={() => navigate('/ai-interview/demo-token')}
+                        onClick={() => latestCompleted?.token && navigate(`/ai-interview/${latestCompleted.token}`)}
                       >
                         <Eye className="w-4 h-4" />
                         View Detailed Results
                       </button>
                       {mockScore.attempts < mockScore.maxAttempts && (
                         <button
-                          className="flex items-center gap-2 rounded-xl px-5 h-10 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.97]"
+                          className="flex items-center gap-2 rounded-xl px-5 h-10 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.97] disabled:opacity-50"
                           style={{
                             background: 'linear-gradient(135deg, #1B8EE5, #1676c0)',
                             boxShadow: '0 4px 20px rgba(27,142,229,0.3)',
                           }}
                           onClick={handleStartAssessment}
+                          disabled={isStarting}
                         >
-                          <RefreshCw className="w-4 h-4" />
-                          Retake Assessment
+                          {isStarting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                          {isStarting ? 'Starting...' : 'Retake Assessment'}
                         </button>
                       )}
                     </div>
@@ -429,30 +458,32 @@ const AIAssessment = () => {
           <motion.div variants={staggerItem} className="text-center pb-12">
             {!hasAssessment && (
               <motion.button
-                className="inline-flex items-center gap-2.5 rounded-2xl px-10 h-14 text-base font-semibold text-white transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]"
+                className="inline-flex items-center gap-2.5 rounded-2xl px-10 h-14 text-base font-semibold text-white transition-all duration-300 hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50"
                 style={{
                   background: 'linear-gradient(135deg, #1B8EE5, #1676c0)',
                   boxShadow: '0 8px 32px rgba(27,142,229,0.35)',
                 }}
                 onClick={handleStartAssessment}
+                disabled={isStarting}
                 whileHover={{ boxShadow: '0 12px 40px rgba(27,142,229,0.45)' }}
                 whileTap={{ scale: 0.97 }}
               >
-                <Sparkles className="w-5 h-5" />
-                Start Assessment
-                <ArrowRight className="w-5 h-5" />
+                {isStarting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                {isStarting ? 'Starting...' : 'Start Assessment'}
+                {!isStarting && <ArrowRight className="w-5 h-5" />}
               </motion.button>
             )}
 
             {hasAssessment && mockScore.attempts < mockScore.maxAttempts && (
               <motion.button
-                className="inline-flex items-center gap-2.5 rounded-2xl px-8 h-12 text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-white/5 active:scale-[0.97]"
+                className="inline-flex items-center gap-2.5 rounded-2xl px-8 h-12 text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-white/5 active:scale-[0.97] disabled:opacity-50"
                 style={{ border: '1px solid var(--orbis-border)' }}
                 onClick={handleStartAssessment}
+                disabled={isStarting}
                 whileHover={{ borderColor: 'rgba(27,142,229,0.4)' }}
               >
-                <RefreshCw className="w-4 h-4" />
-                Retake Assessment
+                {isStarting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                {isStarting ? 'Starting...' : 'Retake Assessment'}
               </motion.button>
             )}
 

@@ -595,6 +595,28 @@ export interface AIInterviewResults {
   completed_at: string | null;
   interview_type: string;
   time_limit_minutes: number;
+  // Enhanced multi-round fields
+  interview_plan?: any;
+  interview_state?: any;
+  recruiter_report?: RecruiterReport | null;
+}
+
+export interface RecruiterReport {
+  candidate_summary: string;
+  overall_assessment: string;
+  recommendation: string;
+  recommendation_confidence: string;
+  key_strengths: string[];
+  concerns: string[];
+  round_highlights?: RoundHighlight[];
+  suggested_next_steps: string[];
+  interview_quality_notes?: string;
+}
+
+export interface RoundHighlight {
+  round: string;
+  summary: string;
+  score?: number;
 }
 
 export interface AIInterviewTranscriptMessage {
@@ -604,6 +626,8 @@ export interface AIInterviewTranscriptMessage {
   code_content?: string;
   code_language?: string;
   timestamp?: string;
+  round_number?: number;
+  round_type?: string;
 }
 
 export interface ProctoringEvent {

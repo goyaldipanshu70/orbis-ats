@@ -29,6 +29,7 @@ import CandidateDetail from "@/pages/CandidateDetail";
 import InterviewEvaluations from "@/pages/InterviewEvaluations";
 import NotFound from "@/pages/NotFound";
 import AccountSettings from "@/pages/AccountSettings";
+import LandingPage from "@/pages/LandingPage";
 import HiringAssistant from "@/pages/HiringAssistant";
 import Analytics from "@/pages/Analytics";
 import DocumentTemplates from "@/pages/DocumentTemplates";
@@ -107,7 +108,7 @@ const App = () => (
         <BrowserRouter>
           <ErrorBoundary>
           <Routes>
-            <Route path="/" element={<HomeRedirect />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

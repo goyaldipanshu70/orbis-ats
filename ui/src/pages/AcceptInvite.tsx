@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Lock, Eye, EyeOff, Loader2, Zap, CheckCircle2, AlertCircle, UserPlus } from 'lucide-react';
+import { Lock, Eye, EyeOff, Loader2, CheckCircle2, AlertCircle, UserPlus } from 'lucide-react';
+import { OrbisLogoIcon } from '@/components/Logo';
 import { apiClient } from '@/utils/api';
 
 const glassInput: React.CSSProperties = {
@@ -47,7 +48,7 @@ export default function AcceptInvite() {
             <Link
               to="/login"
               className="inline-block px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all"
-              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
+              style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))' }}
             >
               Go to Sign In
             </Link>
@@ -98,9 +99,7 @@ export default function AcceptInvite() {
       <div className="w-full max-w-[420px] relative z-10">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 20px rgba(27,142,229,0.3)' }}>
-            <Zap className="w-5 h-5 text-white" strokeWidth={2.5} />
-          </div>
+          <OrbisLogoIcon size="md" />
           <span className="font-bold text-2xl text-white tracking-tight">Orbis</span>
         </div>
 
@@ -118,7 +117,7 @@ export default function AcceptInvite() {
               <button
                 onClick={() => navigate('/interviews')}
                 className="w-full h-12 rounded-xl text-[15px] font-semibold text-white transition-all"
-                style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }}
+                style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }}
               >
                 Go to Dashboard
               </button>
@@ -200,7 +199,7 @@ export default function AcceptInvite() {
                   type="submit"
                   disabled={isSubmitting || !password || !confirmPassword}
                   className="w-full h-12 rounded-xl text-[15px] font-semibold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))', boxShadow: '0 4px 20px rgba(27,142,229,0.25)' }}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center gap-2.5">

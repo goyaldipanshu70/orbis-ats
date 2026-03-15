@@ -7,11 +7,12 @@ import { NotificationBell } from '@/components/NotificationBell';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, Bot, Settings, Shield, BarChart3,
-  LogOut, Zap, Plus, FileText, UserCheck, Workflow, Calendar, Users, Briefcase,
+  LogOut, Plus, FileText, UserCheck, Workflow, Calendar, Users, Briefcase,
   Megaphone, ClipboardCheck, Share2, Mail, ShieldCheck,
   GitPullRequest, FileStack, Globe2, Target, Inbox, Activity,
   ChevronDown, Blocks,
 } from 'lucide-react';
+import { OrbisLogoIcon } from '@/components/Logo';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /* ── dropdown glass styles ── */
@@ -376,7 +377,7 @@ function UserMenu() {
         aria-label="User menu"
         className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/10"
       >
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))' }}>
           {user?.first_name?.[0]}{user?.last_name?.[0]}
         </div>
         <ChevronDown aria-hidden="true" className={cn(
@@ -512,13 +513,8 @@ export default function TopNavbar() {
           aria-label="Go to dashboard"
           className="flex items-center gap-2.5 mr-6 shrink-0 group"
         >
-          <motion.div
-            className="flex h-8 w-8 items-center justify-center rounded-lg"
-            style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Zap aria-hidden="true" className="h-[18px] w-[18px] text-white" />
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <OrbisLogoIcon size="sm" />
           </motion.div>
           <span className="text-base font-bold text-white tracking-tight transition-colors" style={{ transitionProperty: 'color' }}>
             Orbis
@@ -547,7 +543,7 @@ export default function TopNavbar() {
             <button
               onClick={() => navigate('/jobs/create')}
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 4px 16px rgba(27,142,229,0.25)' }}
+              style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))', boxShadow: '0 4px 16px var(--orbis-accent-glow)' }}
             >
               <Plus aria-hidden="true" className="h-3.5 w-3.5" />
               New Job

@@ -417,8 +417,20 @@ def seed_recruiting():
                 cur.execute("INSERT INTO pipeline_stage_history (candidate_id, jd_id, from_stage, to_stage, changed_by, created_at) VALUES (%s,%s,%s,%s,'2',%s)",
                             (eid, ji+1, f_s, t_s, days_ago(td)))
 
-    # Interview schedules
+    # Interview schedules — look up interviewer auth user IDs by email
     print("[recruiting_db] Seeding interviews...")
+    auth_conn2 = psycopg2.connect(AUTH_DB)
+    auth_cur2 = auth_conn2.cursor()
+    interviewer_name_to_uid = {}
+    for iname, iemail in [("Deepak Patel","deepak.patel@orbis.io"),("Meera Nair","meera.nair@orbis.io"),
+                          ("Suresh Reddy","suresh.reddy@orbis.io"),("Kavita Joshi","kavita.joshi@orbis.io"),
+                          ("Arjun Menon","arjun.menon@orbis.io")]:
+        auth_cur2.execute("SELECT id FROM users WHERE email = %s", (iemail,))
+        row = auth_cur2.fetchone()
+        interviewer_name_to_uid[iname] = row[0] if row else 0
+    auth_cur2.close()
+    auth_conn2.close()
+
     interviewer_pools = [
         ["Deepak Patel", "Meera Nair"], ["Suresh Reddy", "Kavita Joshi"],
         ["Arjun Menon", "Deepak Patel"], ["Meera Nair", "Suresh Reddy"],
@@ -429,6 +441,7 @@ def seed_recruiting():
         if stage in ("interview", "offer", "hired"):
             sid += 1
             interviewers = random.choice(interviewer_pools)
+            interviewer_uids = [interviewer_name_to_uid.get(n, 0) for n in interviewers]
             sdate = days_ago(max(1, da - 5))
             status = "completed" if stage in ("offer", "hired") else "scheduled"
             cur.execute("""
@@ -439,7 +452,7 @@ def seed_recruiting():
                 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'2',1,%s,%s,%s,%s,%s)
             """, (sid, eid, ji+1, random.choice(["video","in_person"]),
                   sdate.strftime("%Y-%m-%d"), random.choice(["10:00","11:00","14:00","15:00"]),
-                  random.choice([45, 60]), Json([6, 7]), Json(interviewers),
+                  random.choice([45, 60]), Json(interviewer_uids), Json(interviewers),
                   status, random.choice(["technical","behavioral","system_design"]),
                   "https://meet.google.com/abc-defg-hij",
                   status == "completed", sdate - timedelta(days=2), sdate - timedelta(days=2)))
@@ -450,7 +463,7 @@ def seed_recruiting():
 
     # Feedback
     print("[recruiting_db] Seeding feedback...")
-    iid_map = {"Deepak Patel": "6", "Meera Nair": "7", "Suresh Reddy": "8", "Kavita Joshi": "9", "Arjun Menon": "10"}
+    iid_map = {name: str(uid) for name, uid in interviewer_name_to_uid.items()}
     rec_map = {5: "strong_yes", 4: "yes", 3: "neutral", 2: "no", 1: "strong_no"}
     for sid, interviewers, score in sched_entries:
         for iname in interviewers:
@@ -483,19 +496,27 @@ def seed_recruiting():
     if oid > 0:
         cur.execute("SELECT setval('offers_id_seq', (SELECT MAX(id) FROM offers))")
 
-    # Interviewer profiles
+    # Interviewer profiles — look up actual auth user IDs by email
     print("[recruiting_db] Seeding interviewer profiles...")
-    for uid, email, name, specs, dept in [
-        (6, "deepak.patel@orbis.io", "Deepak Patel", ["React","Node.js","System Design"], "Engineering"),
-        (7, "meera.nair@orbis.io", "Meera Nair", ["Python","Data Science","ML"], "Data Science"),
-        (8, "suresh.reddy@orbis.io", "Suresh Reddy", ["DevOps","AWS","Kubernetes"], "Infrastructure"),
-        (9, "kavita.joshi@orbis.io", "Kavita Joshi", ["Product Management","UX","Analytics"], "Product"),
-        (10, "arjun.menon@orbis.io", "Arjun Menon", ["Java","Microservices","Spring Boot"], "Backend"),
-    ]:
+    auth_conn = psycopg2.connect(AUTH_DB)
+    auth_cur = auth_conn.cursor()
+    interviewer_data = [
+        ("deepak.patel@orbis.io", "Deepak Patel", ["React","Node.js","System Design"], "Engineering"),
+        ("meera.nair@orbis.io", "Meera Nair", ["Python","Data Science","ML"], "Data Science"),
+        ("suresh.reddy@orbis.io", "Suresh Reddy", ["DevOps","AWS","Kubernetes"], "Infrastructure"),
+        ("kavita.joshi@orbis.io", "Kavita Joshi", ["Product Management","UX","Analytics"], "Product"),
+        ("arjun.menon@orbis.io", "Arjun Menon", ["Java","Microservices","Spring Boot"], "Backend"),
+    ]
+    for email, name, specs, dept in interviewer_data:
+        auth_cur.execute("SELECT id FROM users WHERE email = %s", (email,))
+        row = auth_cur.fetchone()
+        uid = row[0] if row else 0
         cur.execute("""
             INSERT INTO interviewer_profiles (user_id, email, full_name, specializations, seniority, department, max_interviews_per_week, is_active, total_interviews, avg_rating_given, created_at, updated_at)
             VALUES (%s,%s,%s,%s,'senior',%s,8,true,%s,%s,%s,%s)
         """, (uid, email, name, Json(specs), dept, random.randint(15,40), round(random.uniform(3.2,4.5),1), days_ago(60), days_ago(60)))
+    auth_cur.close()
+    auth_conn.close()
 
     # Referrals
     print("[recruiting_db] Seeding referrals...")

@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Clock, Send, Loader2, PhoneOff, Code, Brain,
   MessageSquare, CheckCircle, Mail, Timer, X,
-  Shield, Sparkles, ChevronRight, Mic,
+  Shield, Sparkles, ChevronRight, Mic, MicOff,
+  Volume2, VolumeX,
 } from 'lucide-react';
 import InterviewLobby from '@/components/ai-interview/InterviewLobby';
-import VoiceControl from '@/components/ai-interview/VoiceControl';
 import CodePanel from '@/components/ai-interview/CodePanel';
 import ProctoringMonitor from '@/components/ai-interview/ProctoringMonitor';
 
@@ -29,6 +29,14 @@ interface Message {
   content: string;
   messageType?: string;
   codeContent?: string;
+  roundNumber?: number;
+  roundType?: string;
+}
+
+interface RoundInfo {
+  round_number: number;
+  type: string;
+  question_count: number;
 }
 
 interface SessionInfo {
@@ -41,6 +49,15 @@ interface SessionInfo {
   coding_language?: string;
   status: string;
 }
+
+// Round type display names and colors
+const ROUND_LABELS: Record<string, { label: string; color: string; icon: string }> = {
+  screening: { label: 'Screening', color: '#34d399', icon: '🎯' },
+  technical: { label: 'Technical', color: '#60a5fa', icon: '⚙️' },
+  coding: { label: 'Coding', color: '#a78bfa', icon: '💻' },
+  system_design: { label: 'System Design', color: '#f59e0b', icon: '🏗️' },
+  behavioral: { label: 'Behavioral', color: '#f472b6', icon: '🤝' },
+};
 
 const fadeIn = {
   hidden: { opacity: 0, y: 12 },
@@ -59,12 +76,13 @@ function AiWaveform({ active }: { active: boolean }) {
         <div
           key={i}
           className={`w-[3px] rounded-full transition-all duration-300 ${
-            active ? 'animate-waveform bg-blue-400' : 'bg-slate-600'
+            active ? 'animate-waveform bg-blue-400' : ''
           }`}
           style={{
             height: active ? '16px' : '4px',
             animationDelay: `${i * 100}ms`,
             opacity: active ? 0.9 : 0.3,
+            ...(!active ? { background: 'var(--orbis-border)' } : {}),
           }}
         />
       ))}
@@ -86,10 +104,46 @@ function ProgressIndicator({ current, total }: { current: number; total: number 
               ? 'w-4 bg-blue-500'
               : i === filled
                 ? 'w-3 bg-blue-500/50'
-                : 'w-1.5 bg-slate-700'
+                : 'w-1.5'
           }`}
+          style={i > filled ? { background: 'var(--orbis-border)' } : undefined}
         />
       ))}
+    </div>
+  );
+}
+
+// Round progress indicator
+function RoundProgress({ rounds, currentRound }: { rounds: RoundInfo[]; currentRound: number }) {
+  if (!rounds.length) return null;
+  return (
+    <div className="flex items-center gap-1 px-3">
+      {rounds.map((r, i) => {
+        const info = ROUND_LABELS[r.type] || { label: r.type, color: '#94a3b8', icon: '📋' };
+        const isActive = r.round_number === currentRound;
+        const isDone = r.round_number < currentRound;
+        return (
+          <div key={r.round_number} className="flex items-center gap-1">
+            {i > 0 && (
+              <div
+                className="w-4 h-0.5 rounded-full"
+                style={{ background: isDone ? info.color : 'var(--orbis-border)' }}
+              />
+            )}
+            <div
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all"
+              style={{
+                background: isActive ? `${info.color}20` : isDone ? `${info.color}10` : 'transparent',
+                color: isActive ? info.color : isDone ? `${info.color}99` : 'var(--orbis-muted)',
+                border: isActive ? `1px solid ${info.color}40` : '1px solid transparent',
+              }}
+            >
+              {isDone ? <CheckCircle className="h-3 w-3" /> : null}
+              {info.label}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -115,9 +169,162 @@ export default function AIInterviewRoom() {
   const [currentCaption, setCurrentCaption] = useState('');
   const [completionStats, setCompletionStats] = useState({ duration: 0, answered: 0, total: 0 });
 
+  // Multi-round state
+  const [rounds, setRounds] = useState<RoundInfo[]>([]);
+  const [currentRound, setCurrentRound] = useState(1);
+  const [currentRoundType, setCurrentRoundType] = useState<string>('');
+  const [difficultyLevel, setDifficultyLevel] = useState<string>('medium');
+
+  // ── Voice engine state ──
+  const [isAiSpeaking, setIsAiSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [showTranscript, setShowTranscript] = useState(false);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
+  const synthRef = useRef(typeof window !== 'undefined' ? window.speechSynthesis : null);
+  const recognitionRef = useRef<any>(null);
+  const webcamRef = useRef<HTMLVideoElement>(null);
+  const lastSpokenMsgRef = useRef<number>(-1);
+  const voiceEnabledRef = useRef(true);
+  const sendMessageRef = useRef<(text: string) => void>(() => {});
+  const isMountedRef = useRef(true);
+  const endTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleEndRef = useRef<() => void>(() => {});
+
+  // Keep ref in sync with state
+  useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
+
+  // Start webcam
+  useEffect(() => {
+    if (state !== 'active') return;
+    let stopped = false;
+    let activeStream: MediaStream | null = null;
+    navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      audio: false,
+    })
+      .then(stream => {
+        if (stopped) { stream.getTracks().forEach(t => t.stop()); return; }
+        activeStream = stream;
+        if (webcamRef.current) webcamRef.current.srcObject = stream;
+      })
+      .catch(() => {});
+    return () => {
+      stopped = true;
+      if (activeStream) activeStream.getTracks().forEach(t => t.stop());
+    };
+  }, [state]);
+
+  // ── TTS: Speak AI message ──
+  const speakText = useCallback((text: string, onEnd?: () => void) => {
+    if (!synthRef.current || !voiceEnabledRef.current) { onEnd?.(); return; }
+    synthRef.current.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    // Pick a natural English voice
+    const voices = synthRef.current.getVoices();
+    const preferred = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google') && v.name.includes('Female'))
+      || voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'))
+      || voices.find(v => v.lang.startsWith('en') && !v.localService)
+      || voices.find(v => v.lang.startsWith('en'));
+    if (preferred) utterance.voice = preferred;
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.onstart = () => setIsAiSpeaking(true);
+    utterance.onend = () => { setIsAiSpeaking(false); onEnd?.(); };
+    utterance.onerror = () => { setIsAiSpeaking(false); onEnd?.(); };
+    synthRef.current.speak(utterance);
+  }, []);
+
+  // ── STT: Start listening ──
+  const startListening = useCallback(() => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
+    if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    let finalTranscript = '';
+    let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const resetSilenceTimer = () => {
+      if (silenceTimer) clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => { recognition.stop(); }, 2500); // auto-stop after 2.5s silence
+    };
+
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript;
+        if (event.results[i].isFinal) { finalTranscript += t + ' '; } else { interim += t; }
+      }
+      setInterimTranscript(interim || finalTranscript);
+      resetSilenceTimer();
+    };
+
+    recognition.onerror = () => { if (isMountedRef.current) { setIsListening(false); setInterimTranscript(''); } };
+    recognition.onend = () => {
+      if (silenceTimer) clearTimeout(silenceTimer);
+      if (!isMountedRef.current) return;
+      setIsListening(false);
+      const text = finalTranscript.trim();
+      setInterimTranscript('');
+      if (text) sendMessageRef.current(text);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+    resetSilenceTimer();
+  }, []);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) { try { recognitionRef.current.stop(); } catch {} }
+  }, []);
+
+  // ── Auto-speak new AI messages and auto-listen after ──
+  useEffect(() => {
+    if (state !== 'active' || messages.length === 0) return;
+    const lastIdx = messages.length - 1;
+    const lastMsg = messages[lastIdx];
+    if (lastMsg.role !== 'ai' || lastSpokenMsgRef.current >= lastIdx) return;
+    lastSpokenMsgRef.current = lastIdx;
+    setCurrentCaption(lastMsg.content);
+
+    if (voiceEnabledRef.current) {
+      speakText(lastMsg.content, () => {
+        // Auto-start listening after AI finishes speaking
+        if (state === 'active' && !isProcessing) {
+          setTimeout(() => startListening(), 400);
+        }
+      });
+    }
+  }, [messages, state, isProcessing, speakText, startListening]);
+
+  // Cleanup voice + timers on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      synthRef.current?.cancel();
+      if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
+      if (endTimeoutRef.current) clearTimeout(endTimeoutRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  // Cancel speech/recognition when leaving active state
+  useEffect(() => {
+    if (state !== 'active') {
+      synthRef.current?.cancel();
+      if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
+    }
+  }, [state]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -131,7 +338,7 @@ export default function AIInterviewRoom() {
     if (state !== 'active' || timeRemaining <= 0) return;
     timerRef.current = setInterval(() => {
       setTimeRemaining(prev => {
-        if (prev <= 1) { handleEndInterview(); return 0; }
+        if (prev <= 1) { handleEndRef.current(); return 0; }
         return prev - 1;
       });
     }, 1000);
@@ -160,13 +367,19 @@ export default function AIInterviewRoom() {
 
       setMessages([
         { role: 'ai', content: data.opening_message, messageType: 'system' },
-        { role: 'ai', content: data.first_question, messageType: 'question' },
+        { role: 'ai', content: data.first_question, messageType: 'question', roundNumber: 1, roundType: data.current_round_type },
       ]);
       setCurrentCaption(data.first_question);
       setTotalQuestions(data.total_questions || 10);
       setCurrentQuestion(1);
       setTimeRemaining((data.time_limit_minutes || 30) * 60);
       startTimeRef.current = Date.now();
+
+      // Multi-round state
+      if (data.rounds) setRounds(data.rounds);
+      if (data.current_round) setCurrentRound(data.current_round);
+      if (data.current_round_type) setCurrentRoundType(data.current_round_type);
+
       setState('active');
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
@@ -190,10 +403,32 @@ export default function AIInterviewRoom() {
       if (!resp.ok) throw new Error('Failed to get response');
 
       const data = await resp.json();
-      setMessages(prev => [...prev, { role: 'ai', content: data.message, messageType: data.message_type }]);
+
+      // Handle round advancement — insert a transition message before the next question
+      if (data.advance_round && data.current_round_type) {
+        const roundLabel = ROUND_LABELS[data.current_round_type]?.label || data.current_round_type;
+        setMessages(prev => [...prev, {
+          role: 'ai',
+          content: `Moving on to Round ${data.current_round}: ${roundLabel}`,
+          messageType: 'round_transition',
+          roundNumber: data.current_round,
+          roundType: data.current_round_type,
+        }]);
+      }
+
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        content: data.message,
+        messageType: data.message_type,
+        roundNumber: data.current_round || currentRound,
+        roundType: data.current_round_type || currentRoundType,
+      }]);
       setCurrentCaption(data.message);
 
       if (data.current_question) setCurrentQuestion(data.current_question);
+      if (data.current_round) setCurrentRound(data.current_round);
+      if (data.current_round_type) setCurrentRoundType(data.current_round_type);
+      if (data.difficulty_level) setDifficultyLevel(data.difficulty_level);
 
       if (data.code_prompt) {
         setCodeProblem(data.code_prompt.problem || '');
@@ -201,13 +436,16 @@ export default function AIInterviewRoom() {
       }
 
       if (data.is_complete) {
-        setTimeout(() => handleEndInterview(), 3000);
+        endTimeoutRef.current = setTimeout(() => { if (isMountedRef.current) handleEndInterview(); }, 3000);
       }
     } catch {
       toast({ title: 'Error', description: 'Failed to process your answer. Please try again.', variant: 'destructive' });
     }
     setIsProcessing(false);
-  }, [token, isProcessing, toast]);
+  }, [token, isProcessing, toast, currentRound, currentRoundType]);
+
+  // Keep ref in sync for use in speech recognition callback
+  useEffect(() => { sendMessageRef.current = sendMessage; }, [sendMessage]);
 
   const handleCodeSubmit = useCallback(async (code: string, language: string) => {
     if (!token) return;
@@ -236,6 +474,11 @@ export default function AIInterviewRoom() {
   const handleEndInterview = useCallback(async () => {
     if (!token) return;
     if (timerRef.current) clearInterval(timerRef.current);
+    // Stop voice engine
+    synthRef.current?.cancel();
+    if (recognitionRef.current) { try { recognitionRef.current.abort(); } catch {} }
+    setIsAiSpeaking(false);
+    setIsListening(false);
 
     const duration = Math.round((Date.now() - startTimeRef.current) / 60000);
     setCompletionStats({
@@ -250,6 +493,9 @@ export default function AIInterviewRoom() {
     setState('completed');
   }, [token, currentQuestion, totalQuestions]);
 
+  // Keep handleEndRef in sync to avoid stale closures in timer
+  useEffect(() => { handleEndRef.current = handleEndInterview; }, [handleEndInterview]);
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -262,7 +508,7 @@ export default function AIInterviewRoom() {
 
   if (state === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0e1a]">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--orbis-page)' }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -274,7 +520,7 @@ export default function AIInterviewRoom() {
             </div>
             <Loader2 className="h-5 w-5 animate-spin text-blue-400 absolute -bottom-1 -right-1" />
           </div>
-          <p className="text-slate-500 text-sm font-medium">Preparing your interview...</p>
+          <p className="text-sm font-medium" style={{ color: 'var(--orbis-text-muted)' }}>Preparing your interview...</p>
         </motion.div>
       </div>
     );
@@ -284,7 +530,7 @@ export default function AIInterviewRoom() {
 
   if (state === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0e1a] text-slate-100">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--orbis-page)', color: 'var(--orbis-text)' }}>
         <motion.div
           initial="hidden"
           animate="visible"
@@ -295,12 +541,12 @@ export default function AIInterviewRoom() {
           <div className="mx-auto w-20 h-20 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
             <X className="h-10 w-10 text-red-400" />
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white">Interview Unavailable</h2>
-          <p className="text-slate-400 leading-relaxed">{errorMsg || 'This interview link is invalid or has expired.'}</p>
+          <h2 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--orbis-heading)' }}>Interview Unavailable</h2>
+          <p className="leading-relaxed" style={{ color: 'var(--orbis-text-muted)' }}>{errorMsg || 'This interview link is invalid or has expired.'}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-6 py-2.5 rounded-xl text-sm font-medium text-slate-300 hover:bg-white/10 transition-colors"
-            style={glassCard}
+            className="mt-4 px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors"
+            style={{ ...glassCard, color: 'var(--orbis-text)' }}
           >
             Try Again
           </button>
@@ -323,7 +569,7 @@ export default function AIInterviewRoom() {
       : 100;
 
     return (
-      <div className="min-h-screen bg-[#0a0e1a] text-slate-100 flex flex-col overflow-auto" style={{ background: 'linear-gradient(135deg, #0a0e1a 0%, #111827 50%, #0a0e1a 100%)' }}>
+      <div className="min-h-screen flex flex-col overflow-auto" style={{ background: 'var(--orbis-page)', color: 'var(--orbis-text)' }}>
         {/* Ambient glow */}
         <div className="fixed top-1/4 left-1/3 w-[600px] h-[600px] bg-green-500/[0.04] rounded-full blur-[150px] pointer-events-none" />
         <div className="fixed bottom-1/4 right-1/3 w-[500px] h-[500px] bg-blue-500/[0.04] rounded-full blur-[150px] pointer-events-none" />
@@ -334,9 +580,9 @@ export default function AIInterviewRoom() {
             <div className="h-9 w-9 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
               <Brain className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Orbis AI</span>
+            <span className="text-lg font-bold tracking-tight" style={{ color: 'var(--orbis-heading)' }}>Orbis AI</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--orbis-text-muted)' }}>
             <Shield className="h-3.5 w-3.5" />
             <span>Secure Session</span>
           </div>
@@ -372,10 +618,10 @@ export default function AIInterviewRoom() {
             </ThreeErrorBoundary>
           </motion.div>
 
-          <motion.h1 variants={fadeIn} transition={{ duration: 0.5 }} className="text-4xl md:text-5xl font-bold tracking-tight mb-3 bg-gradient-to-b from-white to-slate-300 bg-clip-text text-transparent">
+          <motion.h1 variants={fadeIn} transition={{ duration: 0.5 }} className="text-4xl md:text-5xl font-bold tracking-tight mb-3" style={{ color: 'var(--orbis-heading)' }}>
             Interview Complete!
           </motion.h1>
-          <motion.p variants={fadeIn} transition={{ duration: 0.5 }} className="text-slate-500 text-lg mb-14">
+          <motion.p variants={fadeIn} transition={{ duration: 0.5 }} className="text-lg mb-14" style={{ color: 'var(--orbis-text-muted)' }}>
             Thank you for completing your interview with Aria
           </motion.p>
 
@@ -383,20 +629,20 @@ export default function AIInterviewRoom() {
           <motion.div variants={fadeIn} transition={{ duration: 0.5 }} className="rounded-2xl p-8 w-full mb-14 shadow-xl shadow-black/20" style={glassCard}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { label: 'Duration', value: `${completionStats.duration || '\u2014'} min`, color: 'text-white' },
-                { label: 'Questions Answered', value: `${completionStats.answered} of ${completionStats.total}`, color: 'text-white' },
-                { label: 'Completion', value: `${completionPct}%`, color: 'text-white' },
-                { label: 'Status', value: 'Under Review', color: 'text-amber-400', dot: 'bg-amber-500' },
+                { label: 'Duration', value: `${completionStats.duration || '\u2014'} min`, colorVar: 'var(--orbis-heading)' },
+                { label: 'Questions Answered', value: `${completionStats.answered} of ${completionStats.total}`, colorVar: 'var(--orbis-heading)' },
+                { label: 'Completion', value: `${completionPct}%`, colorVar: 'var(--orbis-heading)' },
+                { label: 'Status', value: 'Under Review', color: 'text-amber-400', colorVar: undefined, dot: 'bg-amber-500' },
               ].map((stat, i) => (
                 <div key={i} className={`flex flex-col items-center md:items-start gap-1.5 p-3 ${i > 0 ? 'md:border-l md:pl-6' : ''}`} style={i > 0 ? { borderLeftColor: 'var(--orbis-border)' } : undefined}>
-                  <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--orbis-text-muted)' }}>{stat.label}</p>
                   {stat.dot ? (
                     <div className="flex items-center gap-2">
                       <span className={`h-2 w-2 rounded-full ${stat.dot} animate-pulse`} />
-                      <p className={`${stat.color} text-xl font-bold`}>{stat.value}</p>
+                      <p className={`${stat.color || ''} text-xl font-bold`} style={stat.colorVar ? { color: stat.colorVar } : undefined}>{stat.value}</p>
                     </div>
                   ) : (
-                    <p className={`${stat.color} text-2xl font-bold tabular-nums`}>{stat.value}</p>
+                    <p className="text-2xl font-bold tabular-nums" style={stat.colorVar ? { color: stat.colorVar } : undefined}>{stat.value}</p>
                   )}
                 </div>
               ))}
@@ -425,7 +671,7 @@ export default function AIInterviewRoom() {
                   <div className={`h-11 w-11 rounded-xl bg-${item.color}-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
                     <item.icon className={`h-5 w-5 text-${item.color}-400`} />
                   </div>
-                  <p className="text-slate-400 text-sm leading-relaxed">{item.text}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--orbis-text-muted)' }}>{item.text}</p>
                 </motion.div>
               ))}
             </div>
@@ -434,15 +680,20 @@ export default function AIInterviewRoom() {
           {/* Footer */}
           <motion.div variants={fadeIn} transition={{ duration: 0.5 }} className="mt-16 flex flex-col items-center gap-6">
             <button
-              onClick={() => window.close()}
-              className="px-8 py-3 rounded-xl text-white font-semibold hover:bg-white/[0.04] transition-all text-sm"
-              style={glassCard}
+              onClick={() => {
+                // window.close() only works on JS-opened windows; fall back to navigation
+                try { window.close(); } catch {}
+                // If still open after 200ms, redirect to careers or home
+                setTimeout(() => { window.location.href = '/careers'; }, 200);
+              }}
+              className="px-8 py-3 rounded-xl font-semibold hover:bg-white/[0.04] transition-all text-sm"
+              style={{ ...glassCard, color: 'var(--orbis-heading)' }}
             >
               Close Window
             </button>
-            <footer className="text-slate-400 text-xs flex items-center gap-2">
+            <footer className="text-xs flex items-center gap-2" style={{ color: 'var(--orbis-text-muted)' }}>
               <span>Powered by Orbis AI</span>
-              <span className="h-1 w-1 bg-slate-700 rounded-full" />
+              <span className="h-1 w-1 rounded-full" style={{ background: 'var(--orbis-border)' }} />
               <span>Secure Interview Session</span>
             </footer>
           </motion.div>
@@ -454,14 +705,14 @@ export default function AIInterviewRoom() {
   // -- Active Interview ----
 
   return (
-    <div className="h-screen flex flex-col bg-[#0a0e1a] text-slate-100 overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: 'var(--orbis-page)', color: 'var(--orbis-text)' }}>
       {/* Top Navigation Bar */}
       <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="flex items-center justify-between px-6 py-3 backdrop-blur-2xl bg-[#0a0e1a]/80 shrink-0 z-50"
-        style={{ borderBottom: '1px solid var(--orbis-grid)' }}
+        className="flex items-center justify-between px-6 py-3 backdrop-blur-2xl shrink-0 z-50"
+        style={{ background: 'color-mix(in srgb, var(--orbis-page) 80%, transparent)', borderBottom: '1px solid var(--orbis-grid)' }}
       >
         {/* Left: Brand + Job info */}
         <div className="flex items-center gap-4">
@@ -469,19 +720,26 @@ export default function AIInterviewRoom() {
             <Brain className="h-5 w-5 text-white" />
           </div>
           <div className="hidden sm:flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-white">Orbis AI Interview</span>
+            <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--orbis-heading)' }}>Orbis AI Interview</span>
             {sessionInfo && (
-              <span className="text-xs text-slate-500 font-medium">{sessionInfo.job_title}</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--orbis-text-muted)' }}>{sessionInfo.job_title}</span>
             )}
           </div>
         </div>
 
-        {/* Center: Progress + Timer */}
+        {/* Center: Rounds + Progress + Timer */}
         <div className="flex items-center gap-5">
+          {/* Round progress indicator */}
+          {rounds.length > 0 && (
+            <div className="hidden lg:block">
+              <RoundProgress rounds={rounds} currentRound={currentRound} />
+            </div>
+          )}
+
           {/* Progress segment indicator */}
           <div className="hidden md:flex flex-col items-center gap-1.5">
             <ProgressIndicator current={currentQuestion} total={totalQuestions} />
-            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
+            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--orbis-text-muted)' }}>
               Question {currentQuestion} of {totalQuestions}
             </span>
           </div>
@@ -490,6 +748,20 @@ export default function AIInterviewRoom() {
           <div className="flex md:hidden items-center gap-1.5 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
             <span className="text-xs font-bold text-blue-400">{currentQuestion}/{totalQuestions}</span>
           </div>
+
+          {/* Difficulty badge */}
+          {difficultyLevel && (
+            <div
+              className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider"
+              style={{
+                background: difficultyLevel === 'expert' ? 'rgba(239,68,68,0.1)' : difficultyLevel === 'hard' ? 'rgba(245,158,11,0.1)' : difficultyLevel === 'easy' ? 'rgba(34,197,94,0.1)' : 'rgba(59,130,246,0.1)',
+                color: difficultyLevel === 'expert' ? '#f87171' : difficultyLevel === 'hard' ? '#fbbf24' : difficultyLevel === 'easy' ? '#34d399' : '#60a5fa',
+                border: `1px solid ${difficultyLevel === 'expert' ? 'rgba(239,68,68,0.2)' : difficultyLevel === 'hard' ? 'rgba(245,158,11,0.2)' : difficultyLevel === 'easy' ? 'rgba(34,197,94,0.2)' : 'rgba(59,130,246,0.2)'}`,
+              }}
+            >
+              {difficultyLevel}
+            </div>
+          )}
 
           {/* Divider */}
           <div className="h-6 w-px bg-white/[0.06] hidden md:block" />
@@ -500,8 +772,8 @@ export default function AIInterviewRoom() {
               ? { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }
               : glassCard
           }>
-            <Clock className={`h-3.5 w-3.5 ${timeRemaining < 300 ? 'text-red-400 animate-pulse' : 'text-slate-500'}`} />
-            <span className={`text-sm font-mono font-bold tabular-nums ${timeRemaining < 300 ? 'text-red-400' : 'text-slate-300'}`}>
+            <Clock className={`h-3.5 w-3.5 ${timeRemaining < 300 ? 'text-red-400 animate-pulse' : ''}`} style={timeRemaining >= 300 ? { color: 'var(--orbis-text-muted)' } : undefined} />
+            <span className={`text-sm font-mono font-bold tabular-nums ${timeRemaining < 300 ? 'text-red-400' : ''}`} style={timeRemaining >= 300 ? { color: 'var(--orbis-text)' } : undefined}>
               {formatTime(timeRemaining)}
             </span>
           </div>
@@ -510,7 +782,7 @@ export default function AIInterviewRoom() {
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
           {/* Integrity indicator */}
-          <div className="hidden lg:flex items-center gap-1.5 text-xs text-slate-500">
+          <div className="hidden lg:flex items-center gap-1.5 text-xs" style={{ color: 'var(--orbis-text-muted)' }}>
             <Shield className="h-3.5 w-3.5 text-green-500" />
             <span className="font-medium">{integrityScore}%</span>
           </div>
@@ -560,7 +832,7 @@ export default function AIInterviewRoom() {
                   </div>
                 }>
                   <AiAvatarOrb
-                    isSpeaking={!isProcessing && messages.length > 0 && messages[messages.length - 1].role === 'ai'}
+                    isSpeaking={isAiSpeaking}
                     isThinking={isProcessing}
                     className="h-44 w-44 mb-6"
                   />
@@ -570,9 +842,9 @@ export default function AIInterviewRoom() {
 
             {/* Name + waveform */}
             <div className="text-center mb-6 relative z-10">
-              <h3 className="text-xl font-bold mb-1.5 tracking-tight text-white">Aria</h3>
-              <p className="text-xs text-slate-500 font-medium uppercase tracking-widest mb-2">AI Interviewer</p>
-              <AiWaveform active={isProcessing} />
+              <h3 className="text-xl font-bold mb-1.5 tracking-tight" style={{ color: 'var(--orbis-heading)' }}>Aria</h3>
+              <p className="text-xs font-medium uppercase tracking-widest mb-2" style={{ color: 'var(--orbis-text-muted)' }}>AI Interviewer</p>
+              <AiWaveform active={isAiSpeaking || isProcessing} />
             </div>
 
             {/* Live caption - question card */}
@@ -586,58 +858,91 @@ export default function AIInterviewRoom() {
                 className="w-full max-w-xl relative z-10"
               >
                 <div className="rounded-xl px-6 py-4" style={glassCard}>
-                  <p className="text-lg md:text-xl font-medium leading-relaxed text-slate-200 text-center">
-                    {currentCaption ? `"${currentCaption}"` : '"Waiting for your response..."'}
+                  <p className="text-lg md:text-xl font-medium leading-relaxed text-center" style={{ color: 'var(--orbis-text)' }}>
+                    {isListening && interimTranscript
+                      ? interimTranscript
+                      : currentCaption
+                        ? `"${currentCaption}"`
+                        : '"Waiting for your response..."'
+                    }
                   </p>
+                  {isListening && (
+                    <p className="text-xs text-green-400 text-center mt-2 flex items-center justify-center gap-1.5">
+                      <Mic className="h-3 w-3" />
+                      Listening — speak your answer
+                    </p>
+                  )}
                 </div>
               </motion.div>
             </AnimatePresence>
           </div>
 
-          {/* Chat transcript */}
-          <div className="rounded-2xl flex flex-col h-48 min-h-[192px]" style={{ ...glassCard, background: 'var(--orbis-subtle)' }}>
+          {/* Chat transcript (collapsible) */}
+          <div className={`rounded-2xl flex flex-col transition-all duration-300 overflow-hidden ${showTranscript ? 'h-48 min-h-[192px]' : 'h-0 min-h-0 border-0'}`} style={showTranscript ? { ...glassCard, background: 'var(--orbis-subtle)' } : {}}>
             <div className="px-4 py-3 flex items-center justify-between shrink-0" style={{ borderBottom: '1px solid var(--orbis-grid)' }}>
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-3.5 w-3.5 text-slate-500" />
-                <span className="text-xs font-semibold uppercase tracking-widest text-slate-500">Transcript</span>
+                <MessageSquare className="h-3.5 w-3.5" style={{ color: 'var(--orbis-text-muted)' }} />
+                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--orbis-text-muted)' }}>Transcript</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">{messages.length} messages</span>
+              <span className="text-[10px] font-medium" style={{ color: 'var(--orbis-text-muted)' }}>{messages.length} messages</span>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-3" ref={scrollRef}>
               <AnimatePresence initial={false}>
-                {messages.map((msg, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className={`flex gap-2.5 ${msg.role === 'candidate' ? 'flex-row-reverse' : ''}`}
-                  >
-                    <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${
-                      msg.role === 'ai'
-                        ? 'bg-gradient-to-br from-blue-600/20 to-blue-600/20 text-blue-400'
-                        : 'bg-slate-500/10 text-slate-400'
-                    }`}>
-                      {msg.role === 'ai' ? <Brain className="h-3.5 w-3.5" /> : <span className="text-[10px] font-bold">You</span>}
-                    </div>
-                    <div className={`rounded-xl px-3.5 py-2.5 max-w-[80%] ${
-                      msg.role === 'ai'
-                        ? 'rounded-tl-sm'
-                        : 'rounded-tr-sm'
-                    }`} style={
-                      msg.role === 'ai'
-                        ? { background: 'var(--orbis-grid)', border: '1px solid var(--orbis-grid)' }
-                        : { background: 'rgba(27,142,229,0.15)', border: '1px solid rgba(27,142,229,0.1)' }
-                    }>
-                      <p className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                      {msg.codeContent && (
-                        <pre className="mt-2 p-2.5 bg-black/40 rounded-lg text-xs overflow-x-auto" style={{ border: '1px solid var(--orbis-grid)' }}>
-                          <code className="text-slate-300">{msg.codeContent}</code>
-                        </pre>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
+                {messages.map((msg, i) => {
+                  // Round transition messages render as a centered divider
+                  if (msg.messageType === 'round_transition') {
+                    const roundInfo = ROUND_LABELS[msg.roundType || ''] || { label: msg.roundType, color: '#94a3b8' };
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4 }}
+                        className="flex items-center gap-3 py-2"
+                      >
+                        <div className="flex-1 h-px" style={{ background: `${roundInfo.color}30` }} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full" style={{ background: `${roundInfo.color}15`, color: roundInfo.color, border: `1px solid ${roundInfo.color}25` }}>
+                          {msg.content}
+                        </span>
+                        <div className="flex-1 h-px" style={{ background: `${roundInfo.color}30` }} />
+                      </motion.div>
+                    );
+                  }
+
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className={`flex gap-2.5 ${msg.role === 'candidate' ? 'flex-row-reverse' : ''}`}
+                    >
+                      <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${
+                        msg.role === 'ai'
+                          ? 'bg-gradient-to-br from-blue-600/20 to-blue-600/20 text-blue-400'
+                          : 'bg-slate-500/10'
+                      }`} style={msg.role !== 'ai' ? { color: 'var(--orbis-text-muted)' } : undefined}>
+                        {msg.role === 'ai' ? <Brain className="h-3.5 w-3.5" /> : <span className="text-[10px] font-bold">You</span>}
+                      </div>
+                      <div className={`rounded-xl px-3.5 py-2.5 max-w-[80%] ${
+                        msg.role === 'ai'
+                          ? 'rounded-tl-sm'
+                          : 'rounded-tr-sm'
+                      }`} style={
+                        msg.role === 'ai'
+                          ? { background: 'var(--orbis-grid)', border: '1px solid var(--orbis-grid)' }
+                          : { background: 'rgba(27,142,229,0.15)', border: '1px solid rgba(27,142,229,0.1)' }
+                      }>
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--orbis-text)' }}>{msg.content}</p>
+                        {msg.codeContent && (
+                          <pre className="mt-2 p-2.5 bg-black/40 rounded-lg text-xs overflow-x-auto" style={{ border: '1px solid var(--orbis-grid)' }}>
+                            <code style={{ color: 'var(--orbis-text)' }}>{msg.codeContent}</code>
+                          </pre>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </AnimatePresence>
               {isProcessing && (
                 <motion.div
@@ -649,7 +954,7 @@ export default function AIInterviewRoom() {
                     <Brain className="h-3.5 w-3.5" />
                   </div>
                   <div className="rounded-xl rounded-tl-sm px-3.5 py-2.5" style={{ background: 'var(--orbis-grid)', border: '1px solid var(--orbis-grid)' }}>
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--orbis-text-muted)' }}>
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       <span className="font-medium">Aria is thinking...</span>
                     </div>
@@ -660,7 +965,7 @@ export default function AIInterviewRoom() {
           </div>
         </motion.section>
 
-        {/* Right Panel -- Candidate / Code */}
+        {/* Right Panel -- Webcam + Live Analysis / Code */}
         <motion.section
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -668,15 +973,16 @@ export default function AIInterviewRoom() {
           className={`flex flex-col gap-4 overflow-hidden transition-all duration-500 ${showCodePanel ? 'w-[60%]' : 'w-[40%]'}`}
         >
           {showCodePanel ? (
-            <div className="flex-1 rounded-2xl overflow-hidden bg-[#0d1117]" style={{ border: '1px solid var(--orbis-border)' }}>
+            <div className="flex-1 rounded-2xl overflow-hidden" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
               <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--orbis-border)', background: 'var(--orbis-subtle)' }}>
                 <div className="flex items-center gap-2">
                   <Code className="h-4 w-4 text-blue-400" />
-                  <span className="text-sm font-semibold text-slate-300">Code Editor</span>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--orbis-text)' }}>Code Editor</span>
                 </div>
                 <button
                   onClick={() => setShowCodePanel(false)}
-                  className="p-1.5 rounded-lg hover:bg-white/[0.06] text-slate-400 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors"
+                  style={{ color: 'var(--orbis-text-muted)' }}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -689,22 +995,105 @@ export default function AIInterviewRoom() {
               />
             </div>
           ) : (
-            <ProctoringMonitor
-              sessionToken={token!}
-              onIntegrityUpdate={setIntegrityScore}
-              apiBase={API_BASE}
-            />
+            <>
+              {/* Candidate Webcam */}
+              <div className="relative rounded-2xl overflow-hidden flex-1 min-h-0" style={{ ...glassCard, background: 'var(--orbis-card)' }}>
+                <video
+                  ref={webcamRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                  style={{ transform: 'scaleX(-1)' }}
+                />
+                {/* Recording indicator */}
+                <div className="absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                  <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-xs font-semibold text-red-400">REC</span>
+                </div>
+                {/* Name tag */}
+                <div className="absolute bottom-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+                  <span className={`h-2 w-2 rounded-full ${isListening ? 'bg-green-500 animate-pulse' : 'bg-green-500'}`} />
+                  <span className="text-sm font-medium" style={{ color: 'var(--orbis-heading)' }}>You</span>
+                </div>
+                {/* Live voice transcript overlay */}
+                {isListening && interimTranscript && (
+                  <div className="absolute bottom-16 left-4 right-4">
+                    <div className="px-4 py-2 rounded-xl text-sm text-white/90 font-medium" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+                      {interimTranscript}...
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Voice Status Card */}
+              <div className="rounded-2xl p-4" style={glassCard}>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--orbis-text-muted)' }}>Voice Status</span>
+                  <div className="flex items-center gap-2">
+                    {isAiSpeaking && (
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-blue-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+                        Aria speaking
+                      </span>
+                    )}
+                    {isListening && (
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-green-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                        Listening
+                      </span>
+                    )}
+                    {isProcessing && (
+                      <span className="flex items-center gap-1.5 text-xs font-medium text-amber-400">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Processing
+                      </span>
+                    )}
+                    {!isAiSpeaking && !isListening && !isProcessing && (
+                      <span className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>Ready</span>
+                    )}
+                  </div>
+                </div>
+                {/* Speaking waveform visualization */}
+                <div className="flex items-center justify-center gap-[3px] h-8">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-[3px] rounded-full ${
+                        (isListening || isAiSpeaking) ? 'animate-waveform' : ''
+                      } ${isListening ? 'bg-green-400' : isAiSpeaking ? 'bg-blue-400' : ''}`}
+                      style={{
+                        height: (isListening || isAiSpeaking) ? '20px' : '4px',
+                        animationDelay: `${i * 100}ms`,
+                        opacity: (isListening || isAiSpeaking) ? 0.8 : 0.2,
+                        transition: 'height 0.3s ease, opacity 0.3s ease',
+                        ...(!isListening && !isAiSpeaking ? { background: 'var(--orbis-border)' } : {}),
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Hidden proctoring monitor */}
+              <div className="hidden">
+                <ProctoringMonitor
+                  sessionToken={token!}
+                  onIntegrityUpdate={setIntegrityScore}
+                  apiBase={API_BASE}
+                />
+              </div>
+            </>
           )}
         </motion.section>
       </main>
 
-      {/* Bottom Action Bar */}
+      {/* Bottom Action Bar — Voice-First */}
       <motion.footer
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        className="px-4 py-3 backdrop-blur-2xl bg-[#0a0e1a]/80 shrink-0"
-        style={{ borderTop: '1px solid var(--orbis-grid)' }}
+        className="px-4 py-3 backdrop-blur-2xl shrink-0"
+        style={{ background: 'color-mix(in srgb, var(--orbis-page) 80%, transparent)', borderTop: '1px solid var(--orbis-grid)' }}
       >
         {/* Progress bar */}
         <div className="max-w-5xl mx-auto mb-3">
@@ -727,16 +1116,30 @@ export default function AIInterviewRoom() {
               className={`flex flex-col items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 shrink-0 ${
                 showCodePanel
                   ? 'bg-blue-600/15 border-blue-600/30 text-blue-400 border'
-                  : 'text-slate-500 hover:bg-white/[0.04] hover:text-slate-300'
+                  : 'hover:bg-white/[0.04]'
               }`}
-              style={!showCodePanel ? glassCard : undefined}
+              style={!showCodePanel ? { ...glassCard, color: 'var(--orbis-text-muted)' } : undefined}
             >
               <Code className="h-4.5 w-4.5" />
               <span className="text-[9px] font-bold uppercase mt-0.5">Code</span>
             </button>
           )}
 
-          {/* Text input */}
+          {/* Transcript toggle */}
+          <button
+            onClick={() => setShowTranscript(!showTranscript)}
+            className={`flex flex-col items-center justify-center h-12 w-12 rounded-xl transition-all duration-300 shrink-0 ${
+              showTranscript
+                ? 'bg-blue-600/15 border-blue-600/30 text-blue-400 border'
+                : 'hover:bg-white/[0.04]'
+            }`}
+            style={!showTranscript ? { ...glassCard, color: 'var(--orbis-text-muted)' } : undefined}
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span className="text-[9px] font-bold uppercase mt-0.5">Chat</span>
+          </button>
+
+          {/* Text input (secondary) */}
           <div className="flex-1 flex items-center gap-3 rounded-2xl px-4 py-2 focus-within:border-blue-600/30 transition-all duration-300" style={{ ...glassCard, background: 'var(--orbis-card)' }}>
             <input
               value={textInput}
@@ -747,13 +1150,14 @@ export default function AIInterviewRoom() {
                   sendMessage(textInput);
                 }
               }}
-              placeholder="Type your answer..."
-              disabled={isProcessing}
-              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-slate-200 placeholder:text-slate-500 font-medium text-sm"
+              placeholder={isListening ? 'Listening... speak your answer' : 'Type or speak your answer...'}
+              disabled={isProcessing || isAiSpeaking}
+              className="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none font-medium text-sm"
+              style={{ color: 'var(--orbis-text)' }}
             />
             <button
               onClick={() => sendMessage(textInput)}
-              disabled={!textInput.trim() || isProcessing}
+              disabled={!textInput.trim() || isProcessing || isAiSpeaking}
               className="p-2.5 rounded-xl text-white shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:scale-105 transition-all duration-200 flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
               style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
             >
@@ -761,11 +1165,43 @@ export default function AIInterviewRoom() {
             </button>
           </div>
 
-          {/* Voice control with large mic */}
-          <VoiceControl
-            onTranscript={sendMessage}
-            disabled={isProcessing}
-          />
+          {/* TTS toggle */}
+          <button
+            onClick={() => {
+              if (isAiSpeaking) synthRef.current?.cancel();
+              setVoiceEnabled(!voiceEnabled);
+            }}
+            className="h-12 w-12 rounded-xl flex items-center justify-center transition-all duration-300 shrink-0"
+            style={{
+              ...glassCard,
+              background: voiceEnabled ? 'rgba(27,142,229,0.15)' : 'var(--orbis-card)',
+              color: voiceEnabled ? '#60a5fa' : '#64748b',
+            }}
+            title={voiceEnabled ? 'Mute Aria' : 'Unmute Aria'}
+          >
+            {voiceEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
+          </button>
+
+          {/* Primary Mic Button */}
+          <button
+            onClick={isListening ? stopListening : startListening}
+            disabled={isProcessing || isAiSpeaking}
+            className="relative h-14 w-14 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            style={
+              isListening
+                ? { background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 0 30px rgba(239,68,68,0.4)' }
+                : { background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 0 20px rgba(27,142,229,0.4)' }
+            }
+          >
+            {isListening && (
+              <div className="absolute inset-0 rounded-full animate-ping" style={{ border: '3px solid rgba(239,68,68,0.4)' }} />
+            )}
+            {isListening ? (
+              <MicOff className="h-6 w-6 text-white" />
+            ) : (
+              <Mic className="h-6 w-6 text-white" />
+            )}
+          </button>
         </div>
       </motion.footer>
     </div>

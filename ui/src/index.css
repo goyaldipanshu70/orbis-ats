@@ -57,6 +57,26 @@
     --orbis-grid: rgba(0,0,0,0.04);
     --orbis-card-shadow: 0 4px 24px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
     --orbis-dropdown-shadow: 0 10px 40px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
+
+    /* ── Accent tokens (hex/rgb for gradients, glows, inline styles) ── */
+    /* Defaults match blue; overridden per .accent-* class below */
+    --orbis-accent: #1B8EE5;
+    --orbis-accent-rgb: 27, 142, 229;
+    --orbis-accent-dark: #1676c0;
+    --orbis-accent-light: #60a5fa;
+    --orbis-accent-glow: rgba(27, 142, 229, 0.25);
+
+    /* ── Semantic text (for pages that need hex, e.g. inline styles) ── */
+    --orbis-heading: #101010;
+    --orbis-text: #3F3F3F;
+    --orbis-text-muted: #515151;
+    --orbis-text-subtle: #94a3b8;
+
+    /* ── Landing / hero surface tokens ── */
+    --orbis-hero-bg: #f7f9fb;
+    --orbis-hero-card: rgba(0, 0, 0, 0.02);
+    --orbis-hero-border: #eaeaea;
+    --orbis-hero-glow: rgba(27, 142, 229, 0.08);
   }
 
   .dark {
@@ -109,6 +129,25 @@
     --orbis-grid: rgba(30,41,59,0.4);
     --orbis-card-shadow: none;
     --orbis-dropdown-shadow: 0 20px 60px rgba(0,0,0,0.5);
+
+    /* ── Accent tokens (dark mode defaults — match blue) ── */
+    --orbis-accent: #3ba0ed;
+    --orbis-accent-rgb: 59, 160, 237;
+    --orbis-accent-dark: #1B8EE5;
+    --orbis-accent-light: #93c5fd;
+    --orbis-accent-glow: rgba(59, 160, 237, 0.25);
+
+    /* ── Semantic text (dark mode) ── */
+    --orbis-heading: #f1f5f9;
+    --orbis-text: #cbd5e1;
+    --orbis-text-muted: #94a3b8;
+    --orbis-text-subtle: #64748b;
+
+    /* ── Landing / hero surface tokens (dark mode) ── */
+    --orbis-hero-bg: #06060f;
+    --orbis-hero-card: rgba(255, 255, 255, 0.02);
+    --orbis-hero-border: rgba(255, 255, 255, 0.06);
+    --orbis-hero-glow: rgba(59, 160, 237, 0.15);
   }
 }
 
@@ -143,6 +182,11 @@
     --ring: 207 79% 50%;
     --sidebar-primary: 207 79% 50%;
     --sidebar-ring: 207 79% 50%;
+    --orbis-accent: #1B8EE5;
+    --orbis-accent-rgb: 27, 142, 229;
+    --orbis-accent-dark: #1676c0;
+    --orbis-accent-light: #60a5fa;
+    --orbis-accent-glow: rgba(27, 142, 229, 0.25);
   }
   .dark.accent-blue {
     --primary: 207 85% 56%;
@@ -150,6 +194,11 @@
     --ring: 207 85% 56%;
     --sidebar-primary: 207 85% 56%;
     --sidebar-ring: 207 85% 56%;
+    --orbis-accent: #3ba0ed;
+    --orbis-accent-rgb: 59, 160, 237;
+    --orbis-accent-dark: #1B8EE5;
+    --orbis-accent-light: #93c5fd;
+    --orbis-accent-glow: rgba(59, 160, 237, 0.25);
   }
 
   /* Green */
@@ -159,6 +208,11 @@
     --ring: 142.1 76.2% 36.3%;
     --sidebar-primary: 142.1 76.2% 36.3%;
     --sidebar-ring: 142.1 76.2% 36.3%;
+    --orbis-accent: #16a34a;
+    --orbis-accent-rgb: 22, 163, 74;
+    --orbis-accent-dark: #15803d;
+    --orbis-accent-light: #4ade80;
+    --orbis-accent-glow: rgba(22, 163, 74, 0.25);
   }
   .dark.accent-green {
     --primary: 142.1 70.6% 45.3%;
@@ -166,6 +220,11 @@
     --ring: 142.1 70.6% 45.3%;
     --sidebar-primary: 142.1 70.6% 45.3%;
     --sidebar-ring: 142.1 70.6% 45.3%;
+    --orbis-accent: #4ade80;
+    --orbis-accent-rgb: 74, 222, 128;
+    --orbis-accent-dark: #22c55e;
+    --orbis-accent-light: #86efac;
+    --orbis-accent-glow: rgba(74, 222, 128, 0.25);
   }
 
   /* Purple */
@@ -175,6 +234,11 @@
     --ring: 262.1 83.3% 57.8%;
     --sidebar-primary: 262.1 83.3% 57.8%;
     --sidebar-ring: 262.1 83.3% 57.8%;
+    --orbis-accent: #8b5cf6;
+    --orbis-accent-rgb: 139, 92, 246;
+    --orbis-accent-dark: #7c3aed;
+    --orbis-accent-light: #a78bfa;
+    --orbis-accent-glow: rgba(139, 92, 246, 0.25);
   }
   .dark.accent-purple {
     --primary: 263.4 70% 50.4%;
@@ -182,6 +246,11 @@
     --ring: 263.4 70% 50.4%;
     --sidebar-primary: 263.4 70% 50.4%;
     --sidebar-ring: 263.4 70% 50.4%;
+    --orbis-accent: #a78bfa;
+    --orbis-accent-rgb: 167, 139, 250;
+    --orbis-accent-dark: #8b5cf6;
+    --orbis-accent-light: #c4b5fd;
+    --orbis-accent-glow: rgba(167, 139, 250, 0.25);
   }
 
   /* Red */
@@ -191,6 +260,11 @@
     --ring: 0 72.2% 50.6%;
     --sidebar-primary: 0 72.2% 50.6%;
     --sidebar-ring: 0 72.2% 50.6%;
+    --orbis-accent: #dc2626;
+    --orbis-accent-rgb: 220, 38, 38;
+    --orbis-accent-dark: #b91c1c;
+    --orbis-accent-light: #f87171;
+    --orbis-accent-glow: rgba(220, 38, 38, 0.25);
   }
   .dark.accent-red {
     --primary: 0 72.2% 50.6%;
@@ -198,6 +272,11 @@
     --ring: 0 72.2% 50.6%;
     --sidebar-primary: 0 72.2% 50.6%;
     --sidebar-ring: 0 72.2% 50.6%;
+    --orbis-accent: #f87171;
+    --orbis-accent-rgb: 248, 113, 113;
+    --orbis-accent-dark: #ef4444;
+    --orbis-accent-light: #fca5a5;
+    --orbis-accent-glow: rgba(248, 113, 113, 0.25);
   }
 
   /* Orange */
@@ -207,6 +286,11 @@
     --ring: 24.6 95% 53.1%;
     --sidebar-primary: 24.6 95% 53.1%;
     --sidebar-ring: 24.6 95% 53.1%;
+    --orbis-accent: #f97316;
+    --orbis-accent-rgb: 249, 115, 22;
+    --orbis-accent-dark: #ea580c;
+    --orbis-accent-light: #fdba74;
+    --orbis-accent-glow: rgba(249, 115, 22, 0.25);
   }
   .dark.accent-orange {
     --primary: 20.5 90.2% 48.2%;
@@ -214,6 +298,11 @@
     --ring: 20.5 90.2% 48.2%;
     --sidebar-primary: 20.5 90.2% 48.2%;
     --sidebar-ring: 20.5 90.2% 48.2%;
+    --orbis-accent: #fb923c;
+    --orbis-accent-rgb: 251, 146, 60;
+    --orbis-accent-dark: #f97316;
+    --orbis-accent-light: #fed7aa;
+    --orbis-accent-glow: rgba(251, 146, 60, 0.25);
   }
 
   /* Teal */
@@ -223,6 +312,11 @@
     --ring: 172.5 66% 38.4%;
     --sidebar-primary: 172.5 66% 38.4%;
     --sidebar-ring: 172.5 66% 38.4%;
+    --orbis-accent: #14b8a6;
+    --orbis-accent-rgb: 20, 184, 166;
+    --orbis-accent-dark: #0d9488;
+    --orbis-accent-light: #5eead4;
+    --orbis-accent-glow: rgba(20, 184, 166, 0.25);
   }
   .dark.accent-teal {
     --primary: 170.6 76.9% 41.2%;
@@ -230,6 +324,11 @@
     --ring: 170.6 76.9% 41.2%;
     --sidebar-primary: 170.6 76.9% 41.2%;
     --sidebar-ring: 170.6 76.9% 41.2%;
+    --orbis-accent: #2dd4bf;
+    --orbis-accent-rgb: 45, 212, 191;
+    --orbis-accent-dark: #14b8a6;
+    --orbis-accent-light: #99f6e4;
+    --orbis-accent-glow: rgba(45, 212, 191, 0.25);
   }
 }
 

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Mail, ArrowLeft, Loader2, Zap, CheckCircle2, ShieldQuestion } from 'lucide-react';
+import { Mail, ArrowLeft, Loader2, CheckCircle2, ShieldQuestion } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { OrbisLogoIcon } from '@/components/Logo';
 import { apiClient } from '@/utils/api';
 import { RippleButton } from '@/components/ui/ripple-button';
 
@@ -51,9 +52,7 @@ export default function ForgotPassword() {
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
         <div className="relative z-10 flex flex-col items-center text-center px-12">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl shadow-2xl mb-8" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 20px 40px rgba(27,142,229,0.3)' }}>
-            <Zap className="w-10 h-10 text-white" strokeWidth={2} />
-          </div>
+          <div className="mb-8"><OrbisLogoIcon size="lg" /></div>
           <h1 className="text-5xl xl:text-6xl font-black text-white tracking-tight">Orbis</h1>
           <p className="text-slate-400 text-xl mt-4 font-medium tracking-wide max-w-sm">Intelligent Hiring, Simplified</p>
         </div>
@@ -69,9 +68,7 @@ export default function ForgotPassword() {
         >
           {/* Mobile Logo */}
           <div className="flex lg:hidden items-center gap-2.5 mb-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg shadow-md" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
-              <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
+            <OrbisLogoIcon size="md" />
             <span className="font-bold text-xl text-foreground tracking-tight">Orbis</span>
           </div>
 
@@ -148,7 +145,7 @@ export default function ForgotPassword() {
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full h-12 rounded-xl text-[15px] font-bold text-white transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)', boxShadow: '0 8px 24px rgba(27,142,229,0.25)' }}
+                  style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))', boxShadow: '0 8px 24px rgba(27,142,229,0.25)' }}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2.5"><Loader2 className="w-[18px] h-[18px] animate-spin" /> Sending...</span>

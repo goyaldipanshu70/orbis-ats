@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { motion } from 'framer-motion';
 import {
   Loader2, Mic, Camera, Volume2, Wifi, CheckCircle, XCircle, Info, Play,
   Clock, HelpCircle, Code, Brain, RefreshCw, Lightbulb, CheckCircle2,
-  MessageSquare, Terminal,
+  MessageSquare, Terminal, Shield,
 } from 'lucide-react';
 
 import ThreeErrorBoundary from './three/ThreeErrorBoundary';
@@ -48,12 +49,15 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
   };
 
   useEffect(() => {
+    let camStream: MediaStream | null = null;
+    let stopped = false;
+
     // Check camera + start preview
-    navigator.mediaDevices.getUserMedia({ video: true })
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } })
       .then(stream => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
+        if (stopped) { stream.getTracks().forEach(t => t.stop()); return; }
+        camStream = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
         updateCheck('Camera', 'pass', 'Ready');
       })
       .catch(() => updateCheck('Camera', 'fail', 'Blocked'));
@@ -62,31 +66,48 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
     navigator.mediaDevices.getUserMedia({ audio: true })
       .then(stream => {
         stream.getTracks().forEach(t => t.stop());
-        updateCheck('Microphone', 'pass', 'Active');
+        if (!stopped) updateCheck('Microphone', 'pass', 'Active');
       })
-      .catch(() => updateCheck('Microphone', 'fail', 'Blocked'));
+      .catch(() => { if (!stopped) updateCheck('Microphone', 'fail', 'Blocked'); });
 
     // Check speakers (assume pass if audio context works)
     try {
       const ctx = new AudioContext();
       ctx.close();
-      updateCheck('Speaker', 'pass', 'Tested');
+      if (!stopped) updateCheck('Speaker', 'pass', 'Tested');
     } catch {
-      updateCheck('Speaker', 'fail', 'Unavailable');
+      if (!stopped) updateCheck('Speaker', 'fail', 'Unavailable');
     }
 
     // Check internet (simple connectivity test)
-    updateCheck('Internet', navigator.onLine ? 'pass' : 'fail', navigator.onLine ? 'Stable' : 'Offline');
+    if (!stopped) updateCheck('Internet', navigator.onLine ? 'pass' : 'fail', navigator.onLine ? 'Stable' : 'Offline');
 
     return () => {
-      if (videoRef.current?.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
-      }
+      stopped = true;
+      if (camStream) camStream.getTracks().forEach(t => t.stop());
     };
   }, []);
 
   const micOk = checks.find(c => c.label === 'Microphone')?.status === 'pass';
+  const speakerOk = checks.find(c => c.label === 'Speaker')?.status === 'pass';
   const noAttemptsLeft = attemptsUsed >= maxAttempts;
+  const [speakerConfirmed, setSpeakerConfirmed] = useState(false);
+
+  // Speaker test: play a short beep to confirm audio output works
+  const playSpeakerTest = () => {
+    try {
+      const ctx = new AudioContext();
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.frequency.value = 440;
+      gain.gain.value = 0.3;
+      oscillator.start();
+      setTimeout(() => { oscillator.stop(); ctx.close(); }, 300);
+      setSpeakerConfirmed(true);
+    } catch {}
+  };
 
   const tips = [
     'Speak clearly and take your time with answers',
@@ -100,28 +121,28 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
     {
       key: 'behavioral',
       title: 'Behavioral',
-      icon: <MessageSquare className="h-5 w-5 text-blue-400" />,
+      icon: <MessageSquare className="h-5 w-5" style={{ color: '#1B8EE5' }} />,
       description: 'Questions about your experience and soft skills',
       show: true,
     },
     {
       key: 'technical',
       title: 'Technical',
-      icon: <Code className="h-5 w-5 text-blue-400" />,
+      icon: <Code className="h-5 w-5" style={{ color: '#1B8EE5' }} />,
       description: 'Domain-specific knowledge assessment',
       show: true,
     },
     {
       key: 'coding',
       title: 'Coding',
-      icon: <Terminal className="h-5 w-5 text-blue-400" />,
+      icon: <Terminal className="h-5 w-5" style={{ color: '#1B8EE5' }} />,
       description: 'Live coding challenge',
       show: sessionInfo.include_coding,
     },
   ].filter(s => s.show);
 
   return (
-    <div className="min-h-screen text-white flex flex-col" style={{ background: 'radial-gradient(circle at top right, #1a1145, var(--orbis-page))' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--orbis-page)', color: 'var(--orbis-text)' }}>
       {/* 3D Particle background */}
       <ThreeErrorBoundary>
         <Suspense fallback={null}>
@@ -160,9 +181,9 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
       >
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: '#1B8EE5' }}>
-            <Brain className="h-5 w-5 text-white" />
+            <Brain className="h-5 w-5" style={{ color: '#ffffff' }} />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-white">ORBIS</h1>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--orbis-heading)' }}>ORBIS</h1>
         </div>
         <div
           className="flex items-center gap-2 px-4 py-2 rounded-full"
@@ -171,8 +192,8 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
             border: '1px solid rgba(27,142,229,0.3)',
           }}
         >
-          <Clock className="h-4 w-4 text-blue-300" />
-          <span className="text-blue-300 font-bold text-sm">
+          <Clock className="h-4 w-4" style={{ color: '#1B8EE5' }} />
+          <span className="font-bold text-sm" style={{ color: '#1B8EE5' }}>
             {sessionInfo.time_limit_minutes} min interview
           </span>
         </div>
@@ -193,37 +214,37 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
           >
             <span
               className="inline-block px-3 py-1 text-xs font-bold rounded-full mb-4 uppercase tracking-wider"
-              style={{ background: 'rgba(27,142,229,0.2)', color: '#b68aff' }}
+              style={{ background: 'rgba(27,142,229,0.2)', color: '#1B8EE5' }}
             >
               Interview Lobby
             </span>
-            <h2 className="text-3xl font-extrabold mb-2 leading-tight text-white">{sessionInfo.job_title}</h2>
+            <h2 className="text-3xl font-extrabold mb-2 leading-tight" style={{ color: 'var(--orbis-heading)' }}>{sessionInfo.job_title}</h2>
             {sessionInfo.company && (
-              <p className="text-slate-400 text-lg mb-6">{sessionInfo.company}</p>
+              <p className="text-lg mb-6" style={{ color: 'var(--orbis-text-muted)' }}>{sessionInfo.company}</p>
             )}
             <div className="space-y-4">
-              <div className="flex items-center gap-3 text-slate-300">
-                <Clock className="h-5 w-5 text-blue-400" />
+              <div className="flex items-center gap-3" style={{ color: 'var(--orbis-text)' }}>
+                <Clock className="h-5 w-5" style={{ color: '#1B8EE5' }} />
                 <span>{sessionInfo.time_limit_minutes} Minute Duration</span>
               </div>
-              <div className="flex items-center gap-3 text-slate-300">
-                <HelpCircle className="h-5 w-5 text-blue-400" />
+              <div className="flex items-center gap-3" style={{ color: 'var(--orbis-text)' }}>
+                <HelpCircle className="h-5 w-5" style={{ color: '#1B8EE5' }} />
                 <span>{sessionInfo.max_questions} Questions</span>
               </div>
-              <div className="flex items-center gap-3 text-slate-300">
-                <Brain className="h-5 w-5 text-blue-400" />
+              <div className="flex items-center gap-3" style={{ color: 'var(--orbis-text)' }}>
+                <Brain className="h-5 w-5" style={{ color: '#1B8EE5' }} />
                 <span className="capitalize">{sessionInfo.interview_type} Interview</span>
               </div>
               {sessionInfo.include_coding && (
-                <div className="flex items-center gap-3 text-slate-300">
-                  <Code className="h-5 w-5 text-blue-400" />
+                <div className="flex items-center gap-3" style={{ color: 'var(--orbis-text)' }}>
+                  <Code className="h-5 w-5" style={{ color: '#1B8EE5' }} />
                   <span>Coding: {sessionInfo.coding_language || 'Any Language'}</span>
                 </div>
               )}
 
               {/* Attempts Remaining */}
-              <div className="flex items-center gap-3 text-slate-300">
-                <RefreshCw className="h-5 w-5 text-blue-400" />
+              <div className="flex items-center gap-3" style={{ color: 'var(--orbis-text)' }}>
+                <RefreshCw className="h-5 w-5" style={{ color: '#1B8EE5' }} />
                 {noAttemptsLeft ? (
                   <span className="text-red-400 font-semibold">No attempts remaining</span>
                 ) : (
@@ -231,7 +252,7 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
                 )}
               </div>
             </div>
-            <p className="text-xs text-slate-500 mt-4">
+            <p className="text-xs mt-4" style={{ color: 'var(--orbis-text-muted)' }}>
               Your best score from all attempts will be used
             </p>
           </div>
@@ -246,13 +267,13 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
               borderLeft: '4px solid #1B8EE5',
             }}
           >
-            <h3 className="text-white font-bold mb-4 flex items-center gap-2">
+            <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--orbis-heading)' }}>
               <Lightbulb className="h-5 w-5 text-yellow-400" />
               Prepare for Success
             </h3>
             <ul className="space-y-3">
               {tips.map((tip, idx) => (
-                <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-300">
+                <li key={idx} className="flex items-start gap-2.5 text-sm" style={{ color: 'var(--orbis-text)' }}>
                   <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                   <span>{tip}</span>
                 </li>
@@ -261,12 +282,12 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
 
             {/* Original instructions kept as a secondary note */}
             <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--orbis-border)' }}>
-              <h4 className="text-white font-semibold mb-2 flex items-center gap-2 text-sm">
-                <Info className="h-4 w-4 text-blue-400" />
+              <h4 className="font-semibold mb-2 flex items-center gap-2 text-sm" style={{ color: 'var(--orbis-heading)' }}>
+                <Info className="h-4 w-4" style={{ color: '#1B8EE5' }} />
                 Important Notes
               </h4>
-              <ul className="text-slate-400 text-xs leading-relaxed space-y-1.5">
-                <li>You'll be interviewed by <strong className="text-slate-300">Aria</strong>, our AI interviewer</li>
+              <ul className="text-xs leading-relaxed space-y-1.5" style={{ color: 'var(--orbis-text-muted)' }}>
+                <li>You'll be interviewed by <strong style={{ color: 'var(--orbis-text)' }}>Aria</strong>, our AI interviewer</li>
                 <li>Speak naturally or type your responses</li>
                 <li>Find a quiet, well-lit environment</li>
                 <li>Your webcam and audio will be recorded</li>
@@ -282,7 +303,7 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
           <div
             className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-2xl"
             style={{
-              background: '#0d0a1f',
+              background: 'var(--orbis-card)',
               border: '1px solid var(--orbis-border)',
               boxShadow: '0 0 30px rgba(27,142,229,0.15), 0 0 60px rgba(91,45,186,0.1)',
             }}
@@ -311,11 +332,11 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
               style={{
                 background: 'var(--orbis-hover)',
                 backdropFilter: 'blur(12px)',
-                border: '1px solid var(--orbis-border-strong)',
+                border: '1px solid var(--orbis-border)',
               }}
             >
               <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-medium text-sm text-white">Camera Preview</span>
+              <span className="font-medium text-sm" style={{ color: 'var(--orbis-heading)' }}>Camera Preview</span>
             </div>
           </div>
 
@@ -328,8 +349,8 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
               border: '1px solid var(--orbis-border)',
             }}
           >
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-white">
-              <CheckCircle className="h-5 w-5 text-blue-400" />
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: 'var(--orbis-heading)' }}>
+              <CheckCircle className="h-5 w-5" style={{ color: '#1B8EE5' }} />
               Equipment Check
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -348,13 +369,9 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
                         : '1px solid var(--orbis-border)',
                   }}
                 >
-                  <div className={
-                    check.status === 'pass'
-                      ? 'text-green-500 mb-2'
-                      : check.status === 'fail'
-                        ? 'text-red-500 mb-2'
-                        : 'text-slate-500 mb-2 animate-pulse'
-                  }>
+                  <div style={{
+                    color: check.status === 'pass' ? '#22c55e' : check.status === 'fail' ? '#ef4444' : 'var(--orbis-text-muted)',
+                  }} className={`mb-2 ${check.status === 'checking' ? 'animate-pulse' : ''}`}>
                     {check.status === 'checking' ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
                     ) : check.status === 'pass' ? (
@@ -363,8 +380,8 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
                       <XCircle className="h-5 w-5" />
                     )}
                   </div>
-                  <span className="text-xs font-semibold text-slate-500 mb-1 uppercase">{check.label}</span>
-                  <span className={`text-sm font-bold ${check.status === 'pass' ? 'text-green-400' : check.status === 'fail' ? 'text-red-400' : 'text-slate-500'}`}>
+                  <span className="text-xs font-semibold mb-1 uppercase" style={{ color: 'var(--orbis-text-muted)' }}>{check.label}</span>
+                  <span className={`text-sm font-bold ${check.status === 'pass' ? 'text-green-400' : check.status === 'fail' ? 'text-red-400' : ''}`} style={check.status !== 'pass' && check.status !== 'fail' ? { color: 'var(--orbis-text-muted)' } : undefined}>
                     {check.detail}
                   </span>
                 </div>
@@ -372,9 +389,62 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
             </div>
           </div>
 
+          {/* Speaker test confirmation (inspired by Mercor/FabricHQ) */}
+          {speakerOk && !speakerConfirmed && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl p-6 flex items-center justify-between"
+              style={{
+                background: 'var(--orbis-card)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid var(--orbis-border)',
+              }}
+            >
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(27,142,229,0.15)' }}>
+                  <Volume2 className="h-6 w-6" style={{ color: '#1B8EE5' }} />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--orbis-heading)' }}>How do we sound?</p>
+                  <p className="text-xs" style={{ color: 'var(--orbis-text-muted)' }}>Make sure your speakers are connected properly</p>
+                </div>
+              </div>
+              <button
+                onClick={playSpeakerTest}
+                className="px-5 py-2.5 rounded-xl text-white font-semibold text-sm hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                style={{ background: '#1B8EE5' }}
+              >
+                I can hear Orbis AI
+              </button>
+            </motion.div>
+          )}
+          {speakerConfirmed && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-2xl p-4 flex items-center gap-3"
+              style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.2)' }}
+            >
+              <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+              <span className="text-sm font-medium text-green-400">Audio confirmed — you're all set!</span>
+            </motion.div>
+          )}
+
+          {/* Fairness commitment (inspired by FabricHQ) */}
+          <div
+            className="rounded-2xl px-6 py-4 flex items-center gap-3"
+            style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
+          >
+            <Shield className="h-5 w-5 flex-shrink-0" style={{ color: '#1B8EE5' }} />
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--orbis-text-muted)' }}>
+              <strong style={{ color: 'var(--orbis-text)' }}>Fair evaluation guaranteed.</strong> Your interview is assessed purely on skills and knowledge — not appearance, accent, or background.
+            </p>
+          </div>
+
           {/* What to Expect section */}
           <div>
-            <h3 className="text-lg font-bold mb-4 text-white">What to Expect</h3>
+            <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--orbis-heading)' }}>What to Expect</h3>
             <div className={`grid gap-4 ${expectSections.length === 3 ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
               {expectSections.map((section) => (
                 <div
@@ -392,8 +462,8 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
                   >
                     {section.icon}
                   </div>
-                  <span className="text-white font-bold text-sm">{section.title}</span>
-                  <span className="text-slate-400 text-xs leading-relaxed">{section.description}</span>
+                  <span className="font-bold text-sm" style={{ color: 'var(--orbis-heading)' }}>{section.title}</span>
+                  <span className="text-xs leading-relaxed" style={{ color: 'var(--orbis-text-muted)' }}>{section.description}</span>
                 </div>
               ))}
             </div>
@@ -404,8 +474,8 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
             <button
               onClick={onStart}
               disabled={!micOk || isStarting || noAttemptsLeft}
-              className="w-full lg:w-auto min-w-[280px] py-5 px-10 rounded-xl text-white font-extrabold text-lg shadow-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              style={{ background: 'linear-gradient(135deg, #1B8EE5 0%, #5b2dba 100%)', boxShadow: '0 8px 30px rgba(27,142,229,0.25)' }}
+              className="w-full lg:w-auto min-w-[280px] py-5 px-10 rounded-xl font-extrabold text-lg shadow-xl hover:scale-[1.02] transition-transform flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              style={{ background: 'linear-gradient(135deg, #1B8EE5 0%, #5b2dba 100%)', boxShadow: '0 8px 30px rgba(27,142,229,0.25)', color: '#ffffff' }}
             >
               {noAttemptsLeft ? (
                 <>
@@ -425,10 +495,10 @@ export default function InterviewLobby({ sessionInfo, onStart, isStarting = fals
               )}
             </button>
 
-            <p className="text-xs text-slate-500 text-center lg:text-right max-w-md">
+            <p className="text-xs text-center lg:text-right max-w-md" style={{ color: 'var(--orbis-text-muted)' }}>
               By starting, you agree to camera and microphone monitoring during the interview
             </p>
-            <p className="text-xs text-slate-500 text-center lg:text-right">
+            <p className="text-xs text-center lg:text-right" style={{ color: 'var(--orbis-text-muted)' }}>
               Your best score from {maxAttempts} attempts will be used
             </p>
           </div>

@@ -61,7 +61,7 @@ export default function CodePanel({
           borderBottom: '1px solid var(--orbis-border)',
         }}
       >
-        <h3 className="text-sm font-semibold text-white">Code Editor</h3>
+        <h3 className="text-sm font-semibold" style={{ color: 'var(--orbis-heading)' }}>Code Editor</h3>
         <Select value={language} onValueChange={(v) => { setLanguage(v); if (!initialCode) setCode(STARTER_CODE[v] || ''); }} disabled={readOnly}>
           <SelectTrigger className="w-[140px] h-8" style={{ background: 'var(--orbis-input)', border: '1px solid var(--orbis-border)', color: 'hsl(var(--foreground))' }}>
             <SelectValue />
@@ -84,12 +84,12 @@ export default function CodePanel({
           }}
         >
           <p className="font-medium text-blue-300 mb-1">Problem:</p>
-          <p className="text-blue-200/80 whitespace-pre-wrap">{problemDescription}</p>
+          <p className="whitespace-pre-wrap" style={{ color: 'var(--orbis-text)' }}>{problemDescription}</p>
         </div>
       )}
 
       {/* Editor */}
-      <div className="flex-1 min-h-0" style={{ background: '#0d0a1f' }}>
+      <div className="flex-1 min-h-0" style={{ background: 'var(--orbis-page)' }}>
         <Editor
           height="100%"
           language={language}

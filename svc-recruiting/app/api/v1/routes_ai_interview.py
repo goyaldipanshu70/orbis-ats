@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import require_employee, require_hiring_access
+from app.core.security import require_employee, require_hiring_access, require_candidate
 from app.db.postgres import get_db
 from app.services import ai_interview_service as svc
 
@@ -132,6 +132,40 @@ async def cancel_session(
     if not success:
         raise HTTPException(status_code=400, detail="Session not found or not in pending state")
     return {"status": "cancelled"}
+
+
+# ── Candidate Self-Service (JWT candidate auth) ─────────────────────
+
+
+@router.post("/start-assessment")
+async def start_assessment(
+    user: dict = Depends(require_candidate),
+    db: AsyncSession = Depends(get_db),
+):
+    """Candidate creates a profiling interview session for themselves."""
+    session = await svc.create_profiling_session(
+        db=db,
+        user_id=int(user["sub"]),
+        user_email=user["email"],
+        user_name=f"{user.get('first_name', '')} {user.get('last_name', '')}".strip(),
+        resume_url=user.get("resume_url"),
+    )
+    from app.core.config import settings
+    return {
+        "session_id": session.id,
+        "token": session.token,
+        "interview_url": f"{settings.FRONTEND_URL}/ai-interview/{session.token}",
+        "status": session.status,
+    }
+
+
+@router.get("/my-assessments")
+async def my_assessments(
+    user: dict = Depends(require_candidate),
+    db: AsyncSession = Depends(get_db),
+):
+    """List candidate's profiling assessment sessions."""
+    return await svc.get_profiling_sessions(db, int(user["sub"]))
 
 
 # ── Candidate-Facing Endpoints (token-based, no JWT) ────────────────

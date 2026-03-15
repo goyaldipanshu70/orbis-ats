@@ -2,8 +2,9 @@ import { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  Zap, FileText, Briefcase, Users, Settings, LogOut, ChevronDown,
+  FileText, Briefcase, Users, Settings, LogOut, ChevronDown,
 } from 'lucide-react';
+import { OrbisLogoIcon } from '@/components/Logo';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
@@ -56,9 +57,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
             onClick={() => navigate('/manager/requisitions')}
             className="flex items-center gap-2.5 mr-8 shrink-0"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
-              <Zap className="h-[18px] w-[18px] text-white" />
-            </div>
+            <OrbisLogoIcon size="sm" />
             <div>
               <span className="text-base font-bold text-white tracking-tight">Orbis</span>
               <span className="text-[10px] text-slate-500 ml-2">Manager Portal</span>
@@ -88,7 +87,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
               onClick={() => setUserMenuOpen(prev => !prev)}
               className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-white/10"
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))' }}>
                 {user?.first_name?.[0]}{user?.last_name?.[0]}
               </div>
               <span className="text-sm text-slate-300 hidden sm:block">{user?.first_name}</span>

@@ -83,7 +83,7 @@ export default function AIInterviewModal({
         if (!cancelled) {
           setCandidates(
             (res.items || []).map((c: any) => ({
-              id: c.id,
+              id: c.id ?? Number(c._id) ?? c.profile_id,
               full_name: c.full_name || c.name || 'Unknown',
               email: c.email || '',
             }))

@@ -1,32 +1,82 @@
+import { Zap } from 'lucide-react';
 
-import { Brain, Users } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+/**
+ * Centralized Orbis logo — single source of truth for the brand mark.
+ *
+ * Usage:
+ *   <OrbisLogo />                           — default (sm, with text)
+ *   <OrbisLogo size="lg" />                 — large for auth panels
+ *   <OrbisLogo size="xs" />                 — tiny for footers
+ *   <OrbisLogo subtitle="Careers" />        — custom subtitle
+ *   <OrbisLogo showText={false} />          — icon only
+ *   <OrbisLogo variant="landing" />         — uses CSS accent vars
+ */
 
-const Logo = () => {
-  const navigate = useNavigate();
+export type LogoSize = 'xs' | 'sm' | 'md' | 'lg';
+export type LogoVariant = 'default' | 'landing';
 
-  return (
-    <div
-      onClick={() => navigate('/')}
-      className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
-    >
-      <div className="relative">
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, #1B8EE5, #1676c0)' }}
-        >
-          <Brain className="w-6 h-6 text-white" />
-        </div>
-        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center">
-          <Users className="w-2.5 h-2.5 text-white" />
-        </div>
-      </div>
-      <div className="flex flex-col">
-        <span className="text-lg font-bold text-white">Orbis</span>
-        <span className="text-xs text-slate-500 -mt-1">Org Intelligence</span>
-      </div>
-    </div>
-  );
+interface OrbisLogoProps {
+  /** xs=28px, sm=32px (nav), md=36px (public header), lg=80px (auth panels) */
+  size?: LogoSize;
+  /** Show "Orbis" text next to icon */
+  showText?: boolean;
+  /** Subtitle under "Orbis" (e.g. "Careers", "Candidate Portal") */
+  subtitle?: string;
+  /** "default" uses brand hex gradient; "landing" uses CSS accent vars */
+  variant?: LogoVariant;
+  /** Additional class on the root div */
+  className?: string;
+}
+
+const sizeConfig = {
+  xs: { box: 'h-7 w-7', icon: 'h-3.5 w-3.5', rounded: 'rounded-md', text: 'text-sm', subtitleText: 'text-[9px]', gap: 'gap-2' },
+  sm: { box: 'h-8 w-8', icon: 'h-[18px] w-[18px]', rounded: 'rounded-lg', text: 'text-base', subtitleText: 'text-[10px]', gap: 'gap-2.5' },
+  md: { box: 'h-9 w-9', icon: 'h-5 w-5', rounded: 'rounded-lg', text: 'text-sm font-bold', subtitleText: 'text-[10px]', gap: 'gap-2.5' },
+  lg: { box: 'h-20 w-20', icon: 'h-10 w-10', rounded: 'rounded-2xl', text: 'text-4xl', subtitleText: 'text-sm', gap: 'gap-4' },
 };
 
-export default Logo;
+/** Brand gradient as inline style — responds to accent theme in "landing" variant */
+function bgStyle(variant: LogoVariant): React.CSSProperties {
+  if (variant === 'landing') {
+    return { background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))' };
+  }
+  return { background: 'linear-gradient(135deg, var(--orbis-accent), var(--orbis-accent-dark))' };
+}
+
+export function OrbisLogoIcon({ size = 'sm', variant = 'default' }: Pick<OrbisLogoProps, 'size' | 'variant'>) {
+  const s = sizeConfig[size];
+  return (
+    <div
+      className={`flex ${s.box} items-center justify-center ${s.rounded} shrink-0`}
+      style={bgStyle(variant)}
+    >
+      <Zap aria-hidden="true" className={`${s.icon} text-white`} />
+    </div>
+  );
+}
+
+export default function OrbisLogo({
+  size = 'sm',
+  showText = true,
+  subtitle,
+  variant = 'default',
+  className = '',
+}: OrbisLogoProps) {
+  const s = sizeConfig[size];
+
+  return (
+    <div className={`flex items-center ${s.gap} ${className}`}>
+      <OrbisLogoIcon size={size} variant={variant} />
+      {showText && (
+        <div>
+          <span className={`${s.text} font-bold text-white tracking-tight`}>
+            Orbis
+          </span>
+          {subtitle && (
+            <span className={`${s.subtitleText} text-slate-500 ml-2`}>{subtitle}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
