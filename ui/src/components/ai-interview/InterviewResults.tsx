@@ -339,20 +339,35 @@ export default function InterviewResults({
   onDashboard,
 }: InterviewResultsProps) {
   const eval_ = results.evaluation || {};
-  const scores = eval_.score_breakdown || {};
+  // Deep eval uses "score_dimensions", legacy uses "score_breakdown"
+  const scores = eval_.score_breakdown || eval_.score_dimensions || {};
   const supplementary = eval_.supplementary_scores || {};
   const rec = getRecBadge(results.ai_recommendation);
-  const recruiterReport: RecruiterReport | null = results.recruiter_report || eval_.recruiter_report || null;
+  // Normalize recruiter report fields — LLM prompt returns different field names than the UI expects
+  const rawReport: any = results.recruiter_report || eval_.recruiter_report || null;
+  const recruiterReport: RecruiterReport | null = rawReport ? {
+    candidate_summary: rawReport.candidate_summary || rawReport.executive_summary || '',
+    overall_assessment: rawReport.overall_assessment || rawReport.executive_summary || rawReport.comparison_notes || '',
+    recommendation: rawReport.recommendation || rawReport.hire_recommendation || results.ai_recommendation || '',
+    recommendation_confidence: rawReport.recommendation_confidence || '',
+    key_strengths: rawReport.key_strengths || rawReport.top_strengths || [],
+    concerns: rawReport.concerns || rawReport.areas_of_concern || rawReport.risk_flags || [],
+    round_highlights: rawReport.round_highlights || [],
+    suggested_next_steps: rawReport.suggested_next_steps || rawReport.recommended_next_steps || [],
+    interview_quality_notes: rawReport.interview_quality_notes || rawReport.interviewer_notes || '',
+  } : null;
   const roundSummaries: any[] = eval_.round_summaries || [];
 
   // Detect if this is a new 10-dimension evaluation (scores on 0-10 scale)
-  const isDeepEval = scores.technical_knowledge !== undefined || scores.adaptability !== undefined;
+  const isDeepEval = !!eval_.score_dimensions || scores.adaptability !== undefined;
 
   const duration = results.started_at && results.completed_at
     ? Math.round((new Date(results.completed_at).getTime() - new Date(results.started_at).getTime()) / 60000)
     : null;
 
-  const overallScore = results.overall_score ?? 0;
+  // Backend normalizes to 0-100; handle edge case where it might still be 0-10
+  const rawOverallScore = results.overall_score ?? 0;
+  const overallScore = rawOverallScore <= 10 && rawOverallScore > 0 ? Math.round(rawOverallScore * 10) : rawOverallScore;
   const scoreColor = getScoreColor(overallScore);
   const scoreLabel = getScoreLabel(overallScore);
 

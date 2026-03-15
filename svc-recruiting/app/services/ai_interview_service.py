@@ -693,9 +693,11 @@ async def end_interview(db: AsyncSession, token: str) -> dict:
             evaluation = resp.json()
             session.evaluation = evaluation
 
-            # Extract overall score — deep eval uses 0-10 scale overall_score
+            # Extract overall score
             if "overall_score" in evaluation:
-                session.overall_score = evaluation["overall_score"]
+                raw_score = evaluation["overall_score"]
+                # Deep eval uses 0-10 scale — normalize to 0-100 for consistent storage
+                session.overall_score = round(raw_score * 10) if raw_score <= 10 else raw_score
             else:
                 score_breakdown = evaluation.get("score_breakdown", {})
                 total = sum(v for v in score_breakdown.values() if isinstance(v, (int, float)))
