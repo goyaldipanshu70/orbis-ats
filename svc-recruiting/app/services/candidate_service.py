@@ -570,7 +570,7 @@ async def get_candidates_analytics(db: AsyncSession, jd_id: str = None) -> list:
 
 
 async def get_candidate_by_id(db: AsyncSession, candidate_id: str) -> Optional[dict]:
-    """Get a single candidate entry with profile."""
+    """Get a single candidate entry with profile, enriched with AI interview data."""
     result = await db.execute(
         select(CandidateJobEntry, CandidateProfile).join(
             CandidateProfile, CandidateJobEntry.profile_id == CandidateProfile.id
@@ -579,7 +579,26 @@ async def get_candidate_by_id(db: AsyncSession, candidate_id: str) -> Optional[d
     row = result.first()
     if not row:
         return None
-    return _entry_to_dict(row[0], row[1])
+    data = _entry_to_dict(row[0], row[1])
+
+    # Enrich with latest AI interview session
+    entry = row[0]
+    ai_sess = (await db.execute(
+        select(AIInterviewSession)
+        .where(
+            AIInterviewSession.candidate_id == entry.id,
+            AIInterviewSession.jd_id == entry.jd_id,
+        )
+        .order_by(AIInterviewSession.created_at.desc())
+        .limit(1)
+    )).scalar_one_or_none()
+    if ai_sess:
+        data["ai_interview_status"] = ai_sess.status
+        data["ai_interview_score"] = ai_sess.overall_score
+        data["ai_interview_session_id"] = ai_sess.id
+        data["ai_interview_recommendation"] = ai_sess.ai_recommendation
+
+    return data
 
 
 async def delete_candidate(db: AsyncSession, candidate_id: str, deleted_by: str = "system") -> bool:

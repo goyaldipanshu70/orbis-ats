@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, Numeric
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, Float, ForeignKey, UniqueConstraint, Numeric, Index
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql import func
@@ -607,6 +607,11 @@ class AIInterviewSession(Base):
 
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index("ix_ai_sessions_candidate_jd", "candidate_id", "jd_id"),
+        Index("ix_ai_sessions_jd_status", "jd_id", "status"),
+    )
 
 
 class AIInterviewMessage(Base):

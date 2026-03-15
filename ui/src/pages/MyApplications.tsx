@@ -12,7 +12,7 @@ import {
   FileText, Clock, CheckCircle2, XCircle, AlertCircle, Briefcase,
   ChevronRight, Loader2, Send, Eye, Star, CalendarClock,
   TrendingUp, Activity, Award, Filter, Sparkles, MapPin, DollarSign,
-  Calendar, ArrowRight,
+  Calendar, ArrowRight, Bot,
 } from 'lucide-react';
 
 /* ────────────────────────────────────────────────────────────────────────── */
@@ -711,6 +711,32 @@ const MyApplications = () => {
                                 <Star className="h-3.5 w-3.5 text-amber-400" />
                                 <span className="text-sm font-semibold text-white tabular-nums">
                                   {matchScore}%
+                                </span>
+                              </div>
+                            )}
+                            {(app as any).ai_interview_status && (
+                              <div
+                                className="flex items-center gap-1 rounded-lg px-2.5 py-1"
+                                style={{
+                                  background: (app as any).ai_interview_status === 'completed'
+                                    ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.1)',
+                                }}
+                              >
+                                <Bot className="h-3.5 w-3.5" style={{
+                                  color: (app as any).ai_interview_status === 'completed' ? '#34d399' :
+                                    (app as any).ai_interview_status === 'in_progress' ? '#818cf8' : '#94a3b8',
+                                }} />
+                                <span className="text-xs font-medium" style={{
+                                  color: (app as any).ai_interview_status === 'completed' ? '#34d399' :
+                                    (app as any).ai_interview_status === 'in_progress' ? '#818cf8' : '#94a3b8',
+                                }}>
+                                  {(app as any).ai_interview_status === 'completed'
+                                    ? `AI: ${(app as any).ai_interview_score ?? '—'}`
+                                    : (app as any).ai_interview_status === 'in_progress'
+                                      ? 'AI: In Progress'
+                                      : (app as any).ai_interview_status === 'pending'
+                                        ? 'AI: Pending'
+                                        : `AI: ${(app as any).ai_interview_status}`}
                                 </span>
                               </div>
                             )}

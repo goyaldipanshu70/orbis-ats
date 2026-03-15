@@ -291,6 +291,17 @@ async def start_interview(db: AsyncSession, token: str) -> dict:
     db.add(first_msg)
     await db.commit()
 
+    # Broadcast real-time event
+    try:
+        from app.services.event_bus import publish_broadcast_event
+        await publish_broadcast_event("ai_interview_started", {
+            "session_id": session.id,
+            "candidate_id": session.candidate_id,
+            "jd_id": session.jd_id,
+        })
+    except Exception:
+        pass
+
     # Build rounds info for frontend
     rounds_info = []
     if plan.get("rounds"):

@@ -37,6 +37,7 @@ import {
   X,
   CheckCircle2,
   Star,
+  Bot,
 } from 'lucide-react';
 import type { Job } from '@/types/api';
 
@@ -95,6 +96,8 @@ interface ComparisonScorecard {
   resume_max: number;
   interview_score: number;
   interview_max: number;
+  ai_interview_score: number;
+  ai_interview_max: number;
   feedback_avg: number;
   skills_match: number;
   recommendation: string;
@@ -695,6 +698,7 @@ export default function CandidateCompare() {
                             {[
                               { icon: Brain, label: 'Resume', value: `${sc.resume_score}/${sc.resume_max}`, sc_score: sc.resume_score, sc_max: sc.resume_max },
                               { icon: TrendingUp, label: 'Interview', value: `${sc.interview_score}/${sc.interview_max}`, sc_score: sc.interview_score, sc_max: sc.interview_max },
+                              { icon: Bot, label: 'AI Interview', value: sc.ai_interview_score > 0 ? `${sc.ai_interview_score}/${sc.ai_interview_max}` : 'N/A', sc_score: sc.ai_interview_score, sc_max: sc.ai_interview_max },
                               { icon: MessageSquare, label: 'Feedback', value: sc.feedback_avg > 0 ? sc.feedback_avg.toFixed(1) : 'N/A', sc_score: sc.feedback_avg, sc_max: 5 },
                               { icon: Star, label: 'Skills Match', value: `${sc.skills_match}%`, sc_score: sc.skills_match, sc_max: 100 },
                             ].map((row) => (

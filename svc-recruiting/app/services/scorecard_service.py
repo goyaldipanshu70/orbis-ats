@@ -523,6 +523,12 @@ async def compare_candidates(
         if not recommendation:
             recommendation = resume_ai.get("recommendation", "") or ""
 
+        # AI interview score: if interview_ai came from ai_interview_session, use it
+        ai_interview_score = 0
+        ai_interview_max = 100
+        if interview_ai and interview_ai.get("source") == "ai_interview_session":
+            ai_interview_score = interview_ai.get("total_score", 0) or 0
+
         comparison_scorecards.append({
             "candidate_id": sc["candidate_id"],
             "candidate_name": sc["candidate_name"],
@@ -533,6 +539,8 @@ async def compare_candidates(
             "resume_max": resume_max,
             "interview_score": interview_score,
             "interview_max": interview_max,
+            "ai_interview_score": ai_interview_score,
+            "ai_interview_max": ai_interview_max,
             "feedback_avg": round(feedback_avg, 2),
             "skills_match": skills_match,
             "recommendation": recommendation,
@@ -545,6 +553,7 @@ async def compare_candidates(
         ("overall_score", 100),
         ("resume_score", 100),
         ("interview_score", 100),
+        ("ai_interview_score", 100),
         ("feedback_avg", 5),
         ("skills_match", 100),
     ]
