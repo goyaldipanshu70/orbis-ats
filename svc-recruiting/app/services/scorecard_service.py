@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.db.models import (
+    AIInterviewSession,
     CandidateJobEntry,
     CandidateProfile,
     InterviewEvaluation,
@@ -168,6 +169,58 @@ def _build_interview_ai(evaluation: Optional["InterviewEvaluation"]) -> Optional
     }
 
 
+def _build_ai_session_interview(ai_session: "AIInterviewSession") -> Optional[dict]:
+    """Transform a completed AIInterviewSession.evaluation into the same
+    structure as _build_interview_ai — used as a fallback when no legacy
+    InterviewEvaluation record exists."""
+    evaluation = ai_session.evaluation or {}
+    if not evaluation:
+        return None
+
+    # Deep eval returns score_dimensions (dict of dimension→0-10 score)
+    score_dims = evaluation.get("score_dimensions", evaluation.get("score_breakdown", {}))
+    score_breakdown: list[dict] = []
+    total_score = ai_session.overall_score or 0
+
+    if isinstance(score_dims, dict):
+        for key, val in score_dims.items():
+            if isinstance(val, (int, float)):
+                # Deep eval uses 0-10 scale per dimension
+                normalized = round(val * 10) if val <= 10 else val
+                score_breakdown.append({
+                    "competency": key,
+                    "score": normalized,
+                    "max_score": 100,
+                })
+    elif isinstance(score_dims, list):
+        for item in score_dims:
+            score_breakdown.append({
+                "competency": item.get("competency", item.get("name", "")),
+                "score": item.get("score", 0) or 0,
+                "max_score": item.get("max_score", 100) or 100,
+            })
+
+    # Derive total from breakdown if not stored
+    if not total_score and score_breakdown:
+        sum_score = sum(s["score"] for s in score_breakdown)
+        sum_max = sum(s["max_score"] for s in score_breakdown)
+        total_score = round((sum_score / sum_max) * 100) if sum_max else 0
+
+    strengths = evaluation.get("strengths", [])
+    weaknesses = evaluation.get("weaknesses", [])
+
+    return {
+        "total_score": total_score,
+        "max_score": 100,
+        "score_breakdown": score_breakdown,
+        "recommendation": ai_session.ai_recommendation or evaluation.get("hire_recommendation", ""),
+        "strongest_competency": strengths[0] if strengths else "",
+        "area_for_development": weaknesses[0] if weaknesses else "",
+        "overall_impression": evaluation.get("summary", evaluation.get("overall_impression", "")),
+        "source": "ai_interview_session",
+    }
+
+
 def _build_feedback(
     schedules: list,
     schedule_map: dict,
@@ -317,6 +370,22 @@ async def get_scorecard(
     )
     evaluation = eval_result.scalar_one_or_none()
     interview_ai = _build_interview_ai(evaluation)
+
+    # Fallback: if no InterviewEvaluation, check AIInterviewSession directly
+    # (covers sessions completed before the bridge was added)
+    if not interview_ai:
+        ai_sess_result = await db.execute(
+            select(AIInterviewSession)
+            .where(
+                AIInterviewSession.candidate_id == candidate_id,
+                AIInterviewSession.status == "completed",
+            )
+            .order_by(AIInterviewSession.completed_at.desc())
+            .limit(1)
+        )
+        ai_session = ai_sess_result.scalar_one_or_none()
+        if ai_session and ai_session.evaluation:
+            interview_ai = _build_ai_session_interview(ai_session)
 
     # ── Interviewer Feedback ───────────────────────────────────────────
     schedule_result = await db.execute(

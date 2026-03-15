@@ -17,6 +17,7 @@ from app.db.models import (
     AIInterviewProctoringEvent,
     CandidateJobEntry,
     CandidateProfile,
+    InterviewEvaluation,
     JobDescription,
     JobApplication,
 )
@@ -41,6 +42,20 @@ async def create_interview_session(
     application_id: Optional[int] = None,
 ) -> AIInterviewSession:
     """Create a new AI interview session with JD/resume context snapshots."""
+    # Duplicate prevention: reject if candidate already has active/completed session for this job
+    existing = (await db.execute(
+        select(AIInterviewSession).where(
+            AIInterviewSession.candidate_id == candidate_id,
+            AIInterviewSession.jd_id == jd_id,
+            AIInterviewSession.status.in_(["pending", "in_progress", "completed"]),
+        )
+    )).scalar_one_or_none()
+    if existing:
+        if existing.status == "completed":
+            raise ValueError("Candidate already completed an AI interview for this job")
+        if existing.status in ("pending", "in_progress"):
+            raise ValueError("Candidate already has an active AI interview session for this job")
+
     # Load JD context
     job = (await db.execute(
         select(JobDescription).where(JobDescription.id == jd_id)
@@ -145,6 +160,19 @@ async def send_interview_invite(
             logger.error("Failed to send AI interview invite: %s", e)
 
     asyncio.create_task(_send())
+
+    # Publish real-time event for AI interview invite
+    try:
+        from app.services.event_bus import publish_broadcast_event
+        await publish_broadcast_event("ai_interview_invited", {
+            "session_id": session.id,
+            "candidate_id": session.candidate_id,
+            "jd_id": session.jd_id,
+            "email": email,
+        })
+    except Exception:
+        pass
+
     return session
 
 
@@ -704,6 +732,58 @@ async def end_interview(db: AsyncSession, token: str) -> dict:
                 session.overall_score = total
 
             session.ai_recommendation = evaluation.get("hire_recommendation") or evaluation.get("ai_recommendation", "maybe")
+
+            # ── Bridge: write to InterviewEvaluation so scorecard picks it up ──
+            try:
+                score_dims = evaluation.get("score_dimensions", evaluation.get("score_breakdown", {}))
+                # Build the ai_interview_result in the format scorecard expects
+                ai_interview_result = {
+                    "score_breakdown": score_dims,
+                    "total_score": session.overall_score,  # already normalized to 0-100
+                    "ai_recommendation": session.ai_recommendation or "",
+                    "strongest_competency": "",
+                    "area_for_development": "",
+                    "overall_impression": evaluation.get("summary", evaluation.get("overall_impression", "")),
+                }
+                # Extract strongest/weakest from score dimensions
+                if isinstance(score_dims, dict) and score_dims:
+                    numeric_dims = {k: v for k, v in score_dims.items() if isinstance(v, (int, float))}
+                    if numeric_dims:
+                        ai_interview_result["strongest_competency"] = max(numeric_dims, key=numeric_dims.get)
+                        ai_interview_result["area_for_development"] = min(numeric_dims, key=numeric_dims.get)
+
+                # Strengths/weaknesses from evaluation
+                strengths = evaluation.get("strengths", [])
+                weaknesses = evaluation.get("weaknesses", [])
+                if strengths:
+                    ai_interview_result["strengths"] = strengths
+                if weaknesses:
+                    ai_interview_result["weaknesses"] = weaknesses
+
+                # Upsert InterviewEvaluation for this candidate+job
+                # Guard: skip bridge for profiling sessions (no jd_id)
+                if session.jd_id is None:
+                    logger.info("Skipping InterviewEvaluation bridge for profiling session %s (no jd_id)", session.id)
+                    raise Exception("skip_bridge")  # caught by outer try/except
+
+                eval_where = [InterviewEvaluation.candidate_id == session.candidate_id]
+                eval_where.append(InterviewEvaluation.jd_id == session.jd_id)
+                existing_eval = (await db.execute(
+                    select(InterviewEvaluation).where(*eval_where)
+                )).scalar_one_or_none()
+
+                if existing_eval:
+                    existing_eval.ai_interview_result = ai_interview_result
+                else:
+                    db.add(InterviewEvaluation(
+                        candidate_id=session.candidate_id,
+                        jd_id=session.jd_id,
+                        ai_interview_result=ai_interview_result,
+                    ))
+                logger.info("Bridged AI interview evaluation to InterviewEvaluation for candidate=%s jd=%s",
+                            session.candidate_id, session.jd_id)
+            except Exception as bridge_err:
+                logger.warning("Failed to bridge AI interview to InterviewEvaluation: %s", bridge_err)
         else:
             logger.error("AI evaluation failed: %s", resp.text)
 
@@ -729,7 +809,45 @@ async def end_interview(db: AsyncSession, token: str) -> dict:
     except Exception as e:
         logger.error("AI evaluation error: %s", e)
 
+    # ── Update CandidateJobEntry: interview_status + pipeline auto-advance ──
+    if session.candidate_id:
+        try:
+            entry = (await db.execute(
+                select(CandidateJobEntry).where(CandidateJobEntry.id == session.candidate_id)
+            )).scalar_one_or_none()
+            if entry:
+                entry.interview_status = True
+                # Auto-advance pipeline: ai_interview → interview
+                if entry.pipeline_stage == "ai_interview":
+                    old_stage = entry.pipeline_stage
+                    entry.pipeline_stage = "interview"
+                    entry.stage_changed_at = datetime.utcnow()
+                    entry.stage_changed_by = "ai_system"
+                    # Record stage transition in history
+                    from app.db.models import PipelineStageHistory
+                    db.add(PipelineStageHistory(
+                        candidate_id=entry.id,
+                        jd_id=entry.jd_id,
+                        from_stage=old_stage,
+                        to_stage="interview",
+                        changed_by="ai_system",
+                        notes=f"Auto-advanced after AI interview (score: {session.overall_score}, recommendation: {session.ai_recommendation})",
+                    ))
+                # Update linked JobApplication status
+                if entry.application_id:
+                    app_row = (await db.execute(
+                        select(JobApplication).where(JobApplication.id == entry.application_id)
+                    )).scalar_one_or_none()
+                    if app_row and hasattr(app_row, "status"):
+                        app_row.status = "interview"
+        except Exception as entry_err:
+            logger.warning("Failed to update CandidateJobEntry after AI interview: %s", entry_err)
+
     await db.commit()
+
+    # ── Notify recruiter via email ──
+    if session.candidate_id and session.jd_id:
+        asyncio.create_task(_notify_recruiter_interview_completed(session))
 
     # Publish event for real-time pipeline updates
     try:
@@ -764,6 +882,60 @@ async def _async_end_interview(token: str):
                 await end_interview(db, token)
     except Exception as e:
         logger.error("_async_end_interview failed for token %s: %s", token, e)
+
+
+async def _notify_recruiter_interview_completed(session: AIInterviewSession):
+    """Fire-and-forget: send email to the recruiter/creator when AI interview completes."""
+    try:
+        from app.db.postgres import AsyncSessionLocal
+        async with AsyncSessionLocal() as db:
+            # Resolve candidate name
+            candidate_name = "Candidate"
+            if session.candidate_id:
+                entry = (await db.execute(
+                    select(CandidateJobEntry).where(CandidateJobEntry.id == session.candidate_id)
+                )).scalar_one_or_none()
+                if entry:
+                    profile = (await db.execute(
+                        select(CandidateProfile).where(CandidateProfile.id == entry.profile_id)
+                    )).scalar_one_or_none()
+                    if profile:
+                        candidate_name = profile.full_name or candidate_name
+
+            # Resolve job title
+            jd_ctx = session.jd_context or {}
+            job_title = jd_ctx.get("job_title") or jd_ctx.get("title") or "Open Position"
+
+            # Determine recruiter email — created_by is either a user_id or email
+            recruiter_email = session.created_by
+            if recruiter_email and "@" not in recruiter_email:
+                # It's a user_id, not an email — skip (we don't have auth_db access here)
+                return
+
+            if not recruiter_email or recruiter_email == "system":
+                return
+
+            score_str = f"{round(session.overall_score)}/100" if session.overall_score else "Pending"
+            rec_str = (session.ai_recommendation or "pending").replace("_", " ").title()
+
+            from app.services.email_service import send_email, _wrap_html
+            subject = f"AI Interview Completed — {candidate_name} for {job_title}"
+            inner = f"""\
+<h2>AI Interview Results</h2>
+<p><strong>{candidate_name}</strong> has completed their AI interview for <strong>{job_title}</strong>.</p>
+<table class="detail-table">
+  <tr><td>Score</td><td><strong>{score_str}</strong></td></tr>
+  <tr><td>Recommendation</td><td><strong>{rec_str}</strong></td></tr>
+  <tr><td>Interview Type</td><td>{session.interview_type or "mixed"}</td></tr>
+  <tr><td>Completed</td><td>{session.completed_at.strftime("%B %d, %Y %I:%M %p") if session.completed_at else "Just now"}</td></tr>
+</table>
+<p style="text-align: center;">
+  <a href="{settings.FRONTEND_URL}/pipeline?jd_id={session.jd_id}" class="cta">View in Pipeline</a>
+</p>
+<p>The candidate has been automatically advanced to the interview stage.</p>"""
+            await send_email(recruiter_email, subject, _wrap_html(inner, "AI Interview Completed"))
+    except Exception as e:
+        logger.warning("Failed to send recruiter AI interview notification: %s", e)
 
 
 async def get_session_results(db: AsyncSession, session_id: int) -> Optional[dict]:

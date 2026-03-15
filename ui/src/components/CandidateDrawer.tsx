@@ -6,10 +6,10 @@ import {
 } from '@/components/ui/accordion';
 import { apiClient } from '@/utils/api';
 import {
-  X, Briefcase, AlertTriangle, FileText, MapPin, Mail, Clock,
+  X, Briefcase, AlertTriangle, FileText, MapPin, Mail, Clock, Bot,
   ExternalLink, Loader2, Tag, Phone, Linkedin, Github, Globe, Download,
   Copy, Check, GraduationCap, Building2, FolderGit2, Award, Languages,
-  Link2, Code2,
+  Link2, Code2, CheckCircle2,
 } from 'lucide-react';
 import type { DeepResumeMetadata } from '@/utils/api';
 
@@ -71,6 +71,7 @@ function CopyButton({ text }: { text: string }) {
 export function CandidateDrawer({ candidateId, open, onClose }: CandidateDrawerProps) {
   const [candidate, setCandidate] = useState<any>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [aiSessions, setAiSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -79,6 +80,7 @@ export function CandidateDrawer({ candidateId, open, onClose }: CandidateDrawerP
     setLoading(true);
     setCandidate(null);
     setHistory([]);
+    setAiSessions([]);
     Promise.all([
       apiClient.getTalentPoolCandidate(candidateId),
       apiClient.getTalentPoolHistory(candidateId),
@@ -86,6 +88,12 @@ export function CandidateDrawer({ candidateId, open, onClose }: CandidateDrawerP
       .then(([c, h]) => {
         setCandidate(c);
         setHistory(Array.isArray(h) ? h : []);
+        // Fetch AI interview sessions if candidate has a jd_id
+        if (c?.jd_id) {
+          apiClient.getAIInterviewSessionsForCandidate(Number(candidateId), Number(c.jd_id))
+            .then(sessions => setAiSessions(Array.isArray(sessions) ? sessions : []))
+            .catch(() => setAiSessions([]));
+        }
       })
       .catch(() => {
         setCandidate(null);
@@ -334,6 +342,53 @@ export function CandidateDrawer({ candidateId, open, onClose }: CandidateDrawerP
                           {s}
                         </span>
                       ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI Interview Results */}
+              {aiSessions.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <Bot className="h-4 w-4 text-purple-400" /> AI Interview ({aiSessions.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {aiSessions.map((s: any) => {
+                      const isCompleted = s.status === 'completed';
+                      const scoreColor = (s.overall_score ?? 0) >= 80 ? 'text-emerald-400' : (s.overall_score ?? 0) >= 60 ? 'text-blue-400' : (s.overall_score ?? 0) >= 40 ? 'text-amber-400' : 'text-red-400';
+                      return (
+                        <div key={s.id} className={glassSection}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {isCompleted ? (
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                              ) : (
+                                <Clock className="h-3.5 w-3.5 text-amber-400" />
+                              )}
+                              <span className="text-xs font-medium text-white capitalize">{s.status?.replace('_', ' ')}</span>
+                              <span className="text-[10px] text-slate-500">{s.interview_type}</span>
+                            </div>
+                            {s.overall_score != null && (
+                              <span className={`text-sm font-bold ${scoreColor}`}>
+                                {Math.round(s.overall_score)}<span className="text-[10px] font-normal text-slate-500">/100</span>
+                              </span>
+                            )}
+                          </div>
+                          {s.ai_recommendation && (
+                            <div className="mt-1.5">
+                              <span className="text-[10px] capitalize px-2 py-0.5 rounded-full bg-white/5 text-slate-300 border border-white/10">
+                                {s.ai_recommendation.replace('_', ' ')}
+                              </span>
+                            </div>
+                          )}
+                          {s.completed_at && (
+                            <p className="text-[10px] text-slate-500 mt-1">
+                              Completed {new Date(s.completed_at).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

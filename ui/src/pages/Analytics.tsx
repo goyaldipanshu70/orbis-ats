@@ -15,7 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import {
   TrendingUp, TrendingDown, Minus, Clock, CheckCircle, Zap, Users,
-  BarChart3, Download, Printer, CalendarIcon, Briefcase, Send, UserCheck, AlertTriangle, DollarSign,
+  BarChart3, Download, Printer, CalendarIcon, Briefcase, Send, UserCheck, AlertTriangle, DollarSign, Bot,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -210,6 +210,7 @@ export default function Analytics() {
   const [boardPerf, setBoardPerf] = useState<any>(null);
   const [schedulingLag, setSchedulingLag] = useState<any>(null);
   const [costData, setCostData] = useState<any>(null);
+  const [aiInterviewData, setAiInterviewData] = useState<any>(null);
 
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pipeline');
@@ -252,6 +253,7 @@ export default function Analytics() {
       apiClient.getJobBoardPerformance(df, dt),
       apiClient.getSchedulingLag(df, dt),
       apiClient.getCostPerHire(jdId ? Number(jdId) : undefined),
+      apiClient.getAIInterviewAnalytics(jdId, df, dt),
     ]);
 
     const val = <T,>(r: PromiseSettledResult<T>) => r.status === 'fulfilled' ? r.value : null;
@@ -268,6 +270,7 @@ export default function Analytics() {
     setBoardPerf(val(results[10]));
     setSchedulingLag(val(results[11]));
     setCostData(val(results[12]));
+    setAiInterviewData(val(results[13]));
 
     setLoading(false);
   };
@@ -500,6 +503,9 @@ export default function Analytics() {
             <TabsTrigger value="efficiency" className="text-xs rounded-md px-4 py-1.5 text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">Efficiency</TabsTrigger>
             <TabsTrigger value="sourcing" className="text-xs rounded-md px-4 py-1.5 text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">Sourcing</TabsTrigger>
             <TabsTrigger value="people" className="text-xs rounded-md px-4 py-1.5 text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10">People</TabsTrigger>
+            <TabsTrigger value="ai" className="text-xs rounded-md px-4 py-1.5 text-slate-400 data-[state=active]:text-white data-[state=active]:bg-white/10 flex items-center gap-1.5">
+              <Bot className="h-3 w-3" />AI Interviews
+            </TabsTrigger>
           </TabsList>
 
           {/* ============ PIPELINE TAB ============ */}
@@ -850,6 +856,133 @@ export default function Analytics() {
                 ) : <p className="text-sm text-slate-500 text-center pt-12">No data</p>}
               </div>
             </ChartCard>
+          </TabsContent>
+
+          {/* ============ AI INTERVIEWS TAB ============ */}
+          <TabsContent value="ai" className="space-y-5">
+            {/* KPI cards row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: 'Total AI Interviews', value: aiInterviewData?.total ?? 0, color: '#a855f7' },
+                { label: 'Completed', value: aiInterviewData?.completed ?? 0, color: '#10b981' },
+                { label: 'Completion Rate', value: `${aiInterviewData?.completion_rate ?? 0}%`, color: '#1B8EE5' },
+                { label: 'Avg Score', value: aiInterviewData?.avg_score ?? 0, color: '#f59e0b' },
+              ].map((kpi) => (
+                <div
+                  key={kpi.label}
+                  className="p-4 rounded-xl"
+                  style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}
+                >
+                  <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{kpi.label}</p>
+                  <p className="text-2xl font-bold mt-1" style={{ color: kpi.color }}>{kpi.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Score Distribution */}
+              <ChartCard title="Score Distribution" subtitle="AI interview score ranges">
+                <div className="h-72">
+                  {loading ? <Skel className="h-full w-full" /> : aiInterviewData?.score_distribution?.length ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={aiInterviewData.score_distribution}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--orbis-grid)" />
+                        <XAxis dataKey="range" tick={{ fontSize: 11, fill: '#64748b' }} />
+                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
+                        <Tooltip content={<ChartTooltip />} />
+                        <Bar dataKey="count" name="Candidates" radius={[4, 4, 0, 0]}>
+                          {aiInterviewData.score_distribution.map((b: any, i: number) => (
+                            <Cell key={b.range} fill={['#ef4444', '#f59e0b', '#eab308', '#1B8EE5', '#10b981'][i] || '#6b7280'} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : <p className="text-sm text-slate-500 text-center pt-12">No data</p>}
+                </div>
+              </ChartCard>
+
+              {/* Recommendation Breakdown */}
+              <ChartCard title="AI Recommendations" subtitle="Distribution of AI interview recommendations">
+                <div className="h-72">
+                  {loading ? <Skel className="h-full w-full" /> : aiInterviewData?.recommendations?.length ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={aiInterviewData.recommendations}
+                          dataKey="count"
+                          nameKey="recommendation"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={90}
+                          label={({ recommendation, count }: any) => `${(recommendation || '').replace(/_/g, ' ')} (${count})`}
+                          labelLine={{ stroke: '#475569' }}
+                        >
+                          {aiInterviewData.recommendations.map((r: any, i: number) => {
+                            const colors: Record<string, string> = {
+                              strong_hire: '#10b981', hire: '#22c55e', consider: '#f59e0b',
+                              no_hire: '#ef4444', reject: '#dc2626',
+                            };
+                            return <Cell key={r.recommendation} fill={colors[r.recommendation] || ['#a855f7', '#1B8EE5', '#06b6d4', '#f97316'][i % 4]} />;
+                          })}
+                        </Pie>
+                        <Tooltip content={<ChartTooltip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : <p className="text-sm text-slate-500 text-center pt-12">No data</p>}
+                </div>
+              </ChartCard>
+            </div>
+
+            {/* Top Jobs by AI Interview */}
+            {aiInterviewData?.top_jobs?.length ? (
+              <ChartCard title="AI Interviews by Job" subtitle="Jobs with the most AI interviews conducted">
+                <div className="space-y-2">
+                  {aiInterviewData.top_jobs.map((job: any) => (
+                    <div key={job.jd_id} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors" style={{ border: '1px solid var(--orbis-border)' }}>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-white truncate">{job.title}</p>
+                        <p className="text-[11px] text-slate-400">{job.completed}/{job.total} completed</p>
+                      </div>
+                      <div className="flex items-center gap-4 text-right shrink-0">
+                        <div>
+                          <p className="text-sm font-bold text-purple-400">{job.avg_score}</p>
+                          <p className="text-[10px] text-slate-500">avg score</p>
+                        </div>
+                        <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--orbis-border)' }}>
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${job.total > 0 ? (job.completed / job.total) * 100 : 0}%`,
+                              background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ChartCard>
+            ) : null}
+
+            {/* Status breakdown table */}
+            {aiInterviewData?.status_counts && Object.keys(aiInterviewData.status_counts).length > 0 && (
+              <ChartCard title="Interview Status Breakdown" subtitle="Current status of all AI interviews">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {Object.entries(aiInterviewData.status_counts).map(([status, count]: [string, any]) => {
+                    const statusColors: Record<string, string> = {
+                      completed: '#10b981', in_progress: '#1B8EE5', pending: '#f59e0b',
+                      expired: '#6b7280', cancelled: '#ef4444',
+                    };
+                    return (
+                      <div key={status} className="p-3 rounded-lg text-center" style={{ background: `${statusColors[status] || '#6b7280'}10`, border: `1px solid ${statusColors[status] || '#6b7280'}25` }}>
+                        <p className="text-lg font-bold" style={{ color: statusColors[status] || '#6b7280' }}>{count}</p>
+                        <p className="text-[11px] text-slate-400 capitalize">{status.replace(/_/g, ' ')}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ChartCard>
+            )}
           </TabsContent>
         </Tabs>
       </div>

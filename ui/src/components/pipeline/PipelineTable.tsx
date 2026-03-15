@@ -4,7 +4,7 @@ import { PipelineCandidate, PipelineStage, PipelineSummary } from '@/types/api';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ChevronDown, ChevronUp, ArrowRightLeft, TableIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, ArrowRightLeft, TableIcon, Bot } from 'lucide-react';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -197,6 +197,7 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
                   <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Email</TableHead>
                   <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stage</TableHead>
                   <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Score</TableHead>
+                  <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">AI Interview</TableHead>
                   <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Recommendation</TableHead>
                 </TableRow>
               </TableHeader>
@@ -243,6 +244,24 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
                       </span>
                     </TableCell>
                     <TableCell>
+                      {candidate.ai_interview_status ? (
+                        <div className="flex items-center gap-1.5">
+                          <Bot className="h-3 w-3 text-purple-400" />
+                          <span className={cn('text-[11px] font-semibold capitalize',
+                            candidate.ai_interview_status === 'completed' ? 'text-emerald-400' :
+                            candidate.ai_interview_status === 'in_progress' ? 'text-blue-400' :
+                            candidate.ai_interview_status === 'pending' ? 'text-amber-400' : 'text-slate-500'
+                          )}>
+                            {candidate.ai_interview_status === 'completed' && candidate.ai_interview_score != null
+                              ? `${Math.round(candidate.ai_interview_score)}/100`
+                              : candidate.ai_interview_status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-slate-500">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <span className={cn('text-sm font-medium', getRecommendationStyle(candidate.recommendation))}>
                         {candidate.recommendation || 'N/A'}
                       </span>
@@ -251,7 +270,7 @@ export default function PipelineTable({ data, onRefresh }: PipelineTableProps) {
                 ))}
                 {allCandidates.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-12 text-slate-500">
+                    <TableCell colSpan={7} className="text-center py-12 text-slate-500">
                       <div className="flex flex-col items-center gap-1">
                         <TableIcon className="h-5 w-5 text-slate-400 mb-1" />
                         <span className="text-sm font-medium">No candidates in pipeline</span>

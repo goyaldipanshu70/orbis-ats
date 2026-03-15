@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
-import { Check, ChevronRight, ChevronLeft, Send, Save, FileText, Loader2 } from 'lucide-react';
+import { Check, ChevronRight, ChevronLeft, Send, Save, FileText, Loader2, Bot } from 'lucide-react';
 
 const glassInput: React.CSSProperties = {
   background: 'var(--orbis-input)',
@@ -91,6 +91,19 @@ export default function OfferModal({
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
   const [templateLoading, setTemplateLoading] = useState(false);
   const [varValues, setVarValues] = useState<Record<string, string>>({});
+
+  // AI interview context
+  const [aiSession, setAiSession] = useState<any>(null);
+
+  useEffect(() => {
+    if (!isOpen || !candidateId) return;
+    apiClient.getAIInterviewSessionsForCandidate(candidateId, Number(jdId))
+      .then((sessions: any[]) => {
+        const completed = sessions?.find((s: any) => s.status === 'completed');
+        setAiSession(completed || null);
+      })
+      .catch(() => setAiSession(null));
+  }, [isOpen, candidateId, jdId]);
 
   // Fetch templates when "Use Template" is toggled on
   const fetchTemplates = useCallback(async () => {
@@ -465,6 +478,31 @@ export default function OfferModal({
           )}
         </div>
       </div>
+
+      {/* AI Interview Context */}
+      {aiSession && (
+        <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.15)' }}>
+          <div className="flex items-center gap-2">
+            <Bot className="h-4 w-4 text-purple-400" />
+            <h3 className="text-[11px] font-semibold text-purple-300 uppercase tracking-wider">AI Interview Results</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <span className="text-slate-400">Score</span>
+              <p className="font-bold text-white">{Math.round(aiSession.overall_score ?? 0)}/100</p>
+            </div>
+            <div>
+              <span className="text-slate-400">Recommendation</span>
+              <p className={`font-semibold capitalize ${
+                ['strong_hire', 'hire'].includes(aiSession.ai_recommendation) ? 'text-emerald-400' :
+                aiSession.ai_recommendation === 'consider' ? 'text-amber-400' : 'text-red-400'
+              }`}>
+                {(aiSession.ai_recommendation || 'N/A').replace(/_/g, ' ')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Template content preview */}
       {useTemplate && selectedTemplate && (

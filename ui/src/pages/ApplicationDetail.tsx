@@ -9,7 +9,7 @@ import {
   ArrowLeft, Briefcase, FileText, CheckCircle2, XCircle, Clock, Send,
   Eye, Star, AlertCircle, Loader2, ExternalLink, AlertTriangle,
   Download, Phone, Mail, Linkedin, Github, Globe, Upload, History,
-  CalendarClock, ChevronRight, Sparkles, TrendingUp, BarChart3,
+  CalendarClock, ChevronRight, Sparkles, TrendingUp, BarChart3, Bot,
 } from 'lucide-react';
 import type { ResumeVersion } from '@/types/api';
 
@@ -569,7 +569,64 @@ const ApplicationDetail = () => {
           </motion.div>
 
           {/* Right column - AI Assessment (2/5) */}
-          <motion.div className="lg:col-span-2" variants={cardVariants}>
+          <motion.div className="lg:col-span-2 space-y-6" variants={cardVariants}>
+            {/* AI Interview Results */}
+            {app.ai_interview && (
+              <div className="rounded-2xl overflow-hidden" style={glassCard}>
+                <div className="h-1" style={{ background: 'linear-gradient(to right, #a855f7, #7c3aed)' }} />
+                <div className="p-6">
+                  <div className="flex items-center gap-2.5 mb-5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg text-purple-400" style={{ background: 'rgba(168,85,247,0.1)' }}>
+                      <Bot className="h-4 w-4" />
+                    </div>
+                    <h2 className="text-sm font-semibold text-white uppercase tracking-wider">AI Interview</h2>
+                  </div>
+
+                  {app.ai_interview.status === 'completed' ? (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-5 p-4 rounded-xl" style={{ background: 'var(--orbis-card)', border: '1px solid var(--orbis-border)' }}>
+                        <ScoreRing score={app.ai_interview.overall_score ?? 0} />
+                        <div>
+                          <p className="text-sm font-semibold text-white">Interview Score</p>
+                          <p className="text-xs text-slate-500 mt-0.5 mb-2">AI-assessed performance</p>
+                          {app.ai_interview.ai_recommendation && (
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                              ['strong_hire', 'hire'].includes(app.ai_interview.ai_recommendation) ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                              app.ai_interview.ai_recommendation === 'consider' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
+                              'bg-red-500/10 text-red-400 border border-red-500/20'
+                            }`}>
+                              {app.ai_interview.ai_recommendation.replace(/_/g, ' ')}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {app.ai_interview.completed_at && (
+                        <p className="text-xs text-slate-500">
+                          Completed {new Date(app.ai_interview.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      )}
+                    </div>
+                  ) : app.ai_interview.status === 'pending' ? (
+                    <div className="flex flex-col items-center gap-3 py-6 text-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
+                        <Clock className="h-6 w-6 text-amber-400" />
+                      </div>
+                      <p className="text-sm font-medium text-white">Interview Pending</p>
+                      <p className="text-xs text-slate-400">You have been invited to an AI interview. Check your email for the link.</p>
+                    </div>
+                  ) : app.ai_interview.status === 'in_progress' ? (
+                    <div className="flex flex-col items-center gap-3 py-6 text-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10">
+                        <Bot className="h-6 w-6 text-blue-400" />
+                      </div>
+                      <p className="text-sm font-medium text-white">Interview In Progress</p>
+                      <p className="text-xs text-slate-400">Your AI interview is underway.</p>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
             {aiAnalysis ? (
               <div className="rounded-2xl overflow-hidden sticky top-24" style={glassCard}>
                 {/* Header gradient strip */}

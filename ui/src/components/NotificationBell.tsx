@@ -102,6 +102,9 @@ export function NotificationBell() {
     stage_changed: '\uD83D\uDD04',
     new_job_request: '\uD83D\uDCDD',
     interview_rescheduled: '\uD83D\uDCC6',
+    ai_interview_invited: '\uD83E\uDD16',
+    ai_interview_started: '\uD83D\uDE80',
+    ai_interview_completed: '\u2705',
   };
 
   return (

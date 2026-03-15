@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { apiClient } from '@/utils/api';
 import { useToast } from '@/hooks/use-toast';
+import { Bot } from 'lucide-react';
 import AISuggestedQuestions from '@/components/ai/AISuggestedQuestions';
 
 const glassInput: React.CSSProperties = {
@@ -43,6 +44,19 @@ export default function InterviewScheduleModal({
   const [location, setLocation] = useState('');
   const [interviewerNames, setInterviewerNames] = useState('');
   const [notes, setNotes] = useState('');
+
+  // AI interview context for interviewer prep
+  const [aiSession, setAiSession] = useState<any>(null);
+
+  useEffect(() => {
+    if (!isOpen || !candidateId) return;
+    apiClient.getAIInterviewSessionsForCandidate(candidateId, Number(jdId))
+      .then((sessions: any[]) => {
+        const completed = sessions?.find((s: any) => s.status === 'completed');
+        setAiSession(completed || null);
+      })
+      .catch(() => setAiSession(null));
+  }, [isOpen, candidateId, jdId]);
 
   const resetForm = () => {
     setInterviewType('video');
@@ -238,6 +252,59 @@ export default function InterviewScheduleModal({
               style={glassInput}
             />
           </div>
+
+          {/* AI Interview Findings */}
+          {aiSession && (
+            <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.15)' }}>
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-purple-400" />
+                <h3 className="text-sm font-semibold text-purple-300">AI Interview Findings</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-slate-400 text-xs">Score</span>
+                  <p className="font-bold text-white">{Math.round(aiSession.overall_score ?? 0)}/100</p>
+                </div>
+                <div>
+                  <span className="text-slate-400 text-xs">Recommendation</span>
+                  <p className={`font-semibold capitalize ${
+                    ['strong_hire', 'hire'].includes(aiSession.ai_recommendation) ? 'text-emerald-400' :
+                    aiSession.ai_recommendation === 'consider' ? 'text-amber-400' : 'text-red-400'
+                  }`}>
+                    {(aiSession.ai_recommendation || 'N/A').replace(/_/g, ' ')}
+                  </p>
+                </div>
+              </div>
+              {aiSession.evaluation && (
+                <div className="space-y-2">
+                  {aiSession.evaluation.strengths?.length > 0 && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">Strengths</span>
+                      <ul className="mt-1 space-y-0.5">
+                        {aiSession.evaluation.strengths.slice(0, 3).map((s: string, i: number) => (
+                          <li key={i} className="text-xs text-slate-300 flex items-start gap-1.5">
+                            <span className="text-emerald-400 mt-0.5 shrink-0">+</span>{s}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {aiSession.evaluation.weaknesses?.length > 0 && (
+                    <div>
+                      <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-wider">Areas to Probe</span>
+                      <ul className="mt-1 space-y-0.5">
+                        {aiSession.evaluation.weaknesses.slice(0, 3).map((w: string, i: number) => (
+                          <li key={i} className="text-xs text-slate-300 flex items-start gap-1.5">
+                            <span className="text-amber-400 mt-0.5 shrink-0">-</span>{w}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* AI Suggested Questions */}
           <div className="pt-2">

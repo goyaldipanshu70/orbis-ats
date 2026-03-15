@@ -145,6 +145,9 @@ export interface DashboardStats {
   recommended_candidates: number;
   closed_jobs: number;
   pending_interviews: number;
+  ai_interviews_pending?: number;
+  ai_interviews_completed?: number;
+  ai_interviews_avg_score?: number;
 }
 
 export interface CandidateMetadata {
@@ -317,6 +320,7 @@ export interface PipelineCandidate {
   ai_interview_status?: 'pending' | 'in_progress' | 'completed' | 'expired' | 'cancelled' | null;
   ai_interview_score?: number | null;
   ai_interview_session_id?: number | null;
+  ai_interview_recommendation?: string | null;
   hired_location_id?: number | null;
 }
 

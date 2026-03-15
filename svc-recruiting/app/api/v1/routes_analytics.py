@@ -189,6 +189,21 @@ async def scheduling_lag(
         raise HTTPException(status_code=500, detail=f"Failed to fetch scheduling lag: {e}")
 
 
+@router.get("/analytics/ai-interviews")
+async def ai_interview_analytics(
+    jd_id: Optional[int] = Query(None),
+    date_from: Optional[datetime] = Query(None),
+    date_to: Optional[datetime] = Query(None),
+    user: dict = Depends(require_hiring_access),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        from app.services.analytics_service import get_ai_interview_analytics
+        return await get_ai_interview_analytics(db, jd_id=jd_id, date_from=date_from, date_to=date_to)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch AI interview analytics: {e}")
+
+
 @router.get("/analytics/job-attractiveness/{jd_id}")
 async def job_attractiveness(
     jd_id: int,

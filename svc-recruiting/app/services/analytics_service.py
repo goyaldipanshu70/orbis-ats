@@ -11,6 +11,7 @@ from app.db.models import (
     Offer,
     JobApplication,
     JobBoardPosting,
+    AIInterviewSession,
 )
 
 # Ordered pipeline stages for conversion rate calculation
@@ -1088,4 +1089,121 @@ async def get_compatibility_score(
         },
         "candidate_id": candidate_id,
         "jd_id": jd_id,
+    }
+
+
+async def get_ai_interview_analytics(
+    db: AsyncSession,
+    jd_id: Optional[int] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+) -> dict:
+    """AI interview analytics: status counts, score distribution, recommendation breakdown."""
+    conditions = []
+    if jd_id is not None:
+        conditions.append(AIInterviewSession.jd_id == jd_id)
+    if date_from is not None:
+        conditions.append(AIInterviewSession.created_at >= date_from)
+    if date_to is not None:
+        conditions.append(AIInterviewSession.created_at <= date_to)
+
+    where = and_(*conditions) if conditions else True
+
+    # Status breakdown
+    status_q = (
+        select(
+            AIInterviewSession.status,
+            func.count(AIInterviewSession.id).label("count"),
+        )
+        .where(where)
+        .group_by(AIInterviewSession.status)
+    )
+    status_rows = (await db.execute(status_q)).all()
+    status_counts = {row.status: row.count for row in status_rows}
+    total = sum(status_counts.values())
+    completed = status_counts.get("completed", 0)
+
+    # Aggregate scores for completed interviews
+    score_agg = (
+        select(
+            func.round(func.avg(AIInterviewSession.overall_score), 1).label("avg_score"),
+            func.min(AIInterviewSession.overall_score).label("min_score"),
+            func.max(AIInterviewSession.overall_score).label("max_score"),
+        )
+        .where(where)
+        .where(AIInterviewSession.status == "completed", AIInterviewSession.overall_score.isnot(None))
+    )
+    agg_row = (await db.execute(score_agg)).first()
+    avg_score = float(agg_row.avg_score or 0) if agg_row else 0
+    min_score = float(agg_row.min_score or 0) if agg_row else 0
+    max_score = float(agg_row.max_score or 0) if agg_row else 0
+
+    # Score distribution buckets (0-20, 20-40, 40-60, 60-80, 80-100)
+    buckets = []
+    for low, high, label in [(0, 20, "0-20"), (20, 40, "20-40"), (40, 60, "40-60"), (60, 80, "60-80"), (80, 101, "80-100")]:
+        cnt = (await db.execute(
+            select(func.count()).select_from(AIInterviewSession)
+            .where(where)
+            .where(
+                AIInterviewSession.status == "completed",
+                AIInterviewSession.overall_score.isnot(None),
+                AIInterviewSession.overall_score >= low,
+                AIInterviewSession.overall_score < high,
+            )
+        )).scalar_one()
+        buckets.append({"range": label, "count": cnt})
+
+    # Recommendation breakdown
+    rec_q = (
+        select(
+            AIInterviewSession.ai_recommendation,
+            func.count(AIInterviewSession.id).label("count"),
+        )
+        .where(where)
+        .where(AIInterviewSession.status == "completed", AIInterviewSession.ai_recommendation.isnot(None))
+        .group_by(AIInterviewSession.ai_recommendation)
+    )
+    rec_rows = (await db.execute(rec_q)).all()
+    recommendations = [{"recommendation": row.ai_recommendation or "unknown", "count": row.count} for row in rec_rows]
+
+    # Top jobs by AI interview count
+    top_jobs_q = (
+        select(
+            AIInterviewSession.jd_id,
+            JobDescription.title,
+            func.count(AIInterviewSession.id).label("total"),
+            func.count(case((AIInterviewSession.status == "completed", 1))).label("completed"),
+            func.round(func.avg(
+                case((AIInterviewSession.status == "completed", AIInterviewSession.overall_score))
+            ), 1).label("avg_score"),
+        )
+        .join(JobDescription, JobDescription.id == AIInterviewSession.jd_id, isouter=True)
+        .where(where)
+        .group_by(AIInterviewSession.jd_id, JobDescription.title)
+        .order_by(func.count(AIInterviewSession.id).desc())
+        .limit(10)
+    )
+    top_jobs_rows = (await db.execute(top_jobs_q)).all()
+    top_jobs = [
+        {
+            "jd_id": row.jd_id,
+            "title": row.title or f"Job #{row.jd_id}",
+            "total": row.total,
+            "completed": row.completed,
+            "avg_score": float(row.avg_score or 0),
+        }
+        for row in top_jobs_rows
+    ]
+
+    return {
+        "total": total,
+        "status_counts": status_counts,
+        "completed": completed,
+        "completion_rate": round(completed / total * 100, 1) if total > 0 else 0,
+        "avg_score": avg_score,
+        "min_score": min_score,
+        "max_score": max_score,
+        "score_distribution": buckets,
+        "recommendations": recommendations,
+        "top_jobs": top_jobs,
     }

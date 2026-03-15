@@ -11,7 +11,7 @@ import ApprovalBadge from '@/components/ApprovalBadge';
 import type { Job, DashboardStats } from '@/types/api';
 import type { PaginatedResponse } from '@/types/pagination';
 import {
-  Briefcase, Zap, Users, ThumbsUp, XCircle, Calendar,
+  Briefcase, Zap, Users, ThumbsUp, XCircle, Calendar, Bot,
   Plus, TrendingUp, ArrowRight, ArrowUpRight, ArrowDownRight,
   CheckCircle, ShieldCheck, Megaphone, Pin, AlertTriangle, Bell, Info,
   Clock, UserCheck, Sparkles, Rocket,
@@ -119,6 +119,15 @@ const STAT_CARDS: StatCardConfig[] = [
     getValue: (s) => s.pending_interviews,
     href: '/interviewers',
   },
+  {
+    key: 'ai_interviews_pending',
+    label: 'AI Interviews',
+    icon: Bot,
+    iconColor: 'text-purple-400',
+    trendUp: true,
+    trendPercent: 0,
+    getValue: (s) => (s.ai_interviews_pending ?? 0) + (s.ai_interviews_completed ?? 0),
+  },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -216,6 +225,9 @@ const Dashboard = () => {
     total_candidates: 0,
     recommended_candidates: 0,
     pending_interviews: 0,
+    ai_interviews_pending: 0,
+    ai_interviews_completed: 0,
+    ai_interviews_avg_score: 0,
   };
 
   const {
@@ -261,7 +273,7 @@ const Dashboard = () => {
   }, [queryClient]);
 
   useRealtimeEvents(handleRealtimeEvent, {
-    eventTypes: ['candidate_evaluation_complete', 'pipeline_stage_changed', 'offer_sent', 'offer_status_changed', 'interview_scheduled'],
+    eventTypes: ['candidate_evaluation_complete', 'pipeline_stage_changed', 'offer_sent', 'offer_status_changed', 'interview_scheduled', 'ai_interview_completed'],
   });
 
   // ---- helper to invalidate all dashboard queries ----
@@ -366,7 +378,7 @@ const Dashboard = () => {
         </Fade>
 
         {/* ── Stats Row ──────────────────────────────────────────────── */}
-        <StaggerGrid inView={false} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <StaggerGrid inView={false} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           {STAT_CARDS.map((card) => {
             const Icon = card.icon;
 

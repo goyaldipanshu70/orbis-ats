@@ -244,25 +244,40 @@ export default function KanbanCard({ candidate, index, onClick, onFeedbackClick,
 
             {/* AI Interview status badge */}
             {candidate.ai_interview_status && AI_STATUS_STYLES[candidate.ai_interview_status] && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (candidate.ai_interview_session_id && onViewAIResults) onViewAIResults(candidate);
-                }}
-                className={cn(
-                  'mt-2.5 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all hover:opacity-80',
-                  AI_STATUS_STYLES[candidate.ai_interview_status].bg,
-                  AI_STATUS_STYLES[candidate.ai_interview_status].text,
+              <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (candidate.ai_interview_session_id && onViewAIResults) onViewAIResults(candidate);
+                  }}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold transition-all hover:opacity-80',
+                    AI_STATUS_STYLES[candidate.ai_interview_status].bg,
+                    AI_STATUS_STYLES[candidate.ai_interview_status].text,
+                  )}
+                  title={AI_STATUS_STYLES[candidate.ai_interview_status].label}
+                >
+                  <span className={cn('h-1.5 w-1.5 rounded-full', AI_STATUS_STYLES[candidate.ai_interview_status].dot)} />
+                  <Bot className="h-3 w-3" />
+                  {AI_STATUS_STYLES[candidate.ai_interview_status].label}
+                  {candidate.ai_interview_score != null && (
+                    <span className="ml-0.5 opacity-75">({Math.round(candidate.ai_interview_score)})</span>
+                  )}
+                </button>
+                {/* Show AI recommendation for completed interviews */}
+                {candidate.ai_interview_status === 'completed' && (candidate as any).ai_interview_recommendation && (
+                  <span className={cn(
+                    'text-[10px] font-semibold px-1.5 py-0.5 rounded-md capitalize',
+                    (candidate as any).ai_interview_recommendation === 'strong_hire' || (candidate as any).ai_interview_recommendation === 'hire'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : (candidate as any).ai_interview_recommendation === 'maybe'
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                  )}>
+                    {((candidate as any).ai_interview_recommendation || '').replace('_', ' ')}
+                  </span>
                 )}
-                title={AI_STATUS_STYLES[candidate.ai_interview_status].label}
-              >
-                <span className={cn('h-1.5 w-1.5 rounded-full', AI_STATUS_STYLES[candidate.ai_interview_status].dot)} />
-                <Bot className="h-3 w-3" />
-                {AI_STATUS_STYLES[candidate.ai_interview_status].label}
-                {candidate.ai_interview_score != null && (
-                  <span className="ml-0.5 opacity-75">({candidate.ai_interview_score})</span>
-                )}
-              </button>
+              </div>
             )}
 
             {/* Meta row: Days + Source + Docs */}

@@ -9,6 +9,9 @@ interface DashboardStats {
   recommended_candidates: number;
   closed_jobs: number;
   pending_interviews: number;
+  ai_interviews_pending?: number;
+  ai_interviews_completed?: number;
+  ai_interviews_avg_score?: number;
 }
 
 interface AdminDashboardStats {
@@ -1227,6 +1230,14 @@ class ApiClient {
     if (dateFrom) p.set('date_from', dateFrom);
     if (dateTo) p.set('date_to', dateTo);
     return await this.request<any>(`/api/dashboard/analytics/summary?${p}`);
+  }
+
+  async getAIInterviewAnalytics(jdId?: string, dateFrom?: string, dateTo?: string) {
+    const p = new URLSearchParams();
+    if (jdId) p.set('jd_id', jdId);
+    if (dateFrom) p.set('date_from', dateFrom);
+    if (dateTo) p.set('date_to', dateTo);
+    return await this.request<any>(`/api/dashboard/analytics/ai-interviews?${p}`);
   }
 
   async getJobBoardPerformance(dateFrom?: string, dateTo?: string) {

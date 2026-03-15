@@ -17,6 +17,7 @@ from app.db.models import (
     PipelineStageHistory,
     Offer,
     JobDescription,
+    AIInterviewSession,
 )
 
 logger = logging.getLogger("svc-recruiting")
@@ -138,6 +139,26 @@ async def export_candidate(
         for h in psh_result.scalars().all()
     ]
 
+    # ── AI Interview Sessions ─────────────────────────────────────────
+    ai_session_result = await db.execute(
+        select(AIInterviewSession)
+        .where(AIInterviewSession.candidate_id == candidate_id)
+        .order_by(AIInterviewSession.created_at)
+    )
+    ai_sessions = [
+        {
+            "id": s.id,
+            "jd_id": s.jd_id,
+            "status": s.status,
+            "overall_score": s.overall_score,
+            "ai_recommendation": s.ai_recommendation,
+            "interview_type": s.interview_type,
+            "created_at": _safe_iso(s.created_at),
+            "completed_at": _safe_iso(s.completed_at),
+        }
+        for s in ai_session_result.scalars().all()
+    ]
+
     # ── Offers ─────────────────────────────────────────────────────────
     offer_result = await db.execute(
         select(Offer)
@@ -180,6 +201,7 @@ async def export_candidate(
             "created_at": _safe_iso(entry.created_at),
         },
         "evaluations": evaluations,
+        "ai_interview_sessions": ai_sessions,
         "schedules": schedules,
         "feedback": feedback_list,
         "screening": screening,
@@ -202,7 +224,7 @@ def _candidate_data_to_csv(data: dict) -> str:
     writer.writerow([
         "profile_email", "profile_name", "profile_phone",
         "pipeline_stage", "source", "jd_id",
-        "evaluations_count", "schedules_count", "feedback_count",
+        "evaluations_count", "ai_interviews_count", "schedules_count", "feedback_count",
         "offers_count", "screening_count", "stage_history_count",
     ])
 
@@ -216,6 +238,7 @@ def _candidate_data_to_csv(data: dict) -> str:
         je.get("source", ""),
         je.get("jd_id", ""),
         len(data["evaluations"]),
+        len(data.get("ai_interview_sessions", [])),
         len(data["schedules"]),
         len(data["feedback"]),
         len(data["offers"]),
@@ -307,6 +330,24 @@ async def erase_candidate(db: AsyncSession, candidate_id: int) -> dict:
             )
             records_affected += fb_count
 
+    # Anonymize AI interview sessions (transcript, evaluation, proctoring)
+    ai_count_result = await db.execute(
+        select(func.count(AIInterviewSession.id))
+        .where(AIInterviewSession.candidate_id == candidate_id)
+    )
+    ai_count = ai_count_result.scalar_one()
+    if ai_count > 0:
+        await db.execute(
+            update(AIInterviewSession)
+            .where(AIInterviewSession.candidate_id == candidate_id)
+            .values(
+                evaluation={},
+                resume_context={},
+                invite_email="[REDACTED]",
+            )
+        )
+        records_affected += ai_count
+
     await db.commit()
 
     return {"erased": True, "records_affected": records_affected}
@@ -339,11 +380,37 @@ async def export_job_candidates(
     if jd and jd.ai_result:
         job_title = jd.ai_result.get("job_title", "")
 
+    # Batch-load AI interview sessions for these candidates
+    candidate_ids = [row.CandidateJobEntry.id for row in rows]
+    ai_map: dict = {}
+    if candidate_ids:
+        ai_result = await db.execute(
+            select(
+                AIInterviewSession.candidate_id,
+                AIInterviewSession.status,
+                AIInterviewSession.overall_score,
+                AIInterviewSession.ai_recommendation,
+            )
+            .where(
+                AIInterviewSession.candidate_id.in_(candidate_ids),
+                AIInterviewSession.jd_id == jd_id,
+            )
+            .order_by(AIInterviewSession.created_at.desc())
+        )
+        for r in ai_result.all():
+            if r.candidate_id not in ai_map:
+                ai_map[r.candidate_id] = {
+                    "status": r.status,
+                    "score": r.overall_score,
+                    "recommendation": r.ai_recommendation,
+                }
+
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
         "candidate_id", "profile_id", "name", "email", "phone",
         "pipeline_stage", "source", "onboard", "resume_score",
+        "ai_interview_status", "ai_interview_score", "ai_interview_recommendation",
         "created_at", "job_title",
     ])
 
@@ -355,6 +422,7 @@ async def export_job_candidates(
         scoring = ai.get("scoring", {})
         total_score = scoring.get("total_score", "")
 
+        ai_info = ai_map.get(entry.id, {})
         writer.writerow([
             entry.id,
             profile.id,
@@ -365,6 +433,9 @@ async def export_job_candidates(
             entry.source,
             entry.onboard,
             total_score,
+            ai_info.get("status", ""),
+            ai_info.get("score", ""),
+            ai_info.get("recommendation", ""),
             _safe_iso(entry.created_at),
             job_title,
         ])

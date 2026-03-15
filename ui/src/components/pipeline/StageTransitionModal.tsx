@@ -145,6 +145,16 @@ export default function StageTransitionModal({
             </div>
           </div>
 
+          {/* Warning when leaving ai_interview without completion */}
+          {fromStage === 'ai_interview' && toStage !== 'rejected' && (
+            <div className="flex items-start gap-2.5 p-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)' }}>
+              <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-300">
+                If the AI interview hasn't been completed yet, the candidate will skip that evaluation step. Completed AI interviews auto-advance candidates automatically.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-2">
             <label htmlFor="notes" className="text-sm font-semibold text-slate-300">
               {isRejection ? 'Rejection reason (required)' : 'Notes (optional)'}

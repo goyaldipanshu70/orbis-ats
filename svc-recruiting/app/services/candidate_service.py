@@ -4,8 +4,8 @@ import math
 from datetime import datetime
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, func, or_
-from app.db.models import JobDescription, CandidateProfile, CandidateJobEntry, PipelineStageHistory, InterviewSchedule, InterviewerFeedback
+from sqlalchemy import select, update, func, or_, exists
+from app.db.models import JobDescription, CandidateProfile, CandidateJobEntry, PipelineStageHistory, InterviewSchedule, InterviewerFeedback, AIInterviewSession
 from app.core.config import settings
 from app.core.http_client import get_ai_client
 from app.schemas.candidate_schema import AIResult
@@ -437,6 +437,7 @@ async def get_candidates(
     db: AsyncSession,
     jd_id: str = None,
     pipeline_stage: str = None,
+    ai_interview_status: str = None,
     search: str = None,
     page: int = 1,
     page_size: int = 20,
@@ -492,12 +493,61 @@ async def get_candidates(
             count_sub = count_sub.where(CandidateJobEntry.pipeline_stage == pipeline_stage)
         count_q = select(func.count()).select_from(count_sub.subquery())
 
+    # AI interview status filter via EXISTS subquery (scoped to candidate's job)
+    if ai_interview_status and ai_interview_status in {"pending", "in_progress", "completed", "expired", "cancelled"}:
+        ai_exists = exists(
+            select(AIInterviewSession.id).where(
+                AIInterviewSession.candidate_id == CandidateJobEntry.id,
+                AIInterviewSession.jd_id == CandidateJobEntry.jd_id,
+                AIInterviewSession.status == ai_interview_status,
+            )
+        )
+        base = base.where(ai_exists)
+        # Rebuild count query with AI filter
+        count_sub = select(CandidateJobEntry.id).join(
+            CandidateProfile, CandidateJobEntry.profile_id == CandidateProfile.id
+        ).where(CandidateJobEntry.deleted_at.is_(None), ai_exists)
+        if jd_id:
+            count_sub = count_sub.where(CandidateJobEntry.jd_id == int(jd_id))
+        if pipeline_stage and pipeline_stage in {"applied", "screening", "ai_interview", "interview", "offer", "hired", "rejected"}:
+            count_sub = count_sub.where(CandidateJobEntry.pipeline_stage == pipeline_stage)
+        if search:
+            search_filter_ai = f"%{search}%"
+            count_sub = count_sub.where(
+                (CandidateProfile.full_name.ilike(search_filter_ai)) |
+                (CandidateProfile.email.ilike(search_filter_ai))
+            )
+        count_q = select(func.count()).select_from(count_sub.subquery())
+
     total = (await db.execute(count_q)).scalar_one()
     offset = (page - 1) * page_size
     query = base.order_by(CandidateJobEntry.id.desc()).offset(offset).limit(page_size)
     result = await db.execute(query)
 
     items = [_entry_to_dict(entry, profile) for entry, profile in result.all()]
+
+    # Enrich with AI interview status (latest session per candidate)
+    candidate_ids = [int(item["_id"]) for item in items]
+    if candidate_ids:
+        AIS = AIInterviewSession
+        ai_result = await db.execute(
+            select(AIS.candidate_id, AIS.status, AIS.overall_score, AIS.id, AIS.ai_recommendation)
+            .where(AIS.candidate_id.in_(candidate_ids))
+            .order_by(AIS.candidate_id, AIS.created_at.desc())
+        )
+        ai_map: dict = {}
+        for row in ai_result.all():
+            if row.candidate_id not in ai_map:
+                ai_map[row.candidate_id] = {
+                    "ai_interview_status": row.status,
+                    "ai_interview_score": row.overall_score,
+                    "ai_interview_session_id": row.id,
+                    "ai_interview_recommendation": row.ai_recommendation,
+                }
+        for item in items:
+            ai_info = ai_map.get(int(item["_id"]))
+            if ai_info:
+                item.update(ai_info)
 
     return {
         "items": items,
@@ -1229,6 +1279,7 @@ async def get_candidates_by_pipeline(db: AsyncSession, jd_id: str) -> dict:
                 AIS.status,
                 AIS.overall_score,
                 AIS.id,
+                AIS.ai_recommendation,
             )
             .where(AIS.candidate_id.in_(all_candidate_ids))
             .order_by(AIS.candidate_id, AIS.created_at.desc())
@@ -1241,6 +1292,7 @@ async def get_candidates_by_pipeline(db: AsyncSession, jd_id: str) -> dict:
                     "ai_interview_status": row.status,
                     "ai_interview_score": row.overall_score,
                     "ai_interview_session_id": row.id,
+                    "ai_interview_recommendation": row.ai_recommendation,
                 }
         for stage_list in pipeline.values():
             for cand in stage_list:

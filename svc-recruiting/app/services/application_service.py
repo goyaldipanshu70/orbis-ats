@@ -7,7 +7,7 @@ from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, update as sql_update
 
-from app.db.models import JobApplication, JobDescription, CandidateJobEntry, CandidateProfile, InterviewSchedule, Offer
+from app.db.models import JobApplication, JobDescription, CandidateJobEntry, CandidateProfile, InterviewSchedule, Offer, AIInterviewSession
 from app.services.email_templates import STATUS_MESSAGES
 
 logger = logging.getLogger("svc-recruiting")
@@ -204,6 +204,32 @@ async def get_my_applications(
                 "interviewer_names": s.interviewer_names or [],
             })
 
+    # Batch-load AI interview sessions
+    ai_session_map: dict = {}
+    all_candidate_ids = {app.candidate_id for app in applications if app.candidate_id}
+    if all_candidate_ids:
+        ai_result = await db.execute(
+            select(
+                AIInterviewSession.candidate_id,
+                AIInterviewSession.jd_id,
+                AIInterviewSession.status,
+                AIInterviewSession.overall_score,
+                AIInterviewSession.ai_recommendation,
+                AIInterviewSession.id,
+            )
+            .where(AIInterviewSession.candidate_id.in_(all_candidate_ids))
+            .order_by(AIInterviewSession.created_at.desc())
+        )
+        for row in ai_result.all():
+            key = (row.candidate_id, row.jd_id)
+            if key not in ai_session_map:
+                ai_session_map[key] = {
+                    "ai_interview_status": row.status,
+                    "ai_interview_score": row.overall_score,
+                    "ai_interview_recommendation": row.ai_recommendation,
+                    "ai_interview_session_id": row.id,
+                }
+
     # Batch-load offers for candidates in offer/hired stage
     offer_map: dict = {}
     offer_candidate_ids = {app.candidate_id for app in applications if app.candidate_id and app.status in ("offered", "hired")}
@@ -268,6 +294,7 @@ async def get_my_applications(
             "candidate_id": app.candidate_id,
             "interview_schedules": interview_map.get(app.candidate_id, []) if app.candidate_id else [],
             "offer": offer_map.get(app.candidate_id) if app.candidate_id else None,
+            **(ai_session_map.get((app.candidate_id, app.jd_id), {}) if app.candidate_id else {}),
         })
 
     # Include HR-uploaded candidates (CandidateJobEntry without JobApplication) via email match
@@ -390,6 +417,28 @@ async def get_application_by_id(db: AsyncSession, application_id: int, user_id: 
         if cand:
             ai_analysis = cand.ai_resume_analysis
 
+    # AI interview session data
+    ai_interview_info = None
+    if app.candidate_id:
+        ai_sess = (await db.execute(
+            select(AIInterviewSession)
+            .where(
+                AIInterviewSession.candidate_id == app.candidate_id,
+                AIInterviewSession.jd_id == app.jd_id,
+            )
+            .order_by(AIInterviewSession.created_at.desc())
+            .limit(1)
+        )).scalar_one_or_none()
+        if ai_sess:
+            ai_interview_info = {
+                "session_id": ai_sess.id,
+                "status": ai_sess.status,
+                "overall_score": ai_sess.overall_score,
+                "ai_recommendation": ai_sess.ai_recommendation,
+                "completed_at": str(ai_sess.completed_at) if ai_sess.completed_at else None,
+                "token": ai_sess.token,
+            }
+
     return {
         "id": app.id,
         "jd_id": app.jd_id,
@@ -412,6 +461,7 @@ async def get_application_by_id(db: AsyncSession, application_id: int, user_id: 
         "cover_letter": app.cover_letter,
         "candidate_id": app.candidate_id,
         "ai_analysis": ai_analysis,
+        "ai_interview": ai_interview_info,
     }
 
 
